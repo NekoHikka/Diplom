@@ -174,7 +174,13 @@
   <body>
     <div
       class="card no-print"
-      style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center"
+      style="
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        align-items: center;
+        flex-wrap: wrap;
+      "
     >
       <span style="font-weight: bold; font-size: 18px; margin-right: 20px"
         >👤 Привіт, {{ username }}!</span
@@ -194,6 +200,12 @@
         style="color: #9c27b0; text-decoration: none; font-weight: bold"
         >🧠 Аналітика</a
       >
+      <a
+        href="/integrations"
+        style="color: #ff9800; text-decoration: none; font-weight: bold"
+        >🏦 Інтеграції</a
+      >
+
       <div style="margin-left: auto; display: flex; gap: 10px">
         {% if is_shared_view %}
         <a
@@ -323,7 +335,6 @@
           style="display: flex; flex-direction: column; gap: 10px"
         >
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-
           <input
             type="hidden"
             name="is_shared"
@@ -400,51 +411,6 @@
             style="font-size: 18px; font-weight: bold; color: {% if balance >= 0 %}#4CAF50{% else %}#ff4d4d{% endif %};"
             >Загалом: {{ balance|int }} ₴</span
           >
-          <div
-            style="
-              margin-top: 20px;
-              padding-top: 15px;
-              border-top: 1px dashed var(--border-color);
-            "
-          >
-            <h4 style="margin: 0 0 10px 0; color: #ff3366">
-              🐈 Синхронізація з Monobank
-            </h4>
-            <form
-              action="/sync_monobank"
-              method="POST"
-              class="no-print"
-              style="display: flex; flex-direction: column; gap: 8px"
-            >
-              <input
-                type="hidden"
-                name="csrf_token"
-                value="{{ csrf_token() }}"
-              />
-
-              <input
-                type="password"
-                name="monobank_token"
-                placeholder="Вставте ваш API токен сюди"
-                style="font-size: 12px; padding: 6px"
-              />
-              <button
-                type="submit"
-                class="btn"
-                style="background-color: #ff3366; font-size: 13px"
-              >
-                🔄 Отримати виписку за 3 дні
-              </button>
-              <div style="font-size: 11px; color: #aaa; text-align: center">
-                <a
-                  href="https://api.monobank.ua/"
-                  target="_blank"
-                  style="color: #4db8ff; text-decoration: none"
-                  >Отримати токен тут</a
-                >
-              </div>
-            </form>
-          </div>
         </div>
         <div
           style="
@@ -496,7 +462,6 @@
           style="display: flex; gap: 8px"
         >
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-
           <input
             type="hidden"
             name="is_shared"
@@ -566,7 +531,6 @@
           "
         >
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-
           <input
             type="hidden"
             name="is_shared"
@@ -686,7 +650,6 @@
           style="display: flex; gap: 8px; margin-bottom: 15px"
         >
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-
           <input
             type="hidden"
             name="is_shared"

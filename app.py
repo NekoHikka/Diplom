@@ -109,10 +109,16 @@ def login():
         else: error = "Неправильний логін або пароль!"
     return render_template('login.html', error=error)
 
-@app.route('/logout')
+@app.route('/integrations')
 @login_required
-def logout(): logout_user(); return redirect(url_for('login'))
-
+def integrations():
+    # Проверяем, подключен ли уже Монобанк
+    mono_token = MonobankToken.query.filter_by(user_id=current_user.id).first()
+    is_mono_connected = bool(mono_token)
+    
+    return render_template('integrations.html', 
+                           username=current_user.username,
+                           is_mono_connected=is_mono_connected)
 # --- ЗАПРОШЕННЯ (СПІЛЬНИЙ БЮДЖЕТ) ---
 @app.route('/send_invite', methods=['POST'])
 @login_required
@@ -422,7 +428,7 @@ def sync_monobank():
     
     user_token = MonobankToken.query.filter_by(user_id=current_user.id).first()
     if not user_token:
-        return redirect(url_for('home'))
+        return redirect(url_for('integrations'))
 
     # 2. Налаштовуємо час (забираємо виписку за останні 3 дні)
     to_time = int(time.time())
@@ -472,7 +478,7 @@ def sync_monobank():
         print(f"Помилка синхронізації: {e}")
 
     return redirect(url_for('home'))
-    
+
 # --- АНАЛІТИКА ---
 @app.route('/analytics')
 @login_required
