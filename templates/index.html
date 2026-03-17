@@ -322,6 +322,7 @@
     <div style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap">
       <div class="card no-print" style="flex: 1.2; min-width: 350px">
         <h3>Додати запис:</h3>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <form
           action="{% if is_shared_view %}/shared{% else %}/{% endif %}"
           method="POST"
@@ -446,6 +447,7 @@
           </div>
           {% endfor %}
         </div>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <form
           action="/add_account"
           method="POST"
@@ -509,6 +511,7 @@
     <div style="display: flex; gap: 20px; margin-bottom: 30px" class="no-print">
       <div class="card" style="flex: 1">
         <h3>🎯 Фінансові цілі</h3>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <form
           action="/add_goal"
           method="POST"
@@ -631,6 +634,7 @@
 
       <div class="card" style="flex: 1.2">
         <h3>⚙️ Управління категоріями</h3>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <form
           action="/add_category"
           method="POST"

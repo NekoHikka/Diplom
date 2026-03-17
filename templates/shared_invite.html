@@ -122,6 +122,7 @@
         цілі та витрати. Це ідеально для планування сімейного бюджету!
       </p>
 
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <form
         action="/send_invite"
         method="POST"

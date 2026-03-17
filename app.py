@@ -1,4 +1,5 @@
 import os
+from flask_wtf.csrf import CSRFProtect
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, redirect, url_for, Response
 from flask_sqlalchemy import SQLAlchemy
@@ -11,8 +12,12 @@ import calendar
 load_dotenv()
 
 app = Flask(__name__)
-# Берем секретный ключ из файла .env (если его там нет - используем запасной)
+
+# Беремо секретний ключ із файлу .env
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'fallback-secret-key')
+
+# Включаємо глобальну захист від CSRF-атак
+csrf = CSRFProtect(app)
 
 # БЕРЕМ ССЫЛКУ НА БАЗУ NEON ИЗ .env (если файла нет, временно создаст sqlite)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///finance.db')

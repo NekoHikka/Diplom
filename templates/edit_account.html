@@ -98,6 +98,7 @@
       <h2 style="text-align: center; margin-top: 0; margin-bottom: 25px">
         💳 Редагувати рахунок
       </h2>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <form action="/edit_account/{{ a.id }}" method="POST">
         <label>Назва (Готівка, Банк):</label>
         <input type="text" name="name" value="{{ a.name }}" required />

@@ -10,6 +10,7 @@
     "
   >
     <h2>Реєстрація в системі</h2>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
     <form
       action="/register"
       method="POST"
