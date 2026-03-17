@@ -462,8 +462,8 @@ def analytics():
 
     return render_template('analytics.html', top_category=top_category, top_category_amount=top_category_amount, recommendations=recommendations, budget_forecast=budget_forecast, projected_month_total=int(projected_month_total), smart_daily_avg=round(real_daily_avg, 1), trend_msg=trend_msg, trend_color=trend_color, total_expense=total_expense, labels=list(category_totals.keys()), values=list(category_totals.values()), username=current_user.username, is_shared_view=is_shared)
 
+with app.app_context():
+    db.create_all()
+
 if __name__ == '__main__':
-    with app.app_context():
-        # Створює всі таблиці. База NEON у хмарі буде створена саме зараз!
-        db.create_all()
     app.run(debug=True)
