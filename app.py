@@ -1,4 +1,6 @@
 import os
+import requests
+import time
 from flask_wtf.csrf import CSRFProtect
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, redirect, url_for, Response
@@ -72,6 +74,11 @@ class Category(db.Model):
     type = db.Column(db.String(20), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     is_shared = db.Column(db.Boolean, default=False)
+
+class MonobankToken(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    token = db.Column(db.String(200), nullable=False)
 
 @login_manager.user_loader
 def load_user(user_id): return User.query.get(int(user_id))
@@ -399,6 +406,73 @@ def home():
 
     return render_template('index.html', transactions=ts, username=current_user.username, labels=list(cat_data.keys()), values=list(cat_data.values()), balance=total_balance, accounts=user_accounts, goals=goals_data, exp_cats=[c.name for c in user_categories if c.type=='Витрата'], inc_cats=[c.name for c in user_categories if c.type=='Дохід'], user_categories=user_categories, current_filter=f, filter_name=filter_name, pending_invite=pending_invite, invite_sender=invite_sender)
 
+# --- ІНТЕГРАЦІЯ З MONOBANK ---
+@app.route('/sync_monobank', methods=['POST'])
+@login_required
+def sync_monobank():
+    # 1. Отримуємо токен з форми або з бази
+    token = request.form.get('monobank_token')
+    if token:
+        existing_token = MonobankToken.query.filter_by(user_id=current_user.id).first()
+        if existing_token:
+            existing_token.token = token
+        else:
+            db.session.add(MonobankToken(user_id=current_user.id, token=token))
+        db.session.commit()
+    
+    user_token = MonobankToken.query.filter_by(user_id=current_user.id).first()
+    if not user_token:
+        return redirect(url_for('home'))
+
+    # 2. Налаштовуємо час (забираємо виписку за останні 3 дні)
+    to_time = int(time.time())
+    from_time = to_time - (3 * 24 * 60 * 60)
+    headers = {'X-Token': user_token.token}
+
+    try:
+        # Звертаємося до відкритого API Монобанку (0 - це головна чорна картка)
+        resp = requests.get(f'https://api.monobank.ua/personal/statement/0/{from_time}/{to_time}', headers=headers)
+        if resp.status_code == 200:
+            transactions = resp.json()
+            
+            # 3. Перевіряємо, чи є вже рахунок "Monobank" у нас в базі
+            mono_acc = Account.query.filter_by(user_id=current_user.id, name="Monobank", is_shared=False).first()
+            if not mono_acc:
+                mono_acc = Account(name="Monobank", balance=0.0, user_id=current_user.id, is_shared=False)
+                db.session.add(mono_acc)
+                db.session.commit()
+
+            # 4. Обробляємо кожну транзакцію
+            for t in transactions:
+                # У монобанку сума в копійках, ділимо на 100
+                amount = t['amount'] / 100.0
+                t_type = "Дохід" if amount > 0 else "Витрата"
+                abs_amount = abs(amount)
+                description = t.get('description', 'Monobank')
+                t_date = datetime.fromtimestamp(t['time'])
+                
+                # Захист від дублікатів (щоб не додати одну і ту ж покупку двічі)
+                exists = Transaction.query.filter_by(
+                    user_id=current_user.id, amount=abs_amount, description=description
+                ).first()
+                
+                if not exists:
+                    new_t = Transaction(
+                        type=t_type, category="💸 З картки", amount=abs_amount, 
+                        description=description, date=t_date, user_id=current_user.id, 
+                        account_id=mono_acc.id, is_shared=False
+                    )
+                    db.session.add(new_t)
+                    if t_type == 'Дохід':
+                        mono_acc.balance += abs_amount
+                    else:
+                        mono_acc.balance -= abs_amount
+            db.session.commit()
+    except Exception as e:
+        print(f"Помилка синхронізації: {e}")
+
+    return redirect(url_for('home'))
+    
 # --- АНАЛІТИКА ---
 @app.route('/analytics')
 @login_required
