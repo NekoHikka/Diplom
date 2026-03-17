@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Редагування цілі</title>
+    <script>
+      if (localStorage.getItem("theme") === "light")
+        document.documentElement.setAttribute("data-theme", "light");
+    </script>
+    <style>
+      :root {
+        --bg-color: #121212;
+        --card-bg: #1e1e1e;
+        --text-color: #ffffff;
+        --border-color: #333333;
+        --input-bg: #2a2a2a;
+        --input-text: #ffffff;
+        --input-border: #444444;
+        color-scheme: dark;
+      }
+      [data-theme="light"] {
+        --bg-color: #f4f4f9;
+        --card-bg: #ffffff;
+        --text-color: #333333;
+        --border-color: #dddddd;
+        --input-bg: #ffffff;
+        --input-text: #333333;
+        --input-border: #cccccc;
+        color-scheme: light;
+      }
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding-top: 50px;
+      }
+      .card {
+        background-color: var(--card-bg);
+        padding: 30px;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        display: inline-block;
+        text-align: left;
+        width: 350px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      }
+      .btn {
+        padding: 10px;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        flex: 1;
+        font-weight: bold;
+        text-decoration: none;
+        text-align: center;
+      }
+      input {
+        background-color: var(--input-bg);
+        color: var(--text-color);
+        border: 1px solid var(--input-border);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 15px;
+        outline: none;
+        width: 100%;
+        box-sizing: border-box;
+        margin-bottom: 20px;
+      }
+      label {
+        font-size: 14px;
+        font-weight: bold;
+        margin-bottom: 5px;
+        display: block;
+        opacity: 0.8;
+      }
+      .acc-pill {
+        background-color: var(--input-bg);
+        border: 1px solid var(--border-color);
+        padding: 5px 12px;
+        border-radius: 15px;
+        font-size: 12px;
+        cursor: pointer;
+        user-select: none;
+        transition: 0.2s;
+        color: var(--text-color);
+      }
+      .acc-pill.active {
+        background-color: #2196f3;
+        color: white;
+        border-color: #2196f3;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2 style="text-align: center; margin-top: 0; margin-bottom: 25px">
+        🎯 Редагувати ціль
+      </h2>
+      <form action="/edit_goal/{{ g.id }}" method="POST">
+        <label>Назва цілі:</label>
+        <input type="text" name="name" value="{{ g.name }}" required />
+        <label>Необхідна сума (грн):</label>
+        <input
+          type="number"
+          name="target_amount"
+          value="{{ g.target_amount }}"
+          required
+        />
+
+        <label>Звідки рахувати гроші:</label>
+        <div
+          id="goal-pills-edit"
+          style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px"
+        >
+          <label class="acc-pill {% if not selected_ids %}active{% endif %}">
+            <input
+              type="checkbox"
+              name="account_ids"
+              value="all"
+              {%
+              if
+              not
+              selected_ids
+              %}checked{%
+              endif
+              %}
+              style="display: none"
+            />Всі
+          </label>
+          {% for acc in accounts %}
+          <label
+            class="acc-pill {% if acc.id in selected_ids %}active{% endif %}"
+          >
+            <input
+              type="checkbox"
+              name="account_ids"
+              value="{{ acc.id }}"
+              {%
+              if
+              acc.id
+              in
+              selected_ids
+              %}checked{%
+              endif
+              %}
+              style="display: none"
+            />{{ acc.name }}
+          </label>
+          {% endfor %}
+        </div>
+
+        <div style="display: flex; gap: 10px">
+          <button type="submit" class="btn" style="background-color: #2196f3">
+            Зберегти
+          </button>
+          <a href="/" class="btn" style="background-color: #555">Скасувати</a>
+        </div>
+      </form>
+    </div>
+
+    <script>
+      const container = document.getElementById("goal-pills-edit");
+      const pills = container.querySelectorAll(".acc-pill");
+      const allPill =
+        container.querySelector('input[value="all"]').parentElement;
+
+      pills.forEach((pill) => {
+        const checkbox = pill.querySelector("input");
+        pill.addEventListener("click", (e) => {
+          e.preventDefault();
+          if (checkbox.value === "all") {
+            pills.forEach((p) => {
+              p.classList.remove("active");
+              p.querySelector("input").checked = false;
+            });
+            pill.classList.add("active");
+            checkbox.checked = true;
+          } else {
+            allPill.classList.remove("active");
+            allPill.querySelector("input").checked = false;
+            checkbox.checked = !checkbox.checked;
+            if (checkbox.checked) pill.classList.add("active");
+            else pill.classList.remove("active");
+            const anyChecked = Array.from(pills).some(
+              (p) => p.querySelector("input").checked,
+            );
+            if (!anyChecked) {
+              allPill.classList.add("active");
+              allPill.querySelector("input").checked = true;
+            }
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

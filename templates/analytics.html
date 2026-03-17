@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Аналітика</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      if (localStorage.getItem("theme") === "light") {
+        document.documentElement.setAttribute("data-theme", "light");
+      }
+    </script>
+    <style>
+      :root {
+        --bg-color: #121212;
+        --card-bg: #1e1e1e;
+        --text-color: #ffffff;
+        --border-color: #333333;
+      }
+      [data-theme="light"] {
+        --bg-color: #f4f4f9;
+        --card-bg: #ffffff;
+        --text-color: #333333;
+        --border-color: #dddddd;
+      }
+
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        font-family: Arial, sans-serif;
+        max-width: 1100px;
+        margin: auto;
+        padding: 20px;
+        transition: 0.3s;
+      }
+      .menu {
+        display: flex;
+        gap: 15px;
+        background-color: var(--card-bg);
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        align-items: center;
+        border: 1px solid var(--border-color);
+      }
+      .menu a {
+        color: #4caf50;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 16px;
+      }
+      .card {
+        background-color: var(--card-bg);
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .btn {
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        color: white;
+        transition: 0.2s;
+      }
+      .btn:hover {
+        transform: translateY(-1px);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="menu">
+      <span style="font-weight: bold; font-size: 18px; margin-right: 20px"
+        >👤 Привіт, {{ username }}!</span
+      >
+      <a href="/">🏠 Головна</a>
+      <a href="/analytics">🧠 Аналітика</a>
+      <div style="margin-left: auto; display: flex; gap: 10px">
+        <button
+          onclick="toggleTheme()"
+          class="btn"
+          style="background-color: #ff9800"
+        >
+          🌓 Тема
+        </button>
+        <a
+          href="/logout"
+          class="btn"
+          style="
+            background-color: #ff4d4d;
+            text-decoration: none;
+            color: white !important;
+          "
+          >🚪 Вийти</a
+        >
+      </div>
+    </div>
+
+    <h2 style="text-align: center; margin-bottom: 30px">
+      Аналітичний центр 🧠
+    </h2>
+
+    <div style="display: flex; gap: 20px; flex-wrap: wrap">
+      <div class="card" style="flex: 1; min-width: 300px">
+        <h3>📊 Поточна статистика</h3>
+        <p>
+          Всього витрачено:
+          <strong style="color: #ff4d4d; font-size: 20px"
+            >{{ total_expense }} грн</strong
+          >
+        </p>
+        <p>
+          Лідер витрат:
+          <strong style="color: #4caf50; font-size: 20px"
+            >{{ top_category }}</strong
+          >
+          ({{ top_category_amount }} грн)
+        </p>
+        <p style="margin-top: 15px; color: #aaa; font-size: 14px">
+          <em>Середній розрахунковий розхід: {{ smart_daily_avg }} грн/день</em>
+        </p>
+      </div>
+
+      <div
+        class="card"
+        style="flex: 1.5; min-width: 300px; border-left: 5px solid #2196f3"
+      >
+        <h3>🔮 Адаптивний прогноз</h3>
+
+        <div style="margin-bottom: 15px">
+          <span style="color: #aaa; font-size: 14px">Прогноз бюджету:</span
+          ><br />
+          <strong style="color: #2196f3; font-size: 18px"
+            >{{ budget_forecast }}</strong
+          >
+        </div>
+
+        <div style="margin-bottom: 15px">
+          <span style="color: #aaa; font-size: 14px"
+            >Очікувані витрати до кінця місяця:</span
+          ><br />
+          <strong style="font-size: 18px"
+            >~ {{ projected_month_total }} грн</strong
+          >
+        </div>
+
+        {% if trend_msg %}
+        <div
+          style="
+            margin-top: 15px;
+            padding: 10px;
+            background-color: rgba(128, 128, 128, 0.1);
+            border-radius: 5px;
+          "
+        >
+          <strong style="color: {{ trend_color }};">{{ trend_msg }}</strong>
+        </div>
+        {% endif %}
+
+        <p
+          style="
+            margin-top: 15px;
+            font-size: 12px;
+            color: #888;
+            font-style: italic;
+          "
+        >
+          *Прогноз побудовано на основі середнього щоденного розходу за поточний
+          місяць.
+        </p>
+      </div>
+    </div>
+
+    <div class="card" style="border-left: 5px solid #4caf50">
+      <h3>💡 Персональні рекомендації системи:</h3>
+      <ul style="line-height: 1.8; font-size: 16px; margin-bottom: 0">
+        {% for rec in recommendations %}
+        <li>{{ rec }}</li>
+        {% else %}
+        <li>Поки що недостатньо даних для аналізу. Додайте більше витрат!</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="card" style="text-align: center">
+      <h3>Розподіл витрат</h3>
+      <div style="width: 100%; max-width: 600px; margin: auto">
+        <canvas id="analyticsChart"></canvas>
+      </div>
+    </div>
+
+    <script>
+      function toggleTheme() {
+          const currentTheme = document.documentElement.getAttribute('data-theme');
+          const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+          document.documentElement.setAttribute('data-theme', newTheme);
+          localStorage.setItem('theme', newTheme);
+          updateChartColors(newTheme);
+      }
+
+      let myChart;
+      const labels = {{ labels | tojson | safe }};
+      const data = {{ values | tojson | safe }};
+
+      function updateChartColors(theme) {
+          if(myChart) {
+              myChart.options.scales.x.ticks.color = theme === 'light' ? '#333' : 'white';
+              myChart.options.scales.y.ticks.color = theme === 'light' ? '#333' : 'white';
+              myChart.options.plugins.legend.labels.color = theme === 'light' ? '#333' : 'white';
+              myChart.update();
+          }
+      }
+
+      if (labels.length > 0) {
+          const textColor = localStorage.getItem('theme') === 'light' ? '#333' : 'white';
+          const ctx = document.getElementById('analyticsChart').getContext('2d');
+          myChart = new Chart(ctx, {
+              type: 'bar',
+              data: {
+                  labels: labels,
+                  datasets: [{
+                      label: 'Сума (₴)',
+                      data: data,
+                      backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8BC34A', '#E91E63', '#009688', '#795548', '#607D8B', '#3F51B5'],
+                      borderRadius: 5
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  plugins: { legend: { display: false } },
+                  scales: { y: { ticks: { color: textColor } }, x: { ticks: { color: textColor } } }
+              }
+          });
+      }
+    </script>
+  </body>
+</html>

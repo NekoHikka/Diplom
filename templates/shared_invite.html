@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Спільний Бюджет</title>
+    <script>
+      if (localStorage.getItem("theme") === "light")
+        document.documentElement.setAttribute("data-theme", "light");
+    </script>
+    <style>
+      :root {
+        --bg-color: #121212;
+        --card-bg: #1e1e1e;
+        --text-color: #ffffff;
+        --border-color: #333333;
+        --input-bg: #2a2a2a;
+      }
+      [data-theme="light"] {
+        --bg-color: #f4f4f9;
+        --card-bg: #ffffff;
+        --text-color: #333333;
+        --border-color: #dddddd;
+        --input-bg: #ffffff;
+      }
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        font-family: Arial, sans-serif;
+        max-width: 1100px;
+        margin: auto;
+        padding: 20px;
+        transition: 0.3s;
+      }
+      .card {
+        background-color: var(--card-bg);
+        padding: 30px;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      }
+      .menu {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 20px;
+        background: var(--card-bg);
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+      }
+      .btn {
+        padding: 12px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: bold;
+        color: white;
+        background: #4caf50;
+        text-decoration: none;
+        border: none;
+        font-size: 16px;
+      }
+      input {
+        background: var(--input-bg);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 12px;
+        width: 100%;
+        box-sizing: border-box;
+        font-size: 16px;
+        outline: none;
+      }
+      input:focus {
+        border-color: #2196f3;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="menu">
+      <strong style="font-size: 18px; margin-right: 20px"
+        >👤 Привіт, {{ username }}!</strong
+      >
+      <a href="/" style="color: #888; text-decoration: none; font-weight: bold"
+        >🏠 Особистий</a
+      >
+      <a
+        href="/shared"
+        style="color: #2196f3; text-decoration: none; font-weight: bold"
+        >🤝 Спільний</a
+      >
+      <a
+        href="/analytics?shared=1"
+        style="color: #888; text-decoration: none; font-weight: bold"
+        >🧠 Аналітика</a
+      >
+    </div>
+
+    <div
+      class="card"
+      style="text-align: center; max-width: 500px; margin: 50px auto"
+    >
+      <h2 style="color: #2196f3">🤝 Спільний Бюджет</h2>
+
+      {% if sent_invite %}
+      <p style="font-size: 18px">
+        Ви відправили запрошення користувачу
+        <strong style="color: #4caf50">{{ receiver.username }}</strong>.
+      </p>
+      <p style="color: #aaa; margin-bottom: 30px">
+        Очікуємо на його підтвердження. Він побачить ваше запрошення на своїй
+        Головній сторінці.
+      </p>
+      <a
+        href="/reject_invite/{{ sent_invite.id }}"
+        class="btn"
+        style="background-color: #ff4d4d"
+        >Скасувати запрошення</a
+      >
+      {% else %}
+      <p style="margin-bottom: 20px">
+        Запросіть партнера, друга або члена сім'ї, щоб вести спільні рахунки,
+        цілі та витрати. Це ідеально для планування сімейного бюджету!
+      </p>
+
+      <form
+        action="/send_invite"
+        method="POST"
+        style="display: flex; flex-direction: column; gap: 15px"
+      >
+        <input
+          type="text"
+          name="username"
+          placeholder="Введіть нікнейм користувача"
+          required
+        />
+        {% if error %}<span style="color: #ff4d4d; font-weight: bold"
+          >{{ error }}</span
+        >{% endif %}
+        <button type="submit" class="btn" style="background-color: #2196f3">
+          Відправити запрошення
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </body>
+</html>

@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Редагування рахунку</title>
+    <script>
+      if (localStorage.getItem("theme") === "light")
+        document.documentElement.setAttribute("data-theme", "light");
+    </script>
+    <style>
+      :root {
+        --bg-color: #121212;
+        --card-bg: #1e1e1e;
+        --text-color: #ffffff;
+        --border-color: #333333;
+        --input-bg: #2a2a2a;
+        --input-text: #ffffff;
+        --input-border: #444444;
+        color-scheme: dark;
+      }
+      [data-theme="light"] {
+        --bg-color: #f4f4f9;
+        --card-bg: #ffffff;
+        --text-color: #333333;
+        --border-color: #dddddd;
+        --input-bg: #ffffff;
+        --input-text: #333333;
+        --input-border: #cccccc;
+        color-scheme: light;
+      }
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding-top: 50px;
+        transition: 0.3s;
+      }
+      .card {
+        background-color: var(--card-bg);
+        padding: 30px;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        display: inline-block;
+        text-align: left;
+        width: 320px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      }
+      .btn {
+        padding: 10px;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        flex: 1;
+        font-weight: bold;
+        text-decoration: none;
+        text-align: center;
+        transition: 0.2s;
+      }
+      input {
+        background-color: var(--input-bg);
+        color: var(--input-text);
+        border: 1px solid var(--input-border);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 15px;
+        outline: none;
+        box-sizing: border-box;
+        width: 100%;
+        margin-bottom: 20px;
+      }
+      input:focus {
+        border-color: #ff9800;
+        box-shadow: 0 0 8px rgba(255, 152, 0, 0.4);
+        background-color: var(--card-bg);
+      }
+      label {
+        color: var(--text-color);
+        font-size: 14px;
+        font-weight: bold;
+        margin-bottom: 5px;
+        display: block;
+        opacity: 0.8;
+      }
+      input[type="number"]::-webkit-outer-spin-button,
+      input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      input[type="number"] {
+        -moz-appearance: textfield;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2 style="text-align: center; margin-top: 0; margin-bottom: 25px">
+        💳 Редагувати рахунок
+      </h2>
+      <form action="/edit_account/{{ a.id }}" method="POST">
+        <label>Назва (Готівка, Банк):</label>
+        <input type="text" name="name" value="{{ a.name }}" required />
+        <label>Поточний баланс (грн):</label>
+        <input
+          type="number"
+          name="balance"
+          step="0.01"
+          value="{{ a.balance }}"
+          required
+        />
+        <div style="display: flex; gap: 10px; margin-top: 10px">
+          <button type="submit" class="btn" style="background-color: #ff9800">
+            Зберегти
+          </button>
+          <a href="/" class="btn" style="background-color: #555">Скасувати</a>
+        </div>
+      </form>
+    </div>
+  </body>
+</html>

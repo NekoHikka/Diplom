@@ -1,0 +1,885 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <title>
+      {% if is_shared_view %}Спільний Бюджет{% else %}Розумні Фінанси{% endif %}
+    </title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+      if (localStorage.getItem("theme") === "light")
+        document.documentElement.setAttribute("data-theme", "light");
+    </script>
+    <style>
+      :root {
+        --bg-color: #121212;
+        --card-bg: #1e1e1e;
+        --text-color: #ffffff;
+        --border-color: #333333;
+        --btn-hover: #45a049;
+        --input-bg: #2a2a2a;
+        --input-text: #ffffff;
+        --input-border: #444444;
+        color-scheme: dark;
+      }
+      [data-theme="light"] {
+        --bg-color: #f4f4f9;
+        --card-bg: #ffffff;
+        --text-color: #333333;
+        --border-color: #dddddd;
+        --btn-hover: #e0e0e0;
+        --input-bg: #ffffff;
+        --input-text: #333333;
+        --input-border: #cccccc;
+        color-scheme: light;
+      }
+
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        font-family: Arial, sans-serif;
+        max-width: 1100px;
+        margin: auto;
+        padding: 20px;
+        transition: 0.3s;
+      }
+      .card {
+        background-color: var(--card-bg);
+        padding: 20px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .btn {
+        padding: 10px 15px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        text-decoration: none;
+        display: inline-block;
+        transition: 0.2s;
+      }
+      .btn:hover {
+        opacity: 0.8;
+        transform: translateY(-1px);
+      }
+      .btn-filter {
+        background-color: #555;
+        margin-right: 5px;
+      }
+      .btn-filter.active {
+        background-color: #2196f3;
+      }
+
+      input,
+      select {
+        background-color: var(--input-bg);
+        color: var(--input-text);
+        border: 1px solid var(--input-border);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 15px;
+        outline: none;
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+        width: 100%;
+      }
+      input:focus,
+      select:focus {
+        border-color: #4caf50;
+        box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
+        background-color: var(--card-bg);
+      }
+      select {
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 16px;
+        padding-right: 40px !important;
+      }
+      [data-theme="light"] select {
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      }
+      input[type="number"]::-webkit-outer-spin-button,
+      input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      input[type="number"] {
+        -moz-appearance: textfield;
+      }
+      ::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+        cursor: pointer;
+      }
+      [data-theme="light"] ::-webkit-calendar-picker-indicator {
+        filter: none;
+      }
+
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background-color: var(--input-bg);
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background-color: var(--border-color);
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background-color: var(--input-border);
+      }
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--border-color) var(--input-bg);
+      }
+      @media print {
+        .no-print {
+          display: none !important;
+        }
+        body {
+          background-color: white !important;
+          color: black !important;
+        }
+        .card {
+          border: none !important;
+          box-shadow: none !important;
+        }
+      }
+      body.generating-pdf .no-print {
+        display: none !important;
+      }
+
+      .acc-pill {
+        background-color: var(--input-bg);
+        border: 1px solid var(--border-color);
+        padding: 5px 12px;
+        border-radius: 15px;
+        font-size: 12px;
+        cursor: pointer;
+        user-select: none;
+        transition: 0.2s;
+        color: var(--text-color);
+      }
+      .acc-pill.active {
+        background-color: #2196f3;
+        color: white;
+        border-color: #2196f3;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      class="card no-print"
+      style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center"
+    >
+      <span style="font-weight: bold; font-size: 18px; margin-right: 20px"
+        >👤 Привіт, {{ username }}!</span
+      >
+
+      <a
+        href="/"
+        style="color: {% if not is_shared_view %}#4caf50{% else %}#888{% endif %}; text-decoration: none; font-weight: bold"
+        >🏠 Особистий</a
+      >
+      <a
+        href="/shared"
+        style="color: {% if is_shared_view %}#2196F3{% else %}#888{% endif %}; text-decoration: none; font-weight: bold"
+        >🤝 Спільний</a
+      >
+      <a
+        href="/analytics{% if is_shared_view %}?shared=1{% endif %}"
+        style="color: #9c27b0; text-decoration: none; font-weight: bold"
+        >🧠 Аналітика</a
+      >
+
+      <div style="margin-left: auto; display: flex; gap: 10px">
+        {% if is_shared_view %}
+        <a
+          href="/leave_partnership"
+          class="btn"
+          style="background-color: #555; font-size: 12px; padding: 10px"
+          >Розірвати спільний бюджет</a
+        >
+        {% endif %}
+        <button
+          onclick="toggleTheme()"
+          class="btn"
+          style="background-color: #ff9800"
+        >
+          🌓 Тема
+        </button>
+        <a
+          href="/logout"
+          class="btn"
+          style="background-color: #ff4d4d; color: white !important"
+          >🚪 Вийти</a
+        >
+      </div>
+    </div>
+
+    {% if pending_invite %}
+    <div
+      class="card no-print"
+      style="
+        border-left: 5px solid #2196f3;
+        background: rgba(33, 150, 243, 0.1);
+        margin-bottom: 20px;
+      "
+    >
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        "
+      >
+        <div>
+          <h3 style="margin: 0 0 5px 0; color: #2196f3">🤝 Запрошення!</h3>
+          <span
+            >Користувач <strong>{{ invite_sender.username }}</strong> пропонує
+            вам вести Спільний Бюджет.</span
+          >
+        </div>
+        <div style="display: flex; gap: 10px">
+          <a
+            href="/accept_invite/{{ pending_invite.id }}"
+            class="btn"
+            style="background: #4caf50"
+            >Прийняти</a
+          >
+          <a
+            href="/reject_invite/{{ pending_invite.id }}"
+            class="btn"
+            style="background: #ff4d4d"
+            >Відхилити</a
+          >
+        </div>
+      </div>
+    </div>
+    {% endif %} {% if is_shared_view %}
+    <h2 style="text-align: center; color: #2196f3; margin-bottom: 20px">
+      🤝 Спільний бюджет з {{ partner.username }}
+    </h2>
+    {% endif %}
+
+    <div
+      class="no-print"
+      style="
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        align-items: center;
+      "
+    >
+      <div>
+        <strong style="margin-right: 10px">Фільтр:</strong>
+        <a
+          href="{% if is_shared_view %}/shared{% else %}/{% endif %}?filter=day"
+          class="btn btn-filter {% if current_filter == 'day' %}active{% endif %}"
+          >За день</a
+        >
+        <a
+          href="{% if is_shared_view %}/shared{% else %}/{% endif %}?filter=month"
+          class="btn btn-filter {% if current_filter == 'month' %}active{% endif %}"
+          >За місяць</a
+        >
+        <a
+          href="{% if is_shared_view %}/shared{% else %}/{% endif %}?filter=year"
+          class="btn btn-filter {% if current_filter == 'year' %}active{% endif %}"
+          >За рік</a
+        >
+        <a
+          href="{% if is_shared_view %}/shared{% else %}/{% endif %}?filter=all"
+          class="btn btn-filter {% if current_filter == 'all' %}active{% endif %}"
+          >Всі часи</a
+        >
+      </div>
+      <div style="display: flex; gap: 10px">
+        <a
+          href="/export{% if is_shared_view %}?shared=1{% endif %}"
+          class="btn"
+          style="background-color: #217346"
+          >📥 Excel</a
+        >
+        <button
+          onclick="downloadPDF()"
+          class="btn"
+          style="background-color: #d32f2f"
+        >
+          📄 PDF
+        </button>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap">
+      <div class="card no-print" style="flex: 1.2; min-width: 350px">
+        <h3>Додати запис:</h3>
+        <form
+          action="{% if is_shared_view %}/shared{% else %}/{% endif %}"
+          method="POST"
+          style="display: flex; flex-direction: column; gap: 10px"
+        >
+          <input
+            type="hidden"
+            name="is_shared"
+            value="{{ 'true' if is_shared_view else 'false' }}"
+          />
+          <div style="display: flex; gap: 10px">
+            <select
+              name="type"
+              id="type_select"
+              onchange="updateCategories()"
+              required
+              style="flex: 1"
+            >
+              <option value="Витрата">Витрата</option>
+              <option value="Дохід">Дохід</option>
+            </select>
+            <select
+              name="account_id"
+              required
+              style="flex: 1; border-color: #ff9800"
+            >
+              {% for acc in accounts %}
+              <option value="{{ acc.id }}">
+                💳 {{ acc.name }} ({{ acc.balance|int }} ₴)
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <select name="category" id="category_select" required></select>
+          <div style="display: flex; gap: 10px">
+            <input
+              type="number"
+              name="amount"
+              step="0.01"
+              placeholder="Сума (грн)"
+              required
+              style="flex: 1"
+            />
+            <input
+              type="date"
+              name="date"
+              id="transaction_date"
+              required
+              style="flex: 1"
+              title="Дата"
+            />
+          </div>
+          <input
+            type="text"
+            name="description"
+            placeholder="Опис (необов'язково)"
+          />
+          <button
+            type="submit"
+            class="btn"
+            style="width: 100%; margin-top: 5px"
+          >
+            Записати операцію
+          </button>
+        </form>
+      </div>
+
+      <div class="card" style="flex: 1; min-width: 300px">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+          "
+        >
+          <h3 style="margin: 0">💳 Мої рахунки</h3>
+          <span
+            style="font-size: 18px; font-weight: bold; color: {% if balance >= 0 %}#4CAF50{% else %}#ff4d4d{% endif %};"
+            >Загалом: {{ balance|int }} ₴</span
+          >
+        </div>
+        <div
+          style="
+            max-height: 150px;
+            overflow-y: auto;
+            padding-right: 5px;
+            margin-bottom: 15px;
+          "
+        >
+          {% for acc in accounts %}
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              padding: 8px;
+              background-color: var(--input-bg);
+              margin-bottom: 8px;
+              border-radius: 8px;
+              border: 1px solid var(--border-color);
+            "
+          >
+            <strong>{{ acc.name }}</strong>
+            <div style="display: flex; align-items: center; gap: 12px">
+              <span style="font-weight: bold; color: #4db8ff"
+                >{{ acc.balance|int }} ₴</span
+              >
+              <span class="no-print">
+                <a
+                  href="/edit_account/{{ acc.id }}"
+                  style="text-decoration: none; margin-right: 5px"
+                  >✏️</a
+                >
+                <a
+                  href="/delete_account/{{ acc.id }}"
+                  style="text-decoration: none"
+                  >❌</a
+                >
+              </span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <form
+          action="/add_account"
+          method="POST"
+          class="no-print"
+          style="display: flex; gap: 8px"
+        >
+          <input
+            type="hidden"
+            name="is_shared"
+            value="{{ 'true' if is_shared_view else 'false' }}"
+          />
+          <input
+            type="text"
+            name="name"
+            placeholder="Новий рахунок"
+            required
+            style="flex: 2; padding: 8px"
+          />
+          <input
+            type="number"
+            name="balance"
+            placeholder="₴"
+            required
+            style="flex: 1; padding: 8px"
+          />
+          <button
+            type="submit"
+            class="btn"
+            style="background-color: #ff9800; padding: 8px"
+          >
+            +
+          </button>
+        </form>
+      </div>
+
+      <div class="card" style="flex: 0.8; min-width: 250px; text-align: center">
+        <h3 style="margin-bottom: 10px">Розподіл 📊</h3>
+        {% if values|length > 0 %}
+        <div
+          style="
+            position: relative;
+            width: 100%;
+            max-width: 160px;
+            height: 160px;
+            margin: auto;
+          "
+        >
+          <canvas id="expensesChart"></canvas>
+        </div>
+        <p style="font-size: 12px; color: #aaa; margin-top: 15px">
+          *Наведіть на сектор, щоб побачити %
+        </p>
+        {% else %}
+        <p style="color: #aaa; margin-top: 40px; font-size: 14px">
+          Немає витрат для графіка
+        </p>
+        {% endif %}
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 20px; margin-bottom: 30px" class="no-print">
+      <div class="card" style="flex: 1">
+        <h3>🎯 Фінансові цілі</h3>
+        <form
+          action="/add_goal"
+          method="POST"
+          style="
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+          "
+        >
+          <input
+            type="hidden"
+            name="is_shared"
+            value="{{ 'true' if is_shared_view else 'false' }}"
+          />
+          <div style="display: flex; gap: 10px">
+            <input
+              type="text"
+              name="name"
+              placeholder="Назва"
+              required
+              style="flex: 1.5"
+            />
+            <input
+              type="number"
+              name="target_amount"
+              placeholder="Сума"
+              required
+              style="flex: 1"
+            />
+            <button
+              type="submit"
+              class="btn"
+              style="background-color: #2196f3; flex: 0.5"
+            >
+              +
+            </button>
+          </div>
+          <div style="font-size: 13px; color: #aaa">
+            Рахувати гроші з рахунків:
+          </div>
+          <div id="goal-pills" style="display: flex; gap: 8px; flex-wrap: wrap">
+            <label class="acc-pill active">
+              <input
+                type="checkbox"
+                name="account_ids"
+                value="all"
+                checked
+                style="display: none"
+              />Всі рахунки
+            </label>
+            {% for acc in accounts %}
+            <label class="acc-pill">
+              <input
+                type="checkbox"
+                name="account_ids"
+                value="{{ acc.id }}"
+                style="display: none"
+              />{{ acc.name }}
+            </label>
+            {% endfor %}
+          </div>
+        </form>
+
+        {% for goal in goals %}
+        <div
+          style="
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+          "
+        >
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              font-size: 13px;
+            "
+          >
+            <div style="display: flex; flex-direction: column">
+              <strong>{{ goal.name }}</strong>
+              <span style="font-size: 11px; opacity: 0.6"
+                >Рахунки: {{ goal.acc_name }}</span
+              >
+            </div>
+            <span
+              >{{ goal.current | int }} / {{ goal.target_amount | int }} ₴</span
+            >
+          </div>
+          <div
+            style="
+              width: 100%;
+              background-color: var(--input-border);
+              border-radius: 5px;
+              height: 8px;
+              overflow: hidden;
+              margin-top: 4px;
+              margin-bottom: 8px;
+            "
+          >
+            <div
+              style="height: 100%; background-color: #4CAF50; width: {{ (goal.current / goal.target_amount * 100) if goal.target_amount > 0 else 0 }}%; max-width: 100%;"
+            ></div>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 15px">
+            <a
+              href="/edit_goal/{{ goal.id }}"
+              style="text-decoration: none; font-size: 13px; color: #2196f3"
+              >✏️ Редагувати</a
+            >
+            <a
+              href="/delete_goal/{{ goal.id }}"
+              style="text-decoration: none; font-size: 13px; color: #ff4d4d"
+              >🗑️ Видалити</a
+            >
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="card" style="flex: 1.2">
+        <h3>⚙️ Управління категоріями</h3>
+        <form
+          action="/add_category"
+          method="POST"
+          style="display: flex; gap: 8px; margin-bottom: 15px"
+        >
+          <input
+            type="hidden"
+            name="is_shared"
+            value="{{ 'true' if is_shared_view else 'false' }}"
+          />
+          <select name="type" required style="width: 25%">
+            <option value="Витрата">Витрата</option>
+            <option value="Дохід">Дохід</option>
+          </select>
+          <select name="emoji" style="width: 15%">
+            <option value="🛒">🛒</option>
+            <option value="🚗">🚗</option>
+            <option value="🎮">🎮</option>
+            <option value="☕">☕</option>
+            <option value="🏠">🏠</option>
+            <option value="👗">👗</option>
+            <option value="🎓">🎓</option>
+            <option value="💸">💸</option>
+            <option value="🐶">🐶</option>
+            <option value="✈️">✈️</option>
+            <option value="🍔">🍔</option>
+            <option value="💊">💊</option>
+          </select>
+          <input
+            type="text"
+            name="name"
+            placeholder="Назва"
+            required
+            style="flex: 1"
+          />
+          <button type="submit" class="btn" style="background-color: #9c27b0">
+            Створити
+          </button>
+        </form>
+
+        <div style="display: flex; gap: 20px">
+          <div
+            style="
+              flex: 1;
+              max-height: 120px;
+              overflow-y: auto;
+              border-right: 1px solid var(--border-color);
+              padding-right: 10px;
+            "
+          >
+            <h4 style="color: #ff4d4d; margin: 0 0 5px 0; font-size: 14px">
+              Витрати
+            </h4>
+            {% for cat in user_categories if cat.type == 'Витрата' %}
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                font-size: 13px;
+                padding: 3px 0;
+              "
+            >
+              <span>{{ cat.name }}</span
+              ><a
+                href="/delete_category/{{ cat.id }}"
+                style="text-decoration: none"
+                >❌</a
+              >
+            </div>
+            {% endfor %}
+          </div>
+          <div style="flex: 1; max-height: 120px; overflow-y: auto">
+            <h4 style="color: #4caf50; margin: 0 0 5px 0; font-size: 14px">
+              Доходи
+            </h4>
+            {% for cat in user_categories if cat.type == 'Дохід' %}
+            <div
+              style="
+                display: flex;
+                justify-content: space-between;
+                font-size: 13px;
+                padding: 3px 0;
+              "
+            >
+              <span>{{ cat.name }}</span
+              ><a
+                href="/delete_category/{{ cat.id }}"
+                style="text-decoration: none"
+                >❌</a
+              >
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="pdf-content">
+      <h3>Історія операцій ({{ filter_name }}):</h3>
+      <table
+        style="
+          width: 100%;
+          border-collapse: collapse;
+          text-align: left;
+          table-layout: fixed;
+          border-top: 1px solid var(--border-color);
+          margin-bottom: 40px;
+        "
+      >
+        <tr style="border-bottom: 1px solid var(--border-color)">
+          <th style="width: 15%; padding: 12px 0">Дата</th>
+          <th style="width: 12%">Рахунок</th>
+          <th style="width: 10%">Тип</th>
+          <th style="width: 18%">Категорія</th>
+          <th style="width: 10%">Сума</th>
+          <th style="width: 25%">Опис</th>
+          <th style="width: 10%; text-align: center" class="no-print">Дія</th>
+        </tr>
+        {% for t in transactions %}
+        <tr
+          style="
+            border-bottom: 1px solid var(--border-color);
+            height: 40px;
+            font-size: 14px;
+          "
+        >
+          <td style="color: #aaa">{{ t.date.strftime('%d.%m.%Y') }}</td>
+          <td style="color: #ff9800; font-weight: bold">
+            {{ t.account.name if t.account else '---' }}
+          </td>
+          <td
+            style="color: {% if t.type == 'Витрата' %}#ff4d4d{% else %}#4CAF50{% endif %}; font-weight: bold;"
+          >
+            {{ t.type }}
+          </td>
+          <td>{{ t.category }}</td>
+          <td>{{ t.amount|int }} ₴</td>
+          <td style="word-wrap: break-word">{{ t.description }}</td>
+          <td style="text-align: center" class="no-print">
+            <a
+              href="/edit/{{ t.id }}"
+              style="text-decoration: none; margin-right: 10px; font-size: 16px"
+              >✏️</a
+            >
+            <a
+              href="/delete/{{ t.id }}"
+              style="text-decoration: none; font-size: 16px"
+              >🗑️</a
+            >
+          </td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    <script>
+      function toggleTheme() {
+          const currentTheme = document.documentElement.getAttribute('data-theme');
+          const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+          document.documentElement.setAttribute('data-theme', newTheme);
+          localStorage.setItem('theme', newTheme);
+      }
+
+      document.getElementById('transaction_date').valueAsDate = new Date();
+
+      const expenseCategories = {{ exp_cats | tojson | safe }};
+      const incomeCategories = {{ inc_cats | tojson | safe }};
+      function updateCategories() {
+          const selectedType = document.getElementById("type_select").value;
+          const catObj = document.getElementById("category_select");
+          catObj.innerHTML = "";
+          (selectedType === "Витрата" ? expenseCategories : incomeCategories).forEach(cat => {
+              let opt = document.createElement("option");
+              opt.value = cat; opt.innerHTML = cat; catObj.appendChild(opt);
+          });
+      }
+      updateCategories();
+
+      function downloadPDF() {
+          document.body.classList.add('generating-pdf');
+          html2pdf().set({ margin: 10, filename: 'finance_report.pdf', html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(document.body).save().then(() => { document.body.classList.remove('generating-pdf'); });
+      }
+
+      const pillsContainer = document.getElementById('goal-pills');
+      if (pillsContainer) {
+          const pills = pillsContainer.querySelectorAll('.acc-pill');
+          const allPill = pillsContainer.querySelector('input[value="all"]').parentElement;
+          pills.forEach(pill => {
+              const checkbox = pill.querySelector('input');
+              pill.addEventListener('click', (e) => {
+                  e.preventDefault();
+                  if (checkbox.value === 'all') {
+                      pills.forEach(p => { p.classList.remove('active'); p.querySelector('input').checked = false; });
+                      pill.classList.add('active'); checkbox.checked = true;
+                  } else {
+                      allPill.classList.remove('active'); allPill.querySelector('input').checked = false;
+                      checkbox.checked = !checkbox.checked;
+                      if (checkbox.checked) pill.classList.add('active'); else pill.classList.remove('active');
+                      const anyChecked = Array.from(pills).some(p => p.querySelector('input').checked);
+                      if (!anyChecked) { allPill.classList.add('active'); allPill.querySelector('input').checked = true; }
+                  }
+              });
+          });
+      }
+
+      const labels = {{ labels | tojson | safe }};
+      const data = {{ values | tojson | safe }};
+
+      if (labels.length > 0) {
+          const totalSum = data.reduce((a, b) => a + b, 0);
+
+          // ПЛАГІН ДЛЯ МАЛЮВАННЯ СУМИ ВСЕРЕДИНІ CANVAS
+          const centerTextPlugin = {
+              id: 'centerText',
+              beforeDraw: function(chart) {
+                  const ctx = chart.ctx; const width = chart.width; const height = chart.height;
+                  ctx.restore();
+
+                  ctx.font = "bold 20px Arial"; ctx.textBaseline = "middle"; ctx.fillStyle = "#ff4d4d";
+                  const text1 = totalSum + " ₴";
+                  const text1X = Math.round((width - ctx.measureText(text1).width) / 2);
+                  const text1Y = height / 2 - 8;
+                  ctx.fillText(text1, text1X, text1Y);
+
+                  ctx.font = "10px Arial"; ctx.fillStyle = "#aaaaaa";
+                  const text2 = "ВИТРАТ";
+                  const text2X = Math.round((width - ctx.measureText(text2).width) / 2);
+                  const text2Y = height / 2 + 12;
+                  ctx.fillText(text2, text2X, text2Y);
+                  ctx.save();
+              }
+          };
+
+          new Chart(document.getElementById('expensesChart').getContext('2d'), {
+              type: 'doughnut',
+              data: { labels: labels, datasets: [{ data: data, backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8BC34A', '#E91E63'], borderWidth: 0 }] },
+              options: {
+                  responsive: true, maintainAspectRatio: false, cutout: '75%',
+                  plugins: {
+                      legend: { display: false },
+                      tooltip: { callbacks: { label: function(context) {
+                          let value = context.parsed; let percentage = ((value / totalSum) * 100).toFixed(1);
+                          return context.label + ': ' + value + ' ₴ (' + percentage + '%)';
+                      }}}
+                  }
+              },
+              plugins: [centerTextPlugin]
+          });
+      }
+    </script>
+  </body>
+</html>

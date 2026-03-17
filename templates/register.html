@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="uk">
+  <body
+    style="
+      background-color: #121212;
+      color: white;
+      font-family: Arial;
+      text-align: center;
+      padding-top: 100px;
+    "
+  >
+    <h2>Реєстрація в системі</h2>
+    <form
+      action="/register"
+      method="POST"
+      style="
+        display: inline-block;
+        background-color: #1e1e1e;
+        padding: 30px;
+        border-radius: 10px;
+      "
+    >
+      {% if error %}
+      <p style="color: #ff4d4d; font-weight: bold; margin-top: 0">
+        {{ error }}
+      </p>
+      {% endif %}
+
+      <input
+        type="text"
+        name="username"
+        placeholder="Придумайте логін"
+        required
+        style="padding: 10px; margin: 10px; width: 200px"
+      /><br />
+      <input
+        type="password"
+        name="password"
+        placeholder="Придумайте пароль"
+        required
+        style="padding: 10px; margin: 10px; width: 200px"
+      /><br />
+      <button
+        type="submit"
+        style="
+          padding: 10px 20px;
+          background-color: #4caf50;
+          color: white;
+          border: none;
+          cursor: pointer;
+        "
+      >
+        Зареєструватися
+      </button>
+      <p><a href="/login" style="color: #4db8ff">Вже є акаунт? Увійти</a></p>
+    </form>
+  </body>
+</html>
