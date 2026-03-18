@@ -120,7 +120,7 @@ def register():
 @app.route('/analyze_ai', methods=['POST'])
 @login_required
 def analyze_ai():
-    # 1. Защита: проверяем лимит (максимум 10 запросов в день)
+    # 1. Захист: перевіряємо ліміт
     today_str = datetime.now().strftime("%Y-%m-%d")
     limit_record = AILimit.query.filter_by(user_id=current_user.id, date=today_str).first()
     
@@ -132,48 +132,89 @@ def analyze_ai():
         session['ai_response'] = "🛑 Захист системи: Ви досягли денного ліміту (10/10) на поради від ШІ. Повертайтеся завтра!"
         return redirect(url_for('analytics'))
 
-    # 2. Собираем финансовые данные пользователя
-    transactions = Transaction.query.filter_by(user_id=current_user.id).all()
+    # 2. Отримуємо дані з форми
+    period_days = int(request.form.get('period', 30))
+    analysis_type = request.form.get('analysis_type', 'evaluation')
+
+    # 3. Збираємо фінансові дані
+    now = datetime.now()
+    start_date = now - timedelta(days=period_days)
+    
+    transactions = Transaction.query.filter(
+        Transaction.user_id == current_user.id,
+        Transaction.date >= start_date
+    ).order_by(Transaction.date.desc()).all()
+
+    accounts = Account.query.filter_by(user_id=current_user.id).all()
+    total_balance = sum(a.balance for a in accounts)
+
+    # 🎯 НОВЕ: ДІСТАЄМО ЦІЛІ ТА СТВОРЮЄМО КОНТЕКСТ ДЛЯ ШІ
+    goals = Goal.query.filter_by(user_id=current_user.id).all()
+    if goals:
+        goals_list = "\n".join([f"- {g.name}: зібрано {g.current|int} ₴ із {g.target_amount|int} ₴ (Залишилося: {g.target_amount - g.current|int} ₴)" for g in goals])
+    else:
+        goals_list = "Активних цілей поки немає."
+
     income = sum(t.amount for t in transactions if t.type == 'Дохід')
     expenses = sum(t.amount for t in transactions if t.type == 'Витрата')
-    balance = income - expenses
 
-    # 3. ФОРМИРУЕМ НАУЧНЫЙ ПРОМПТ
+    cat_totals = {}
+    for t in transactions:
+        if t.type == 'Витрата':
+            cat_totals[t.category] = cat_totals.get(t.category, 0) + t.amount
+
+    last_20 = transactions[:20]
+    tx_list = "\n".join([f"- {t.date.strftime('%d.%m')}: {t.category} ({t.amount|int} ₴) - {t.description}" for t in last_20])
+
+    # 4. Формуємо спеціалізований промпт
+    if analysis_type == 'evaluation':
+        task = "Проаналізуй мої витрати за категоріями. Вкажи, де я витрачаю найбільше. Обов'язково врахуй, що покупки в категоріях 'Техніка', 'Меблі' чи 'Ремонт' - це разові інвестиції, а не щоденне тринькання. Дай об'єктивну оцінку моїм фінансовим звичкам."
+    elif analysis_type == 'savings':
+        task = "На основі моїх останніх транзакцій та категорій витрат, запропонуй 3 конкретні та реалістичні кроки для оптимізації бюджету та збільшення заощаджень. Використовуй термін 'Коефіцієнт заощаджень'."
+    elif analysis_type == 'runway':
+        task = "Зроби аналіз моєї фінансової стійкості (Runway). Враховуючи мій поточний загальний баланс на рахунках та суму витрат за вибраний період, оціни, на скільки приблизно часу мені вистачить цих грошей, якщо доходи раптом припиняться. Дай оцінку ризикам ліквідності."
+    elif analysis_type == 'goals':
+        task = "Проаналізуй мої фінансові цілі. На основі різниці між моїми доходами та витратами за вказаний період (це мій вільний грошовий потік), розрахуй математично, скільки приблизно часу (місяців/років) мені знадобиться, щоб накопичити суми, яких не вистачає для досягнення цілей. Використай економічні терміни 'вільний грошовий потік' (Free Cash Flow) та 'горизонт планування'."
+    else:
+        task = "Дай загальну фінансову пораду."
+
     prompt = f"""
     Ти — ШІ-асистент та професійний фінансовий аналітик. 
-    Твій клієнт: {current_user.username}.
+    Клієнт: {current_user.username}. Період аналізу: останні {period_days} днів.
     
-    Його фінансові дані за весь час:
-    Загальний дохід: {income} грн.
-    Загальні витрати: {expenses} грн.
-    Поточний баланс (різниця): {balance} грн.
+    ДАНІ КЛІЄНТА:
+    - Загальний баланс на всіх рахунках: {total_balance} ₴
+    - Доходи за період: {income} ₴
+    - Витрати за період: {expenses} ₴
     
-    Завдання:
-    Дай коротку, науково обґрунтовану пораду щодо фінансової грамотності (максимум 4 речення).
-    1. Обов'язково звернися до клієнта на ім'я.
-    2. Обов'язково використай 1-2 професійних економічних терміни (наприклад: "диверсифікація активів", "коефіцієнт заощаджень", "дефіцит ліквідності", "оптимізація грошових потоків", "інфляційні ризики"), але поясни їхній сенс так, щоб було зрозуміло звичайній людині.
-    3. Враховуй його реальні цифри: якщо витрати більші за доходи - жорстко попередь про ризики. Якщо є профіцит - радь, як зберегти або примножити капітал.
-    4. Не використовуй формальні привітання типу "Чим можу допомогти", відповідай одразу по суті як суворий експерт.
+    ФІНАНСОВІ ЦІЛІ:
+    {goals_list}
+    
+    ВИТРАТИ ЗА КАТЕГОРІЯМИ:
+    {cat_totals}
+    
+    ОСТАННІ ТРАНЗАКЦІЇ (до 20 штук):
+    {tx_list}
+    
+    ЗАВДАННЯ:
+    {task}
+    
+    Пиши чітко, структуровано, без зайвих вступів. Звертайся до клієнта на ім'я. Використовуй професійні економічні терміни, але пояснюй їх суть. Максимум 6-8 речень.
     """
 
-    # 4. Отправляем запрос в Gemini
     try:
         model = genai.GenerativeModel('gemini-2.5-flash')
         response = model.generate_content(prompt)
-        
-        # Сохраняем текст ответа в сессию
-        session['ai_response'] = response.text.replace('*', '') # Убираем лишние звездочки форматирования
-        
-        # Списываем 1 попытку из 10
+        formatted_text = response.text.replace('**', '').replace('*', '• ').replace('\n', '<br>')
+        session['ai_response'] = formatted_text
         limit_record.count += 1
         db.session.commit()
-        
     except Exception as e:
         print("Помилка ШІ:", e)
-        session['ai_response'] = "⚙️ Вибачте, сервери нейромережі зараз перевантажені або API-ключ не налаштовано. Спробуйте пізніше."
+        session['ai_response'] = "⚙️ Вибачте, сервери нейромережі зараз перевантажені або виникла помилка API."
 
     return redirect(url_for('analytics'))
-
+    
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
