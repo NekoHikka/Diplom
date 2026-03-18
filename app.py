@@ -109,6 +109,12 @@ def login():
         else: error = "Неправильний логін або пароль!"
     return render_template('login.html', error=error)
 
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
+    
 @app.route('/integrations')
 @login_required
 def integrations():
