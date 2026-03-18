@@ -23,18 +23,16 @@
         --card-bg: #1e1e1e;
         --text-color: #ffffff;
         --border-color: #333333;
-        --btn-hover: #45a049;
         --input-bg: #2a2a2a;
         --input-text: #ffffff;
         --input-border: #444444;
-        color-scheme: dark; /* МАГІЯ ДЛЯ ТЕМНОГО СКРОЛУ В WINDOWS */
+        color-scheme: dark;
       }
       [data-theme="light"] {
         --bg-color: #f4f4f9;
         --card-bg: #ffffff;
         --text-color: #333333;
         --border-color: #dddddd;
-        --btn-hover: #e0e0e0;
         --input-bg: #ffffff;
         --input-text: #333333;
         --input-border: #cccccc;
@@ -79,8 +77,8 @@
         gap: 20px;
       }
 
-      /* ІДЕАЛЬНІ СТИЛІ ДЛЯ ВИПАДАЮЧИХ СПИСКІВ (ЯК НА ГОЛОВНІЙ) */
-      select {
+      select,
+      input {
         background-color: var(--input-bg);
         color: var(--input-text);
         border: 1px solid var(--input-border);
@@ -91,7 +89,9 @@
         transition: all 0.3s ease;
         box-sizing: border-box;
         cursor: pointer;
-        appearance: none; /* Прибираємо стандартну стрілку */
+      }
+      select {
+        appearance: none;
         background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
         background-repeat: no-repeat;
         background-position: right 12px center;
@@ -101,17 +101,12 @@
       [data-theme="light"] select {
         background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
       }
-      select:focus {
+      select:focus,
+      input:focus {
         border-color: #9c27b0;
         box-shadow: 0 0 8px rgba(156, 39, 176, 0.4);
         background-color: var(--card-bg);
       }
-      select option {
-        background-color: var(--input-bg);
-        color: var(--input-text);
-      }
-
-      /* КАСТОМНИЙ СКРОЛБАР ДЛЯ СТОРІНКИ */
       ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
@@ -127,123 +122,154 @@
       ::-webkit-scrollbar-thumb:hover {
         background-color: var(--input-border);
       }
-      * {
-        scrollbar-width: thin;
-        scrollbar-color: var(--border-color) var(--input-bg);
+
+      /* --- ІДЕАЛЬНЕ УНІВЕРСАЛЬНЕ МЕНЮ --- */
+      .top-menu {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+        padding: 15px;
       }
-      /* 📱 МОБІЛЬНА АДАПТАЦІЯ (АЛЬФА-ВЕРСІЯ) */
+      .user-greeting {
+        font-weight: bold;
+        font-size: 16px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 200px;
+        padding-right: 10px;
+      }
+      .nav-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 40px;
+        padding: 0 15px;
+        border-radius: 8px;
+        font-weight: bold;
+        text-decoration: none;
+        transition: 0.2s;
+        box-sizing: border-box;
+        white-space: nowrap;
+        border: none;
+        cursor: pointer;
+        background-color: var(--input-bg);
+        color: var(--text-color);
+        font-size: 14px;
+      }
+      .nav-btn:hover {
+        filter: brightness(1.2);
+      }
+      .nav-btn.active-home {
+        background-color: #4caf50;
+        color: white;
+      }
+      .nav-btn.active-shared {
+        background-color: #2196f3;
+        color: white;
+      }
+      .nav-btn.active-analytics {
+        background-color: #9c27b0;
+        color: white;
+      }
+      .nav-btn.active-integrations {
+        background-color: #ff9800;
+        color: white;
+      }
+
+      /* --- МОБІЛЬНА АДАПТАЦІЯ ДЛЯ ВСІХ СТОРІНОК --- */
       @media (max-width: 768px) {
-        /* Зменшуємо відступи по краях екрана */
         body {
           padding: 10px;
           margin: 0;
         }
         .card {
           padding: 15px;
-          margin-bottom: 15px;
+          margin-bottom: 12px;
         }
-
-        /* Всі сітки (графіки, статистика) стають в одну колонку */
         .grid {
           grid-template-columns: 1fr;
-          gap: 15px;
+          gap: 12px;
         }
 
-        /* Робимо верхнє меню зручним для пальців */
-        .no-print {
-          flex-direction: column;
-          align-items: stretch !important;
-          gap: 10px;
-          text-align: center;
+        .top-menu {
+          flex-wrap: nowrap !important;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          justify-content: flex-start !important;
+          padding-bottom: 10px;
+          gap: 10px !important;
         }
-        .no-print a,
-        .no-print span {
-          margin-right: 0 !important;
-          width: 100%;
-          display: block;
-          padding: 10px 0;
-          background-color: var(--input-bg);
-          border-radius: 8px;
+        .top-menu::-webkit-scrollbar {
+          display: none;
         }
-        .no-print div {
-          flex-direction: column;
-          width: 100%;
-          gap: 10px;
+        .top-menu > * {
+          flex-shrink: 0;
+        }
+        .top-menu .right-buttons {
           margin-left: 0 !important;
+          display: flex;
+          gap: 10px;
+          flex-shrink: 0;
         }
-        .no-print button,
-        .no-print a.btn {
-          width: 100%;
-          box-sizing: border-box;
+        .user-greeting {
+          max-width: 120px;
         }
 
-        /* Елементи форм і пульту ШІ */
-        form > div {
-          flex-direction: column;
+        .card form > div[style*="display: flex"],
+        .card form[style*="display: flex"] {
+          flex-direction: column !important;
           align-items: stretch !important;
+          gap: 10px !important;
         }
+        input:not([type="hidden"]):not([type="checkbox"]),
         select,
-        input {
+        .btn {
           width: 100% !important;
-          margin-top: 5px;
-        }
-
-        /* Кнопки ШІ стають одна під одною */
-        form .btn {
-          width: 100%;
-          flex: none;
+          box-sizing: border-box;
         }
       }
     </style>
   </head>
   <body>
-    <div
-      class="card no-print"
-      style="
-        display: flex;
-        gap: 15px;
-        align-items: center;
-        flex-wrap: wrap;
-        margin-bottom: 20px;
-      "
-    >
-      <span style="font-weight: bold; font-size: 18px; margin-right: 20px"
-        >👤 Привіт, {{ username }}!</span
-      >
+    <div class="card no-print top-menu">
+      <div class="user-greeting" title="Привіт, {{ username }}!">
+        👤 {{ username }}
+      </div>
       <a
         href="/"
-        style="color: {% if not is_shared_view %}#4caf50{% else %}#888{% endif %}; text-decoration: none; font-weight: bold"
+        class="nav-btn {% if request.path == '/' %}active-home{% endif %}"
         >🏠 Особистий</a
       >
       <a
         href="/shared"
-        style="color: {% if is_shared_view %}#2196F3{% else %}#888{% endif %}; text-decoration: none; font-weight: bold"
+        class="nav-btn {% if request.path == '/shared' %}active-shared{% endif %}"
         >🤝 Спільний</a
       >
       <a
-        href="/analytics"
-        style="color: #9c27b0; text-decoration: none; font-weight: bold"
+        href="/analytics{% if is_shared_view %}?shared=1{% endif %}"
+        class="nav-btn {% if request.path == '/analytics' %}active-analytics{% endif %}"
         >🧠 Аналітика</a
       >
       <a
         href="/integrations"
-        style="color: #ff9800; text-decoration: none; font-weight: bold"
+        class="nav-btn {% if request.path == '/integrations' %}active-integrations{% endif %}"
         >🏦 Інтеграції</a
       >
-      <div
-        style="margin-left: auto; display: flex; gap: 10px; align-items: center"
-      >
+      <div class="right-buttons" style="margin-left: auto">
         <button
           onclick="toggleTheme()"
-          class="btn"
+          class="nav-btn"
           style="background-color: #ff9800; color: white"
         >
           🌓 Тема
         </button>
         <a
           href="/logout"
-          class="btn"
-          style="background-color: #ff4d4d; color: white !important"
+          class="nav-btn"
+          style="background-color: #ff4d4d; color: white"
           >🚪 Вийти</a
         >
       </div>
@@ -481,21 +507,8 @@
       if (labels.length > 0) {
           new Chart(document.getElementById('analyticsChart').getContext('2d'), {
               type: 'doughnut',
-              data: {
-                  labels: labels,
-                  datasets: [{
-                      data: data,
-                      backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8BC34A', '#E91E63'],
-                      borderWidth: 0
-                  }]
-              },
-              options: {
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                      legend: { position: 'right', labels: { color: document.documentElement.getAttribute('data-theme') === 'light' ? '#333' : '#fff' } }
-                  }
-              }
+              data: { labels: labels, datasets: [{ data: data, backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8BC34A', '#E91E63'], borderWidth: 0 }] },
+              options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: document.documentElement.getAttribute('data-theme') === 'light' ? '#333' : '#fff' } } } }
           });
       }
     </script>
