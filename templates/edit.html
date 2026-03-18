@@ -3,6 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <title>Редагування запису</title>
+    <link
+      rel="icon"
+      type="image/png"
+      href="{{ url_for('static', filename='logo.png') }}"
+    />
     <script>
       if (localStorage.getItem("theme") === "light")
         document.documentElement.setAttribute("data-theme", "light");
