@@ -1,6 +1,7 @@
 import google.generativeai as genai
 from flask import session
 import os
+import re
 import requests
 import time
 from flask_wtf.csrf import CSRFProtect
@@ -111,14 +112,42 @@ def get_partner_id(user_id):
 def register():
     error = None
     if request.method == 'POST':
-        if User.query.filter_by(username=request.form['username']).first(): 
-            error = "Користувач вже існує!"
-        else:
-            db.session.add(User(username=request.form['username'], password=generate_password_hash(request.form['password'])))
-            db.session.commit()
-            return redirect(url_for('login'))
-    return render_template('register.html', error=error)
+        username = request.form['username'].strip()
+        password = request.form['password']
+        
+        errors = [] # Створюємо порожній список для збору всіх помилок
 
+        # --- ВАЛІДАЦІЯ ЛОГІНА ---
+        if len(username) < 3 or len(username) > 20:
+            errors.append("Логін має містити від 3 до 20 символів.")
+        if not re.match(r"^[a-zA-Z0-9_]+$", username):
+            errors.append("Логін може містити лише латинські літери, цифри та нижнє підкреслення (_).")
+            
+        # --- ВАЛІДАЦІЯ ПАРОЛЯ ---
+        if len(password) < 8:
+            errors.append("Пароль має містити щонайменше 8 символів.")
+        if not re.search(r"[A-Z]", password):
+            errors.append("Пароль має містити хоча б одну велику літеру.")
+        if not re.search(r"[a-z]", password):
+            errors.append("Пароль має містити хоча б одну малу літеру.")
+        if not re.search(r"[0-9]", password):
+            errors.append("Пароль має містити хоча б одну цифру.")
+
+        # Якщо список помилок НЕ порожній:
+        if errors:
+            # Склеюємо всі помилки в один текст через HTML-тег <br> (перенесення рядка)
+            error = "<br>• ".join(["Виправте наступні помилки:"] + errors)
+        else:
+            # Якщо все ідеально, перевіряємо чи вільний нікнейм у базі
+            if User.query.filter_by(username=username).first(): 
+                error = "Цей логін вже зайнятий! Придумайте інший."
+            else:
+                db.session.add(User(username=username, password=generate_password_hash(password)))
+                db.session.commit()
+                return redirect(url_for('login'))
+
+    return render_template('register.html', error=error)
+    
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
