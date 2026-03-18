@@ -81,23 +81,69 @@
     </style>
   </head>
   <body>
-    <div class="menu">
-      <strong style="font-size: 18px; margin-right: 20px"
-        >👤 Привіт, {{ username }}!</strong
+    <div
+      class="card no-print"
+      style="
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+      "
+    >
+      <span style="font-weight: bold; font-size: 18px; margin-right: 20px"
+        >👤 Привіт, {{ username }}!</span
       >
-      <a href="/" style="color: #888; text-decoration: none; font-weight: bold"
+
+      <a
+        href="/"
+        style="color: {% if not is_shared_view %}#4caf50{% else %}#888{% endif %}; text-decoration: none; font-weight: bold"
         >🏠 Особистий</a
       >
       <a
         href="/shared"
-        style="color: #2196f3; text-decoration: none; font-weight: bold"
+        style="color: {% if is_shared_view %}#2196F3{% else %}#888{% endif %}; text-decoration: none; font-weight: bold"
         >🤝 Спільний</a
       >
       <a
-        href="/analytics?shared=1"
-        style="color: #888; text-decoration: none; font-weight: bold"
+        href="/analytics{% if is_shared_view %}?shared=1{% endif %}"
+        style="color: #9c27b0; text-decoration: none; font-weight: bold"
         >🧠 Аналітика</a
       >
+      <a
+        href="/integrations"
+        style="color: #ff9800; text-decoration: none; font-weight: bold"
+        >🏦 Інтеграції</a
+      >
+
+      <div
+        style="margin-left: auto; display: flex; gap: 10px; align-items: center"
+      >
+        <a
+          href="/leave_partnership"
+          class="btn"
+          style="
+            background-color: #555;
+            font-size: 12px;
+            padding: 10px;
+            color: white;
+          "
+          >Розірвати бюджет</a
+        >
+        <button
+          onclick="toggleTheme()"
+          class="btn"
+          style="background-color: #ff9800; color: white"
+        >
+          🌓 Тема
+        </button>
+        <a
+          href="/logout"
+          class="btn"
+          style="background-color: #ff4d4d; color: white !important"
+          >🚪 Вийти</a
+        >
+      </div>
     </div>
 
     <div
