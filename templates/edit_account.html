@@ -1,45 +1,265 @@
 <!doctype html>
 <html lang="uk">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <title>Редагувати рахунок</title>
-    <script>if (localStorage.getItem("theme") === "light") document.documentElement.setAttribute("data-theme", "light");</script>
+    <script>
+      if (localStorage.getItem("theme") === "light")
+        document.documentElement.setAttribute("data-theme", "light");
+    </script>
     <style>
-      :root { --bg-color: #121212; --card-bg: #1e1e1e; --text-color: #ffffff; --border-color: #333333; --input-bg: #2a2a2a; }
-      [data-theme="light"] { --bg-color: #f4f4f9; --card-bg: #ffffff; --text-color: #333333; --border-color: #dddddd; --input-bg: #ffffff; }
-      body { background-color: var(--bg-color); color: var(--text-color); font-family: Arial, sans-serif; max-width: 500px; margin: 50px auto; padding: 20px; }
-      .card { background-color: var(--card-bg); padding: 30px; border-radius: 10px; border: 1px solid var(--border-color); }
-      .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; color: white; }
-      input, select { width: 100%; padding: 12px; margin-top: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color); box-sizing: border-box; }
+      :root {
+        --bg-color: #121212;
+        --card-bg: #1e1e1e;
+        --text-color: #ffffff;
+        --border-color: #333333;
+        --input-bg: #2a2a2a;
+      }
+      [data-theme="light"] {
+        --bg-color: #f4f4f9;
+        --card-bg: #ffffff;
+        --text-color: #333333;
+        --border-color: #dddddd;
+        --input-bg: #ffffff;
+      }
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        font-family: Arial, sans-serif;
+        max-width: 500px;
+        margin: 50px auto;
+        padding: 20px;
+      }
+      .card {
+        background-color: var(--card-bg);
+        padding: 30px;
+        border-radius: 10px;
+        border: 1px solid var(--border-color);
+      }
+      .btn {
+        padding: 12px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        width: 100%;
+        margin-top: 15px;
+        color: white;
+      }
+      input,
+      select {
+        width: 100%;
+        padding: 12px;
+        margin-top: 10px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--input-bg);
+        color: var(--text-color);
+        box-sizing: border-box;
+      }
+      /* 📱 МОБІЛЬНА АДАПТАЦІЯ (АЛЬФА-ВЕРСІЯ) */
+      @media (max-width: 768px) {
+        /* Зменшуємо відступи по краях екрана */
+        body {
+          padding: 10px;
+          margin: 0;
+        }
+        .card {
+          padding: 15px;
+          margin-bottom: 15px;
+        }
+
+        /* Всі сітки (графіки, статистика) стають в одну колонку */
+        .grid {
+          grid-template-columns: 1fr;
+          gap: 15px;
+        }
+
+        /* Робимо верхнє меню зручним для пальців */
+        .no-print {
+          flex-direction: column;
+          align-items: stretch !important;
+          gap: 10px;
+          text-align: center;
+        }
+        .no-print a,
+        .no-print span {
+          margin-right: 0 !important;
+          width: 100%;
+          display: block;
+          padding: 10px 0;
+          background-color: var(--input-bg);
+          border-radius: 8px;
+        }
+        .no-print div {
+          flex-direction: column;
+          width: 100%;
+          gap: 10px;
+          margin-left: 0 !important;
+        }
+        .no-print button,
+        .no-print a.btn {
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        /* Елементи форм і пульту ШІ */
+        form > div {
+          flex-direction: column;
+          align-items: stretch !important;
+        }
+        select,
+        input {
+          width: 100% !important;
+          margin-top: 5px;
+        }
+
+        /* Кнопки ШІ стають одна під одною */
+        form .btn {
+          width: 100%;
+          flex: none;
+        }
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="card">
-        <h2 style="margin-top:0; color: #ff9800;">✏️ Редагувати рахунок</h2>
-        <form method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-            
-            <label>Іконка та Назва:</label>
-            <div style="display: flex; gap: 10px;">
-                <select name="emoji" style="width: 80px;">
-                    <option value="💳" {% if current_emoji == '💳' %}selected{% endif %}>💳</option>
-                    <option value="💵" {% if current_emoji == '💵' %}selected{% endif %}>💵</option>
-                    <option value="🏦" {% if current_emoji == '🏦' %}selected{% endif %}>🏦</option>
-                    <option value="🐖" {% if current_emoji == '🐖' %}selected{% endif %}>🐖</option>
-                    <option value="🗄️" {% if current_emoji == '🗄️' %}selected{% endif %}>🗄️</option>
-                    <option value="📱" {% if current_emoji == '📱' %}selected{% endif %}>📱</option>
-                    <option value="🪙" {% if current_emoji == '🪙' %}selected{% endif %}>🪙</option>
-                    <option value="💼" {% if current_emoji == '💼' %}selected{% endif %}>💼</option>
-                </select>
-                <input type="text" name="name" value="{{ current_name }}" required />
-            </div>
+      <h2 style="margin-top: 0; color: #ff9800">✏️ Редагувати рахунок</h2>
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-            <label style="display: block; margin-top: 15px;">Баланс (₴):</label>
-            <input type="number" step="0.01" name="balance" value="{{ acc.balance }}" required />
+        <label>Іконка та Назва:</label>
+        <div style="display: flex; gap: 10px">
+          <select name="emoji" style="width: 80px">
+            <option
+              value="💳"
+              {%
+              if
+              current_emoji=""
+              ="💳"
+              %}selected{%
+              endif
+              %}
+            >
+              💳
+            </option>
+            <option
+              value="💵"
+              {%
+              if
+              current_emoji=""
+              ="💵"
+              %}selected{%
+              endif
+              %}
+            >
+              💵
+            </option>
+            <option
+              value="🏦"
+              {%
+              if
+              current_emoji=""
+              ="🏦"
+              %}selected{%
+              endif
+              %}
+            >
+              🏦
+            </option>
+            <option
+              value="🐖"
+              {%
+              if
+              current_emoji=""
+              ="🐖"
+              %}selected{%
+              endif
+              %}
+            >
+              🐖
+            </option>
+            <option
+              value="🗄️"
+              {%
+              if
+              current_emoji=""
+              ="🗄️"
+              %}selected{%
+              endif
+              %}
+            >
+              🗄️
+            </option>
+            <option
+              value="📱"
+              {%
+              if
+              current_emoji=""
+              ="📱"
+              %}selected{%
+              endif
+              %}
+            >
+              📱
+            </option>
+            <option
+              value="🪙"
+              {%
+              if
+              current_emoji=""
+              ="🪙"
+              %}selected{%
+              endif
+              %}
+            >
+              🪙
+            </option>
+            <option
+              value="💼"
+              {%
+              if
+              current_emoji=""
+              ="💼"
+              %}selected{%
+              endif
+              %}
+            >
+              💼
+            </option>
+          </select>
+          <input type="text" name="name" value="{{ current_name }}" required />
+        </div>
 
-            <button type="submit" class="btn" style="background-color: #4CAF50;">💾 Зберегти зміни</button>
-            <a href="/" class="btn" style="background-color: #555; text-align: center; display: block; text-decoration: none; box-sizing: border-box;">Скасувати</a>
-        </form>
+        <label style="display: block; margin-top: 15px">Баланс (₴):</label>
+        <input
+          type="number"
+          step="0.01"
+          name="balance"
+          value="{{ acc.balance }}"
+          required
+        />
+
+        <button type="submit" class="btn" style="background-color: #4caf50">
+          💾 Зберегти зміни
+        </button>
+        <a
+          href="/"
+          class="btn"
+          style="
+            background-color: #555;
+            text-align: center;
+            display: block;
+            text-decoration: none;
+            box-sizing: border-box;
+          "
+          >Скасувати</a
+        >
+      </form>
     </div>
-</body>
+  </body>
 </html>

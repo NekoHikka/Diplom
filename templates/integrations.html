@@ -2,6 +2,10 @@
 <html lang="uk">
   <head>
     <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
     <title>Інтеграції - Розумні Фінанси</title>
     <link
       rel="icon"
@@ -121,6 +125,69 @@
       }
       input:focus {
         border-color: #4caf50;
+      }
+      /* 📱 МОБІЛЬНА АДАПТАЦІЯ (АЛЬФА-ВЕРСІЯ) */
+      @media (max-width: 768px) {
+        /* Зменшуємо відступи по краях екрана */
+        body {
+          padding: 10px;
+          margin: 0;
+        }
+        .card {
+          padding: 15px;
+          margin-bottom: 15px;
+        }
+
+        /* Всі сітки (графіки, статистика) стають в одну колонку */
+        .grid {
+          grid-template-columns: 1fr;
+          gap: 15px;
+        }
+
+        /* Робимо верхнє меню зручним для пальців */
+        .no-print {
+          flex-direction: column;
+          align-items: stretch !important;
+          gap: 10px;
+          text-align: center;
+        }
+        .no-print a,
+        .no-print span {
+          margin-right: 0 !important;
+          width: 100%;
+          display: block;
+          padding: 10px 0;
+          background-color: var(--input-bg);
+          border-radius: 8px;
+        }
+        .no-print div {
+          flex-direction: column;
+          width: 100%;
+          gap: 10px;
+          margin-left: 0 !important;
+        }
+        .no-print button,
+        .no-print a.btn {
+          width: 100%;
+          box-sizing: border-box;
+        }
+
+        /* Елементи форм і пульту ШІ */
+        form > div {
+          flex-direction: column;
+          align-items: stretch !important;
+        }
+        select,
+        input {
+          width: 100% !important;
+          margin-top: 5px;
+        }
+
+        /* Кнопки ШІ стають одна під одною */
+        form .btn {
+          width: 100%;
+          flex: none;
+        }
       }
     </style>
   </head>
