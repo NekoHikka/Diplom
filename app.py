@@ -246,11 +246,17 @@ def leave_partnership():
 @app.route('/add_account', methods=['POST'])
 @login_required
 def add_account():
+    name = request.form.get('name')
+    emoji = request.form.get('emoji', '💳') # Забираємо емодзі з форми
+    full_name = f"{emoji} {name}" # Склеюємо їх разом!
+    
+    balance = float(request.form.get('balance', 0))
     is_shared = request.form.get('is_shared') == 'true'
-    uid = get_partner_id(current_user.id) if is_shared and get_partner_id(current_user.id) and Partnership.query.filter_by(user2_id=current_user.id, status='accepted').first() else current_user.id
-    db.session.add(Account(name=request.form['name'], balance=float(request.form['balance']), user_id=uid, is_shared=is_shared))
+    
+    new_acc = Account(name=full_name, balance=balance, user_id=current_user.id, is_shared=is_shared)
+    db.session.add(new_acc)
     db.session.commit()
-    return redirect(url_for('shared_budget') if is_shared else url_for('home'))
+    return redirect(url_for('shared' if is_shared else 'home'))
 
 @app.route('/add_goal', methods=['POST'])
 @login_required
@@ -308,11 +314,28 @@ def delete_category(id):
 @login_required
 def edit_account(id):
     acc = Account.query.get_or_404(id)
+    
+    # Захист від чужих рахунків
+    if acc.user_id != current_user.id and not acc.is_shared:
+        return redirect(url_for('home'))
+        
     if request.method == 'POST':
-        acc.name = request.form['name']; acc.balance = float(request.form['balance'])
+        name = request.form.get('name')
+        emoji = request.form.get('emoji', '💳')
+        acc.name = f"{emoji} {name}" # Знову склеюємо при збереженні
+        acc.balance = float(request.form.get('balance', acc.balance))
         db.session.commit()
-        return redirect(url_for('shared_budget') if acc.is_shared else url_for('home'))
-    return render_template('edit_account.html', a=acc)
+        return redirect(url_for('shared' if acc.is_shared else 'home'))
+        
+    # Розумне розділення емодзі та тексту для відображення у формі
+    current_emoji = '💳'
+    current_name = acc.name
+    # Перевіряємо, чи перший символ - це наш емодзі
+    if acc.name and acc.name[0] in '💳💵🏦🐖🗄️📱🪙💼':
+        current_emoji = acc.name[0]
+        current_name = acc.name[1:].strip()
+        
+    return render_template('edit_account.html', acc=acc, current_emoji=current_emoji, current_name=current_name)
 
 @app.route('/edit_goal/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -358,26 +381,60 @@ def edit_transaction(id):
     accs = Account.query.filter(Account.user_id.in_(user_ids), Account.is_shared==t.is_shared).all()
     return render_template('edit.html', t=t, accounts=accs, exp_cats=[c.name for c in cats if c.type == 'Витрата'], inc_cats=[c.name for c in cats if c.type == 'Дохід'])
 
-# --- ЕКСПОРТ EXCEL ---
 @app.route('/export')
 @login_required
-def export_excel():
+def export():
+    import pandas as pd
+    from io import BytesIO
+    from flask import send_file
+    
     is_shared = request.args.get('shared') == '1'
+    filter_type = request.args.get('filter', 'month') # Отримуємо фільтр з URL
+    now = datetime.utcnow()
+    
+    # 1. Вибираємо транзакції (Особисті або Спільні)
     if is_shared:
         partner_id = get_partner_id(current_user.id)
         user_ids = [current_user.id, partner_id] if partner_id else [current_user.id]
-        ts = Transaction.query.filter(Transaction.user_id.in_(user_ids), Transaction.is_shared==True).order_by(Transaction.date.desc()).all()
+        query = Transaction.query.filter(Transaction.user_id.in_(user_ids), Transaction.is_shared == True)
     else:
-        ts = Transaction.query.filter_by(user_id=current_user.id, is_shared=False).order_by(Transaction.date.desc()).all()
-
-    csv_data = '\ufeffРахунок;Тип;Категорія;Сума;Опис;Дата\n'
-    for t in ts:
-        acc_name = t.account.name if t.account else "---"
-        clean_category = t.category.split(' ', 1)[-1] if ' ' in t.category else t.category
-        safe_desc = t.description.replace(';', ',').replace('\n', ' ') if t.description else ""
-        csv_data += f"{acc_name};{t.type};{clean_category};{t.amount};{safe_desc};{t.date.strftime('%d.%m.%Y')}\n"
-    return Response(csv_data, mimetype='text/csv', headers={'Content-Disposition': 'attachment; filename=finance_export.csv'})
-
+        query = Transaction.query.filter_by(user_id=current_user.id, is_shared=False)
+        
+    transactions = query.order_by(Transaction.date.desc()).all()
+    
+    # 2. ФІЛЬТРУЄМО ЇХ ТАК САМО, ЯК НА ГОЛОВНІЙ СТОРІНЦІ
+    filtered_tx = []
+    for t in transactions:
+        if filter_type == 'day' and t.date.date() == now.date():
+            filtered_tx.append(t)
+        elif filter_type == 'month' and t.date.month == now.month and t.date.year == now.year:
+            filtered_tx.append(t)
+        elif filter_type == 'year' and t.date.year == now.year:
+            filtered_tx.append(t)
+        elif filter_type == 'all':
+            filtered_tx.append(t)
+            
+    # 3. Генеруємо Excel тільки з відфільтрованих даних
+    data = []
+    for t in filtered_tx:
+        data.append({
+            'Дата': t.date.strftime('%Y-%m-%d'),
+            'Рахунок': t.account.name if t.account else '---',
+            'Тип': t.type,
+            'Категорія': t.category,
+            'Сума (ГРН)': t.amount,
+            'Опис': t.description
+        })
+        
+    df = pd.DataFrame(data)
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name=f'Виписка ({filter_type})')
+    
+    output.seek(0)
+    filename = f"export_{filter_type}_{now.strftime('%Y%m%d')}.xlsx"
+    return send_file(output, download_name=filename, as_attachment=True)
+    
 # --- СПІЛЬНИЙ БЮДЖЕТ (ГОЛОВНА) ---
 @app.route('/shared', methods=['GET', 'POST'])
 @login_required

@@ -314,7 +314,7 @@
       </div>
       <div style="display: flex; gap: 10px">
         <a
-          href="/export{% if is_shared_view %}?shared=1{% endif %}"
+          href="/export?filter={{ current_filter }}{% if is_shared_view %}&shared=1{% endif %}"
           class="btn"
           style="background-color: #217346; color: white"
           >📥 Excel</a
@@ -361,7 +361,7 @@
             >
               {% for acc in accounts %}
               <option value="{{ acc.id }}">
-                💳 {{ acc.name }} ({{ acc.balance|int }} ₴)
+                {{ acc.name }} ({{ acc.balance|int }} ₴)
               </option>
               {% endfor %}
             </select>
@@ -475,10 +475,30 @@
             name="is_shared"
             value="{{ 'true' if is_shared_view else 'false' }}"
           />
+          <select
+            name="emoji"
+            style="
+              width: 70px;
+              padding: 8px;
+              border-radius: 8px;
+              border: 1px solid var(--border-color);
+              background: var(--input-bg);
+              color: var(--text-color);
+            "
+          >
+            <option value="💳">💳</option>
+            <option value="💵">💵</option>
+            <option value="🏦">🏦</option>
+            <option value="🐖">🐖</option>
+            <option value="🗄️">🗄️</option>
+            <option value="📱">📱</option>
+            <option value="🪙">🪙</option>
+            <option value="💼">💼</option>
+          </select>
           <input
             type="text"
             name="name"
-            placeholder="Новий рахунок"
+            placeholder="Назва"
             required
             style="flex: 2; padding: 8px"
           />
@@ -486,6 +506,7 @@
             type="number"
             name="balance"
             placeholder="₴"
+            step="0.01"
             required
             style="flex: 1; padding: 8px"
           />
@@ -756,7 +777,7 @@
     </div>
 
     <div id="pdf-content">
-      <h3>Історія операцій ({{ filter_name }}):</h3>
+      <h3>Історія операцій:</h3>
       <div style="overflow-x: auto">
         <table
           style="
