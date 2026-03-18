@@ -114,119 +114,6 @@ def register():
             return redirect(url_for('login'))
     return render_template('register.html', error=error)
 
-@app.route('/analyze_ai', methods=['POST'])
-@login_required
-def analyze_ai():
-    # 1. Захист: перевіряємо ліміт
-    today_str = datetime.now().strftime("%Y-%m-%d")
-    limit_record = AILimit.query.filter_by(user_id=current_user.id, date=today_str).first()
-    
-    if not limit_record:
-        limit_record = AILimit(user_id=current_user.id, date=today_str, count=0)
-        db.session.add(limit_record)
-        
-    if limit_record.count >= 10:
-        session['ai_response'] = "🛑 Захист системи: Ви досягли денного ліміту (10/10) на поради від ШІ. Повертайтеся завтра!"
-        return redirect(url_for('analytics'))
-
-    # 2. Отримуємо дані з форми
-    period_days = int(request.form.get('period', 30))
-    analysis_type = request.form.get('analysis_type', 'evaluation')
-
-    # 3. Збираємо фінансові дані
-    now = datetime.now()
-    start_date = now - timedelta(days=period_days)
-    
-    transactions = Transaction.query.filter(
-        Transaction.user_id == current_user.id,
-        Transaction.date >= start_date
-    ).order_by(Transaction.date.desc()).all()
-
-    user_accounts = Account.query.filter_by(user_id=current_user.id).all()
-    total_balance = sum(a.balance for a in user_accounts)
-
-    # 🎯 ВИПРАВЛЕНО: Рахуємо прогрес цілей на льоту!
-    goals = Goal.query.filter_by(user_id=current_user.id).all()
-    if goals:
-        goals_text_lines = []
-        for g in goals:
-            # Шукаємо, які рахунки прив'язані до цієї цілі
-            if g.account_ids == 'all' or not g.account_ids:
-                curr_val = total_balance
-            else:
-                ids_list = [int(x) for x in g.account_ids.split(',')]
-                target_accs = [a for a in user_accounts if a.id in ids_list]
-                curr_val = sum(a.balance for a in target_accs)
-            
-            left_to_collect = g.target_amount - curr_val
-            if left_to_collect < 0: left_to_collect = 0
-            
-            goals_text_lines.append(f"- {g.name}: зібрано {int(curr_val)} ₴ із {int(g.target_amount)} ₴ (Залишилося: {int(left_to_collect)} ₴)")
-        
-        goals_list = "\n".join(goals_text_lines)
-    else:
-        goals_list = "Активних цілей поки немає."
-
-    income = sum(t.amount for t in transactions if t.type == 'Дохід')
-    expenses = sum(t.amount for t in transactions if t.type == 'Витрата')
-
-    cat_totals = {}
-    for t in transactions:
-        if t.type == 'Витрата':
-            cat_totals[t.category] = cat_totals.get(t.category, 0) + t.amount
-
-    last_20 = transactions[:20]
-    tx_list = "\n".join([f"- {t.date.strftime('%d.%m')}: {t.category} ({int(t.amount)} ₴) - {t.description}" for t in last_20])
-
-    # 4. Формуємо спеціалізований промпт
-    if analysis_type == 'evaluation':
-        task = "Проаналізуй мої витрати за категоріями. Вкажи, де я витрачаю найбільше. Обов'язково врахуй, що покупки в категоріях 'Техніка', 'Меблі' чи 'Ремонт' - це разові інвестиції, а не щоденне тринькання. Дай об'єктивну оцінку моїм фінансовим звичкам."
-    elif analysis_type == 'savings':
-        task = "На основі моїх останніх транзакцій та категорій витрат, запропонуй 3 конкретні та реалістичні кроки для оптимізації бюджету та збільшення заощаджень. Використовуй термін 'Коефіцієнт заощаджень'."
-    elif analysis_type == 'runway':
-        task = "Зроби аналіз моєї фінансової стійкості (Runway). Враховуючи мій поточний загальний баланс на рахунках та суму витрат за вибраний період, оціни, на скільки приблизно часу мені вистачить цих грошей, якщо доходи раптом припиняться. Дай оцінку ризикам ліквідності."
-    elif analysis_type == 'goals':
-        task = "Проаналізуй мої фінансові цілі. На основі різниці між моїми доходами та витратами за вказаний період (це мій вільний грошовий потік), розрахуй математично, скільки приблизно часу (місяців/років) мені знадобиться, щоб накопичити суми, яких не вистачає для досягнення цілей. Використай економічні терміни 'вільний грошовий потік' (Free Cash Flow) та 'горизонт планування'."
-    else:
-        task = "Дай загальну фінансову пораду."
-
-    prompt = f"""
-    Ти — ШІ-асистент та професійний фінансовий аналітик. 
-    Клієнт: {current_user.username}. Період аналізу: останні {period_days} днів.
-    
-    ДАНІ КЛІЄНТА:
-    - Загальний баланс на всіх рахунках: {total_balance} ₴
-    - Доходи за період: {income} ₴
-    - Витрати за період: {expenses} ₴
-    
-    ФІНАНСОВІ ЦІЛІ:
-    {goals_list}
-    
-    ВИТРАТИ ЗА КАТЕГОРІЯМИ:
-    {cat_totals}
-    
-    ОСТАННІ ТРАНЗАКЦІЇ (до 20 штук):
-    {tx_list}
-    
-    ЗАВДАННЯ:
-    {task}
-    
-    Пиши чітко, структуровано, без зайвих вступів. Звертайся до клієнта на ім'я. Використовуй професійні економічні терміни, але пояснюй їх суть. Максимум 6-8 речень.
-    """
-
-    try:
-        model = genai.GenerativeModel('gemini-2.5-flash')
-        response = model.generate_content(prompt)
-        formatted_text = response.text.replace('**', '').replace('*', '• ').replace('\n', '<br>')
-        session['ai_response'] = formatted_text
-        limit_record.count += 1
-        db.session.commit()
-    except Exception as e:
-        print("Помилка ШІ:", e)
-        session['ai_response'] = "⚙️ Вибачте, сервери нейромережі зараз перевантажені або виникла помилка API."
-
-    return redirect(url_for('analytics'))
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
@@ -708,16 +595,135 @@ def sync_monobank():
         print("Помилка отримання балансу:", client_info_resp.text)
 
     return redirect(url_for('integrations'))
-# --- АНАЛІТИКА ---
+
+@app.route('/analyze_ai', methods=['POST'])
+@login_required
+def analyze_ai():
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    limit_record = AILimit.query.filter_by(user_id=current_user.id, date=today_str).first()
+    
+    if not limit_record:
+        limit_record = AILimit(user_id=current_user.id, date=today_str, count=0)
+        db.session.add(limit_record)
+        
+    if limit_record.count >= 10:
+        session['ai_response'] = "🛑 Захист системи: Ви досягли денного ліміту (10/10) на поради від ШІ. Повертайтеся завтра!"
+        return redirect(url_for('analytics'))
+
+    period_days = int(request.form.get('period', 30))
+    analysis_type = request.form.get('analysis_type', 'evaluation')
+    budget_type = request.form.get('budget_type', 'personal') # Отримуємо тип бюджету з форми
+
+    now = datetime.now()
+    start_date = now - timedelta(days=period_days)
+    
+    # РОЗДІЛЯЄМО БЮДЖЕТИ
+    if budget_type == 'shared':
+        partner_id = get_partner_id(current_user.id)
+        if not partner_id:
+            session['ai_response'] = "⚠️ Помилка: У вас немає активного спільного бюджету для аналізу."
+            return redirect(url_for('analytics'))
+            
+        user_ids = [current_user.id, partner_id]
+        transactions = Transaction.query.filter(Transaction.user_id.in_(user_ids), Transaction.is_shared == True, Transaction.date >= start_date).order_by(Transaction.date.desc()).all()
+        user_accounts = Account.query.filter(Account.user_id.in_(user_ids), Account.is_shared == True).all()
+        goals = Goal.query.filter(Goal.user_id.in_(user_ids), Goal.is_shared == True).all()
+        context_prefix = "СПІЛЬНИЙ БЮДЖЕТ (Дані обох партнерів)"
+    else:
+        # Тільки особисті!
+        transactions = Transaction.query.filter(Transaction.user_id == current_user.id, Transaction.is_shared == False, Transaction.date >= start_date).order_by(Transaction.date.desc()).all()
+        user_accounts = Account.query.filter_by(user_id=current_user.id, is_shared=False).all()
+        goals = Goal.query.filter_by(user_id=current_user.id, is_shared=False).all()
+        context_prefix = "ОСОБИСТИЙ БЮДЖЕТ"
+
+    total_balance = sum(a.balance for a in user_accounts)
+
+    # Рахуємо прогрес цілей
+    if goals:
+        goals_text_lines = []
+        for g in goals:
+            if g.account_ids == 'all' or not g.account_ids:
+                curr_val = total_balance
+            else:
+                ids_list = [int(x) for x in g.account_ids.split(',')]
+                target_accs = [a for a in user_accounts if a.id in ids_list]
+                curr_val = sum(a.balance for a in target_accs)
+            
+            left_to_collect = g.target_amount - curr_val
+            if left_to_collect < 0: left_to_collect = 0
+            
+            goals_text_lines.append(f"- {g.name}: зібрано {int(curr_val)} ₴ із {int(g.target_amount)} ₴ (Залишилося: {int(left_to_collect)} ₴)")
+        
+        goals_list = "\n".join(goals_text_lines)
+    else:
+        goals_list = "Активних цілей поки немає."
+
+    income = sum(t.amount for t in transactions if t.type == 'Дохід')
+    expenses = sum(t.amount for t in transactions if t.type == 'Витрата')
+
+    cat_totals = {}
+    for t in transactions:
+        if t.type == 'Витрата':
+            cat_totals[t.category] = cat_totals.get(t.category, 0) + t.amount
+
+    last_20 = transactions[:20]
+    tx_list = "\n".join([f"- {t.date.strftime('%d.%m')}: {t.category} ({int(t.amount)} ₴) - {t.description}" for t in last_20])
+
+    if analysis_type == 'evaluation': task = "Проаналізуй мої витрати за категоріями. Вкажи, де я витрачаю найбільше. Обов'язково врахуй, що покупки в категоріях 'Техніка', 'Меблі' чи 'Ремонт' - це разові інвестиції, а не щоденне тринькання. Дай об'єктивну оцінку моїм фінансовим звичкам."
+    elif analysis_type == 'savings': task = "На основі моїх останніх транзакцій та категорій витрат, запропонуй 3 конкретні та реалістичні кроки для оптимізації бюджету та збільшення заощаджень. Використовуй термін 'Коефіцієнт заощаджень'."
+    elif analysis_type == 'runway': task = "Зроби аналіз моєї фінансової стійкості (Runway). Враховуючи мій поточний загальний баланс на рахунках та суму витрат за вибраний період, оціни, на скільки приблизно часу мені вистачить цих грошей, якщо доходи раптом припиняться. Дай оцінку ризикам ліквідності."
+    elif analysis_type == 'goals': task = "Проаналізуй мої фінансові цілі. На основі різниці між моїми доходами та витратами за вказаний період (це мій вільний грошовий потік), розрахуй математично, скільки приблизно часу (місяців/років) мені знадобиться, щоб накопичити суми, яких не вистачає для досягнення цілей. Використай економічні терміни 'вільний грошовий потік' (Free Cash Flow) та 'горизонт планування'."
+    else: task = "Дай загальну фінансову пораду."
+
+    prompt = f"""
+    Ти — ШІ-асистент та професійний фінансовий аналітик. 
+    Клієнт: {current_user.username}. Тип аналізу: {context_prefix}. Період аналізу: останні {period_days} днів.
+    
+    ДАНІ КЛІЄНТА:
+    - Загальний баланс на всіх рахунках: {total_balance} ₴
+    - Доходи за період: {income} ₴
+    - Витрати за період: {expenses} ₴
+    
+    ФІНАНСОВІ ЦІЛІ:
+    {goals_list}
+    
+    ВИТРАТИ ЗА КАТЕГОРІЯМИ:
+    {cat_totals}
+    
+    ОСТАННІ ТРАНЗАКЦІЇ (до 20 штук):
+    {tx_list}
+    
+    ЗАВДАННЯ:
+    {task}
+    
+    Пиши чітко, структуровано, без зайвих вступів. Звертайся до клієнта на ім'я. Використовуй професійні економічні терміни, але пояснюй їх суть. Максимум 6-8 речень.
+    """
+
+    try:
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        response = model.generate_content(prompt)
+        formatted_text = response.text.replace('**', '').replace('*', '• ').replace('\n', '<br>')
+        session['ai_response'] = formatted_text
+        limit_record.count += 1
+        db.session.commit()
+    except Exception as e:
+        print("Помилка ШІ:", e)
+        session['ai_response'] = "⚙️ Вибачте, сервери нейромережі зараз перевантажені або виникла помилка API."
+
+    return redirect(url_for('analytics', shared='1' if budget_type == 'shared' else '0'))
+
+
 @app.route('/analytics')
 @login_required
 def analytics():
     is_shared = request.args.get('shared') == '1'
     now = datetime.utcnow()
     
-    if is_shared:
-        partner_id = get_partner_id(current_user.id)
-        user_ids = [current_user.id, partner_id] if partner_id else [current_user.id]
+    partner_id = get_partner_id(current_user.id)
+    has_partner = bool(partner_id) # ПЕРЕВІРЯЄМО ЧИ Є ПАРТНЕР
+    
+    if is_shared and has_partner:
+        user_ids = [current_user.id, partner_id]
         month_expenses = Transaction.query.filter(Transaction.user_id.in_(user_ids), Transaction.is_shared==True, Transaction.type=='Витрата').all()
         user_accounts = Account.query.filter(Account.user_id.in_(user_ids), Account.is_shared==True).all()
     else:
@@ -731,10 +737,8 @@ def analytics():
     current_day = now.day
     days_in_month = calendar.monthrange(now.year, now.month)[1]
     days_remaining = days_in_month - current_day
-    
     real_daily_avg = total_expense / current_day if current_day > 0 else 0
     projected_month_total = total_expense + (real_daily_avg * days_remaining)
-    
     days_left = int(current_balance / real_daily_avg) if real_daily_avg > 0 else 999
     
     if current_balance <= 0: budget_forecast = "⚠️ Бюджет вичерпано!"
@@ -752,7 +756,6 @@ def analytics():
     seven_days_ago = now - timedelta(days=7)
     recent_sum = sum(e.amount for e in month_expenses if e.date >= seven_days_ago)
     older_sum = sum(e.amount for e in month_expenses if e.date < seven_days_ago)
-
     recent_days_count = min(current_day, 7)
     older_days_count = current_day - recent_days_count
     avg_recent = recent_sum / recent_days_count if recent_days_count > 0 else 0
@@ -774,24 +777,9 @@ def analytics():
         elif cat.lower() == 'транспорт' and percent > 15: recommendations.append("🚌 Високі витрати на транспорт.")
     if not recommendations and total_expense > 0: recommendations.append("✅ Витрати виглядають збалансовано.")
 
-    # --- 🤖 МАГІЯ ШІ: ДІСТАЄМО ТЕКСТ З СЕСІЇ ---
     ai_text = session.pop('ai_response', None)
 
-    return render_template('analytics.html', 
-                           top_category=top_category, 
-                           top_category_amount=top_category_amount, 
-                           recommendations=recommendations, 
-                           budget_forecast=budget_forecast, 
-                           projected_month_total=int(projected_month_total), 
-                           smart_daily_avg=round(real_daily_avg, 1), 
-                           trend_msg=trend_msg, 
-                           trend_color=trend_color, 
-                           total_expense=total_expense, 
-                           labels=list(category_totals.keys()), 
-                           values=list(category_totals.values()), 
-                           username=current_user.username, 
-                           is_shared_view=is_shared,
-                           ai_response=ai_text) # <-- ПЕРЕДАЛИ ТЕКСТ У HTML
+    return render_template('analytics.html', top_category=top_category, top_category_amount=top_category_amount, recommendations=recommendations, budget_forecast=budget_forecast, projected_month_total=int(projected_month_total), smart_daily_avg=round(real_daily_avg, 1), trend_msg=trend_msg, trend_color=trend_color, total_expense=total_expense, labels=list(category_totals.keys()), values=list(category_totals.values()), username=current_user.username, is_shared_view=is_shared, ai_response=ai_text, has_partner=has_partner)
 
 with app.app_context():
     db.create_all()

@@ -21,6 +21,9 @@
         --border-color: #333333;
         --btn-hover: #45a049;
         --input-bg: #2a2a2a;
+        --input-text: #ffffff;
+        --input-border: #444444;
+        color-scheme: dark; /* МАГІЯ ДЛЯ ТЕМНОГО СКРОЛУ В WINDOWS */
       }
       [data-theme="light"] {
         --bg-color: #f4f4f9;
@@ -29,6 +32,9 @@
         --border-color: #dddddd;
         --btn-hover: #e0e0e0;
         --input-bg: #ffffff;
+        --input-text: #333333;
+        --input-border: #cccccc;
+        color-scheme: light;
       }
       body {
         background-color: var(--bg-color);
@@ -68,13 +74,58 @@
         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
         gap: 20px;
       }
+
+      /* ІДЕАЛЬНІ СТИЛІ ДЛЯ ВИПАДАЮЧИХ СПИСКІВ (ЯК НА ГОЛОВНІЙ) */
       select {
-        background: var(--input-bg);
-        color: var(--text-color);
-        border: 1px solid var(--border-color);
-        border-radius: 6px;
-        padding: 8px 12px;
+        background-color: var(--input-bg);
+        color: var(--input-text);
+        border: 1px solid var(--input-border);
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 15px;
         outline: none;
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+        cursor: pointer;
+        appearance: none; /* Прибираємо стандартну стрілку */
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 16px;
+        padding-right: 40px !important;
+      }
+      [data-theme="light"] select {
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      }
+      select:focus {
+        border-color: #9c27b0;
+        box-shadow: 0 0 8px rgba(156, 39, 176, 0.4);
+        background-color: var(--card-bg);
+      }
+      select option {
+        background-color: var(--input-bg);
+        color: var(--input-text);
+      }
+
+      /* КАСТОМНИЙ СКРОЛБАР ДЛЯ СТОРІНКИ */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background-color: var(--input-bg);
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background-color: var(--border-color);
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background-color: var(--input-border);
+      }
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--border-color) var(--input-bg);
       }
     </style>
   </head>
@@ -185,7 +236,6 @@
         {% else %}
         <p style="color: #aaa">Недостатньо даних для розрахунку трендів.</p>
         {% endif %}
-
         <h4 style="margin-bottom: 5px">Системні спостереження:</h4>
         <ul style="padding-left: 20px; margin-top: 5px">
           {% for rec in recommendations %}
@@ -209,14 +259,61 @@
       <form action="/analyze_ai" method="POST" style="margin-top: 20px">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-        <div style="margin-bottom: 15px">
-          <strong style="margin-right: 10px">Враховувати дані за:</strong>
-          <select name="period">
-            <option value="7">Останні 7 днів</option>
-            <option value="30" selected>Останні 30 днів</option>
-            <option value="90">Останні 90 днів</option>
-            <option value="365">Останній рік</option>
-          </select>
+        <div
+          style="
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+          "
+        >
+          <div style="display: flex; align-items: center; gap: 10px">
+            <strong>Враховувати дані за:</strong>
+            <select name="period" style="width: 200px">
+              <option value="7">Останні 7 днів</option>
+              <option value="30" selected>Останні 30 днів</option>
+              <option value="90">Останні 90 днів</option>
+              <option value="365">Останній рік</option>
+            </select>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px">
+            <strong>Бюджет:</strong>
+            <select name="budget_type" style="width: 200px">
+              <option
+                value="personal"
+                {%
+                if
+                not
+                is_shared_view
+                %}selected{%
+                endif
+                %}
+              >
+                Особистий
+              </option>
+              <option
+                value="shared"
+                {%
+                if
+                is_shared_view
+                %}selected{%
+                endif
+                %}
+                {%
+                if
+                not
+                has_partner
+                %}disabled
+                title="У вас немає активного спільного бюджету"
+                {%
+                endif
+                %}
+              >
+                Спільний {% if not has_partner %}(Немає пари){% endif %}
+              </option>
+            </select>
+          </div>
         </div>
 
         <div style="display: flex; gap: 10px; flex-wrap: wrap">
