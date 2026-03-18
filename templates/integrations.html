@@ -27,37 +27,56 @@
         --border-color: #dddddd;
         --input-bg: #ffffff;
       }
+
+      /* Ширина 1100px як на головній */
       body {
         background-color: var(--bg-color);
         color: var(--text-color);
         font-family: Arial, sans-serif;
-        max-width: 900px;
+        max-width: 1100px;
         margin: auto;
         padding: 20px;
         transition: 0.3s;
       }
-      .header-card {
+
+      .card {
         background-color: var(--card-bg);
         padding: 20px;
         border-radius: 10px;
         border: 1px solid var(--border-color);
-        display: flex;
-        gap: 15px;
-        align-items: center;
-        margin-bottom: 30px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
       }
+      .btn {
+        padding: 10px 15px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        text-align: center;
+        text-decoration: none;
+        transition: 0.2s;
+        box-sizing: border-box;
+        display: inline-block;
+      }
+      .btn:hover {
+        opacity: 0.8;
+        transform: translateY(-1px);
+      }
+
       .integration-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        display: flex;
         gap: 20px;
+        flex-wrap: wrap;
       }
       .bank-card {
         background-color: var(--card-bg);
-        border-radius: 15px;
+        border-radius: 10px;
         border: 1px solid var(--border-color);
         padding: 25px;
-        position: relative;
-        overflow: hidden;
+        flex: 1;
+        min-width: 300px;
+        max-width: 500px;
         display: flex;
         flex-direction: column;
       }
@@ -90,22 +109,6 @@
         color: #aaa;
         border: 1px solid #888;
       }
-      .btn {
-        padding: 12px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: bold;
-        text-align: center;
-        text-decoration: none;
-        width: 100%;
-        margin-top: auto;
-        transition: 0.2s;
-        box-sizing: border-box;
-      }
-      .btn:hover {
-        opacity: 0.8;
-      }
       input {
         width: 100%;
         padding: 12px;
@@ -115,20 +118,65 @@
         background: var(--input-bg);
         color: var(--text-color);
         box-sizing: border-box;
+        outline: none;
+      }
+      input:focus {
+        border-color: #4caf50;
       }
     </style>
   </head>
   <body>
-    <div class="header-card">
+    <div
+      class="card no-print"
+      style="
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+      "
+    >
       <span style="font-weight: bold; font-size: 18px; margin-right: 20px"
-        >👤 {{ username }}</span
+        >👤 Привіт, {{ username }}!</span
       >
       <a
         href="/"
-        style="color: #4caf50; text-decoration: none; font-weight: bold"
-        >🏠 На головну</a
+        style="color: {% if request.path == '/' %}#4caf50{% else %}#888{% endif %}; text-decoration: none; font-weight: bold"
+        >🏠 Особистий</a
       >
-      <h2 style="margin: 0; margin-left: auto">Управління банками 🏦</h2>
+      <a
+        href="/shared"
+        style="color: {% if request.path == '/shared' %}#2196F3{% else %}#888{% endif %}; text-decoration: none; font-weight: bold"
+        >🤝 Спільний</a
+      >
+      <a
+        href="/analytics"
+        style="color: {% if request.path == '/analytics' %}#9c27b0{% else %}#888{% endif %}; text-decoration: none; font-weight: bold"
+        >🧠 Аналітика</a
+      >
+      <a
+        href="/integrations"
+        style="color: {% if request.path == '/integrations' %}#ff9800{% else %}#888{% endif %}; text-decoration: none; font-weight: bold"
+        >🏦 Інтеграції</a
+      >
+
+      <div
+        style="margin-left: auto; display: flex; gap: 10px; align-items: center"
+      >
+        <button
+          onclick="toggleTheme()"
+          class="btn"
+          style="background-color: #ff9800; color: white"
+        >
+          🌓 Тема
+        </button>
+        <a
+          href="/logout"
+          class="btn"
+          style="background-color: #ff4d4d; color: white !important"
+          >🚪 Вийти</a
+        >
+      </div>
     </div>
 
     <div class="integration-grid">
@@ -180,40 +228,23 @@
           <button
             type="submit"
             class="btn"
-            style="background-color: #ff3366; color: white"
+            style="background-color: #ff3366; color: white; margin-top: auto"
           >
             {% if is_mono_connected %}🔄 Оновити дані за 3 дні{% else %}🔗
             Підключити рахунок{% endif %}
           </button>
         </form>
       </div>
-
-      <div class="bank-card" style="border-top: 4px solid #7cb342">
-        <div class="bank-header">
-          <div class="bank-logo">🟩 ПриватБанк</div>
-          <span class="status-badge status-inactive">В розробці</span>
-        </div>
-        <p
-          style="
-            font-size: 14px;
-            color: #aaa;
-            margin-bottom: 20px;
-            line-height: 1.5;
-          "
-        >
-          Інтеграція через Privat24 AutoClient API. Наразі доступно лише для ФОП
-          (Merchant ID) у зв'язку з політикою безпеки банку.
-        </p>
-        <div style="margin-top: auto">
-          <button
-            class="btn"
-            style="background-color: #333; color: #888; cursor: not-allowed"
-            disabled
-          >
-            🚧 Очікує оновлення API
-          </button>
-        </div>
-      </div>
     </div>
+
+    <script>
+      function toggleTheme() {
+        const currentTheme =
+          document.documentElement.getAttribute("data-theme");
+        const newTheme = currentTheme === "light" ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", newTheme);
+        localStorage.setItem("theme", newTheme);
+      }
+    </script>
   </body>
 </html>
