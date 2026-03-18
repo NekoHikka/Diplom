@@ -31,6 +31,11 @@ csrf = CSRFProtect(app)
 # БЕРЕМ ССЫЛКУ НА БАЗУ NEON ИЗ .env (если файла нет, временно создаст sqlite)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///finance.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    "pool_pre_ping": True,  # Перевіряє, чи не заснула база, перед кожним запитом
+    "pool_recycle": 280     # Примусово оновлює з'єднання кожні 4.5 хвилини
+}
+
 db = SQLAlchemy(app)
 
 login_manager = LoginManager(app)
