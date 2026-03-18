@@ -19,6 +19,7 @@
         --card-bg: #1e1e1e;
         --text-color: #ffffff;
         --border-color: #333333;
+        --btn-hover: #45a049;
         --input-bg: #2a2a2a;
       }
       [data-theme="light"] {
@@ -26,9 +27,9 @@
         --card-bg: #ffffff;
         --text-color: #333333;
         --border-color: #dddddd;
+        --btn-hover: #e0e0e0;
         --input-bg: #ffffff;
       }
-
       body {
         background-color: var(--bg-color);
         color: var(--text-color);
@@ -38,7 +39,6 @@
         padding: 20px;
         transition: 0.3s;
       }
-
       .card {
         background-color: var(--card-bg);
         padding: 20px;
@@ -63,6 +63,19 @@
         opacity: 0.8;
         transform: translateY(-1px);
       }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+      }
+      select {
+        background: var(--input-bg);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 8px 12px;
+        outline: none;
+      }
     </style>
   </head>
   <body>
@@ -81,25 +94,24 @@
       >
       <a
         href="/"
-        style="color: {% if request.path == '/' %}#4caf50{% else %}#888{% endif %}; text-decoration: none; font-weight: bold"
+        style="color: {% if not is_shared_view %}#4caf50{% else %}#888{% endif %}; text-decoration: none; font-weight: bold"
         >🏠 Особистий</a
       >
       <a
         href="/shared"
-        style="color: {% if request.path == '/shared' %}#2196F3{% else %}#888{% endif %}; text-decoration: none; font-weight: bold"
+        style="color: {% if is_shared_view %}#2196F3{% else %}#888{% endif %}; text-decoration: none; font-weight: bold"
         >🤝 Спільний</a
       >
       <a
         href="/analytics"
-        style="color: {% if request.path == '/analytics' %}#9c27b0{% else %}#888{% endif %}; text-decoration: none; font-weight: bold"
+        style="color: #9c27b0; text-decoration: none; font-weight: bold"
         >🧠 Аналітика</a
       >
       <a
         href="/integrations"
-        style="color: {% if request.path == '/integrations' %}#ff9800{% else %}#888{% endif %}; text-decoration: none; font-weight: bold"
+        style="color: #ff9800; text-decoration: none; font-weight: bold"
         >🏦 Інтеграції</a
       >
-
       <div
         style="margin-left: auto; display: flex; gap: 10px; align-items: center"
       >
@@ -119,88 +131,193 @@
       </div>
     </div>
 
-    <h2 style="color: #9c27b0; text-align: center; margin-bottom: 30px">
-      Аналітика витрат 📊
+    <h2 style="text-align: center; color: #9c27b0; margin-bottom: 20px">
+      🧠 Розумна Аналітика
     </h2>
 
-    <div style="display: flex; gap: 20px; flex-wrap: wrap">
-      <div class="card" style="flex: 1; min-width: 300px; text-align: center">
-        <h3>Ваші витрати за категоріями</h3>
-        {% if labels and values %}
-        <div
+    <div class="grid">
+      <div class="card">
+        <h3
           style="
-            position: relative;
-            width: 100%;
-            max-width: 300px;
-            height: 300px;
-            margin: auto;
+            margin-top: 0;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
           "
         >
-          <canvas id="analyticsChart"></canvas>
-        </div>
-        {% else %}
-        <p style="color: #aaa; margin-top: 40px; font-size: 14px">
-          Немає даних для відображення графіка.
+          📊 Статистика місяця
+        </h3>
+        <p>
+          <strong>Сума витрат:</strong>
+          <span style="font-size: 18px; color: #ff4d4d"
+            >{{ total_expense | int }} ₴</span
+          >
         </p>
-        {% endif %}
+        <p>
+          <strong>Прогноз на кінець місяця:</strong> {{ projected_month_total |
+          int }} ₴
+        </p>
+        <p>
+          <strong>Топ категорія:</strong> {{ top_category }} ({{
+          top_category_amount | int }} ₴)
+        </p>
+        <p>
+          <strong>Реальна середня витрата:</strong> {{ smart_daily_avg }} ₴/день
+        </p>
+        <p><strong>Запас міцності:</strong> {{ budget_forecast }}</p>
       </div>
 
-      <div
-        class="card"
-        style="
-          flex: 1;
-          min-width: 300px;
-          border-left: 4px solid #9c27b0;
-          display: flex;
-          flex-direction: column;
-        "
-      >
-        <h3 style="margin-top: 0">🤖 Розумний ШІ-Асистент</h3>
-        <p
+      <div class="card">
+        <h3
           style="
-            color: #aaa;
-            font-size: 14px;
-            line-height: 1.5;
-            margin-bottom: 20px;
+            margin-top: 0;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
           "
         >
-          Штучний інтелект готовий проаналізувати ваші фінансові звички та
-          надати персоналізовані поради щодо економії та бюджетування.
+          📈 Тренди та Поради
+        </h3>
+        {% if trend_msg %}
+        <p
+          style="color: {{ trend_color }}; font-weight: bold; font-size: 16px;"
+        >
+          {{ trend_msg }}
         </p>
+        {% else %}
+        <p style="color: #aaa">Недостатньо даних для розрахунку трендів.</p>
+        {% endif %}
 
-        <form action="/analyze_ai" method="POST" style="margin-top: auto">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <h4 style="margin-bottom: 5px">Системні спостереження:</h4>
+        <ul style="padding-left: 20px; margin-top: 5px">
+          {% for rec in recommendations %}
+          <li style="margin-bottom: 5px">{{ rec }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    <div
+      class="card no-print"
+      style="margin-top: 20px; border: 1px solid #9c27b0; margin-bottom: 20px"
+    >
+      <h3 style="color: #9c27b0; margin-top: 0">🤖 ШІ Фінансовий Аналітик</h3>
+      <p style="font-size: 14px; color: #aaa">
+        Оберіть період та тип аналізу. Нейромережа проаналізує ваші баланси,
+        категорії витрат, цілі та останні 20 транзакцій для створення
+        персоналізованого звіту.
+      </p>
+
+      <form action="/analyze_ai" method="POST" style="margin-top: 20px">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+        <div style="margin-bottom: 15px">
+          <strong style="margin-right: 10px">Враховувати дані за:</strong>
+          <select name="period">
+            <option value="7">Останні 7 днів</option>
+            <option value="30" selected>Останні 30 днів</option>
+            <option value="90">Останні 90 днів</option>
+            <option value="365">Останній рік</option>
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 10px; flex-wrap: wrap">
           <button
             type="submit"
+            name="analysis_type"
+            value="evaluation"
             class="btn"
             style="
               background-color: #9c27b0;
               color: white;
-              width: 100%;
-              font-size: 15px;
+              flex: 1;
+              min-width: 200px;
             "
           >
-            ✨ Отримати пораду від ШІ
+            📊 Оцінка витрат
           </button>
-        </form>
-
-        {% if ai_response %}
-        <div
-          style="
-            margin-top: 20px;
-            padding: 15px;
-            background-color: var(--input-bg);
-            border-radius: 8px;
-            border: 1px solid #9c27b0;
-            font-size: 14px;
-            line-height: 1.6;
-          "
-        >
-          <strong>💡 Порада:</strong><br />
-          {{ ai_response }}
+          <button
+            type="submit"
+            name="analysis_type"
+            value="savings"
+            class="btn"
+            style="
+              background-color: #2196f3;
+              color: white;
+              flex: 1;
+              min-width: 200px;
+            "
+          >
+            💰 Поради з економії
+          </button>
+          <button
+            type="submit"
+            name="analysis_type"
+            value="runway"
+            class="btn"
+            style="
+              background-color: #ff9800;
+              color: white;
+              flex: 1;
+              min-width: 200px;
+            "
+          >
+            ⏳ Аналіз стійкості
+          </button>
+          <button
+            type="submit"
+            name="analysis_type"
+            value="goals"
+            class="btn"
+            style="
+              background-color: #4caf50;
+              color: white;
+              flex: 1;
+              min-width: 200px;
+            "
+          >
+            🎯 Розрахунок цілей
+          </button>
         </div>
-        {% endif %}
+      </form>
+
+      {% if ai_response %}
+      <div
+        style="
+          margin-top: 25px;
+          padding: 20px;
+          background-color: var(--input-bg);
+          border-radius: 8px;
+          border-left: 5px solid #9c27b0;
+          font-size: 15px;
+          line-height: 1.6;
+        "
+      >
+        <strong style="color: #9c27b0; font-size: 18px"
+          >💡 Висновок нейромережі:</strong
+        ><br /><br />
+        {{ ai_response | safe }}
       </div>
+      {% endif %}
+    </div>
+
+    <div class="card" style="text-align: center">
+      <h3 style="margin-top: 0">Розподіл витрат (Поточний місяць)</h3>
+      {% if values|length > 0 %}
+      <div
+        style="
+          position: relative;
+          width: 100%;
+          max-width: 400px;
+          height: 300px;
+          margin: auto;
+        "
+      >
+        <canvas id="analyticsChart"></canvas>
+      </div>
+      {% else %}
+      <p style="color: #aaa; padding: 40px 0">
+        Немає витрат для побудови графіка.
+      </p>
+      {% endif %}
     </div>
 
     <script>
@@ -211,21 +328,27 @@
           localStorage.setItem('theme', newTheme);
       }
 
-      // Малювання великого графіка
-      const labels = {{ labels | default([]) | tojson | safe }};
-      const data = {{ values | default([]) | tojson | safe }};
+      const labels = {{ labels | tojson | safe }};
+      const data = {{ values | tojson | safe }};
 
       if (labels.length > 0) {
           new Chart(document.getElementById('analyticsChart').getContext('2d'), {
-              type: 'pie',
+              type: 'doughnut',
               data: {
                   labels: labels,
                   datasets: [{
                       data: data,
-                      backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8BC34A', '#E91E63']
+                      backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8BC34A', '#E91E63'],
+                      borderWidth: 0
                   }]
               },
-              options: { responsive: true, maintainAspectRatio: false }
+              options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                      legend: { position: 'right', labels: { color: document.documentElement.getAttribute('data-theme') === 'light' ? '#333' : '#fff' } }
+                  }
+              }
           });
       }
     </script>

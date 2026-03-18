@@ -106,15 +106,12 @@ def get_partner_id(user_id):
 def register():
     error = None
     if request.method == 'POST':
-        if User.query.filter_by(username=request.form['username']).first(): error = "Користувач вже існує!"
+        if User.query.filter_by(username=request.form['username']).first(): 
+            error = "Користувач вже існує!"
         else:
             db.session.add(User(username=request.form['username'], password=generate_password_hash(request.form['password'])))
-            db.session.commit(); return redirect(url_for('login'))
-            # ДОБАВИТЬ ВОТ ЭТУ СТРОЧКУ:
-    ai_text = session.pop('ai_response', None)
-    
-    # И передать ai_response в render_template:
-    return render_template('analytics.html', ..., ai_response=ai_text)
+            db.session.commit()
+            return redirect(url_for('login'))
     return render_template('register.html', error=error)
 
 @app.route('/analyze_ai', methods=['POST'])
@@ -145,13 +142,28 @@ def analyze_ai():
         Transaction.date >= start_date
     ).order_by(Transaction.date.desc()).all()
 
-    accounts = Account.query.filter_by(user_id=current_user.id).all()
-    total_balance = sum(a.balance for a in accounts)
+    user_accounts = Account.query.filter_by(user_id=current_user.id).all()
+    total_balance = sum(a.balance for a in user_accounts)
 
-    # 🎯 НОВЕ: ДІСТАЄМО ЦІЛІ ТА СТВОРЮЄМО КОНТЕКСТ ДЛЯ ШІ
+    # 🎯 ВИПРАВЛЕНО: Рахуємо прогрес цілей на льоту!
     goals = Goal.query.filter_by(user_id=current_user.id).all()
     if goals:
-        goals_list = "\n".join([f"- {g.name}: зібрано {g.current|int} ₴ із {g.target_amount|int} ₴ (Залишилося: {g.target_amount - g.current|int} ₴)" for g in goals])
+        goals_text_lines = []
+        for g in goals:
+            # Шукаємо, які рахунки прив'язані до цієї цілі
+            if g.account_ids == 'all' or not g.account_ids:
+                curr_val = total_balance
+            else:
+                ids_list = [int(x) for x in g.account_ids.split(',')]
+                target_accs = [a for a in user_accounts if a.id in ids_list]
+                curr_val = sum(a.balance for a in target_accs)
+            
+            left_to_collect = g.target_amount - curr_val
+            if left_to_collect < 0: left_to_collect = 0
+            
+            goals_text_lines.append(f"- {g.name}: зібрано {int(curr_val)} ₴ із {int(g.target_amount)} ₴ (Залишилося: {int(left_to_collect)} ₴)")
+        
+        goals_list = "\n".join(goals_text_lines)
     else:
         goals_list = "Активних цілей поки немає."
 
@@ -164,7 +176,7 @@ def analyze_ai():
             cat_totals[t.category] = cat_totals.get(t.category, 0) + t.amount
 
     last_20 = transactions[:20]
-    tx_list = "\n".join([f"- {t.date.strftime('%d.%m')}: {t.category} ({t.amount|int} ₴) - {t.description}" for t in last_20])
+    tx_list = "\n".join([f"- {t.date.strftime('%d.%m')}: {t.category} ({int(t.amount)} ₴) - {t.description}" for t in last_20])
 
     # 4. Формуємо спеціалізований промпт
     if analysis_type == 'evaluation':
@@ -214,7 +226,7 @@ def analyze_ai():
         session['ai_response'] = "⚙️ Вибачте, сервери нейромережі зараз перевантажені або виникла помилка API."
 
     return redirect(url_for('analytics'))
-    
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
