@@ -293,6 +293,40 @@
           width: 100% !important;
           box-sizing: border-box;
         }
+
+        /* 📱 Мобільні фільтри та експорт */
+        .filter-container {
+          flex-direction: column !important;
+          align-items: stretch !important;
+          gap: 15px !important;
+        }
+        .filter-scroll {
+          display: flex;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          padding-bottom: 5px;
+          gap: 8px;
+          width: 100%;
+          justify-content: flex-start;
+        }
+        .filter-scroll::-webkit-scrollbar {
+          display: none;
+        }
+        .filter-scroll > * {
+          flex-shrink: 0;
+          margin-right: 0 !important;
+        }
+        .export-btns {
+          display: flex;
+          gap: 10px;
+          width: 100%;
+          justify-content: space-between;
+        }
+        .export-btns > * {
+          flex: 1;
+          margin: 0 !important;
+          text-align: center;
+        }
       }
     </style>
   </head>
@@ -384,7 +418,7 @@
     {% endif %}
 
     <div
-      class="no-print"
+      class="no-print filter-container"
       style="
         display: flex;
         justify-content: space-between;
@@ -394,8 +428,11 @@
         gap: 15px;
       "
     >
-      <div>
-        <strong style="margin-right: 10px">Фільтр:</strong>
+      <div
+        class="filter-scroll"
+        style="display: flex; align-items: center; gap: 10px"
+      >
+        <strong style="margin-right: 5px; flex-shrink: 0">Фільтр:</strong>
         <a
           href="{% if is_shared_view %}/shared{% else %}/{% endif %}?filter=day"
           class="btn btn-filter {% if current_filter == 'day' %}active{% endif %}"
@@ -417,7 +454,7 @@
           >Всі часи</a
         >
       </div>
-      <div style="display: flex; gap: 10px">
+      <div class="export-btns" style="display: flex; gap: 10px">
         <a
           href="/export?filter={{ current_filter }}{% if is_shared_view %}&shared=1{% endif %}"
           class="btn"
@@ -630,14 +667,15 @@
         {% if values|length > 0 %}
         <div
           style="
-            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             width: 100%;
-            max-width: 160px;
-            height: 160px;
-            margin: auto;
           "
         >
-          <canvas id="expensesChart"></canvas>
+          <div style="position: relative; width: 160px; height: 160px">
+            <canvas id="expensesChart"></canvas>
+          </div>
         </div>
         <p style="font-size: 12px; color: #aaa; margin-top: 15px">
           *Наведіть на сектор, щоб побачити %
