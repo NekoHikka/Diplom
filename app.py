@@ -158,7 +158,7 @@ def analyze_ai():
 
     # 4. Отправляем запрос в Gemini
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-1.5-flash-latest')
         response = model.generate_content(prompt)
         
         # Сохраняем текст ответа в сессию
@@ -173,7 +173,7 @@ def analyze_ai():
         session['ai_response'] = "⚙️ Вибачте, сервери нейромережі зараз перевантажені або API-ключ не налаштовано. Спробуйте пізніше."
 
     return redirect(url_for('analytics'))
-    
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
