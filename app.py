@@ -187,8 +187,8 @@ def leave_partnership():
 @login_required
 def add_account():
     name = request.form.get('name')
-    emoji = request.form.get('emoji', '💳') # Забираємо емодзі з форми
-    full_name = f"{emoji} {name}" # Склеюємо їх разом!
+    emoji = request.form.get('emoji', '💳') 
+    full_name = f"{emoji} {name}" 
     
     balance = float(request.form.get('balance', 0))
     is_shared = request.form.get('is_shared') == 'true'
@@ -196,7 +196,8 @@ def add_account():
     new_acc = Account(name=full_name, balance=balance, user_id=current_user.id, is_shared=is_shared)
     db.session.add(new_acc)
     db.session.commit()
-    return redirect(url_for('shared' if is_shared else 'home'))
+    # ВИПРАВЛЕНО 'shared' на 'shared_budget'
+    return redirect(url_for('shared_budget' if is_shared else 'home'))
 
 @app.route('/add_goal', methods=['POST'])
 @login_required
@@ -255,7 +256,6 @@ def delete_category(id):
 def edit_account(id):
     acc = Account.query.get_or_404(id)
     
-    # Захист від чужих рахунків
     if acc.user_id != current_user.id and not acc.is_shared:
         return redirect(url_for('home'))
         
@@ -265,7 +265,8 @@ def edit_account(id):
         acc.name = f"{emoji} {name}"
         acc.balance = float(request.form.get('balance', acc.balance))
         db.session.commit()
-        return redirect(url_for('shared' if acc.is_shared else 'home'))
+        # ВИПРАВЛЕНО 'shared' на 'shared_budget'
+        return redirect(url_for('shared_budget' if acc.is_shared else 'home'))
         
     current_emoji = '💳'
     current_name = acc.name
@@ -327,10 +328,9 @@ def export():
     from flask import send_file
     
     is_shared = request.args.get('shared') == '1'
-    filter_type = request.args.get('filter', 'month') # Отримуємо фільтр з URL
+    filter_type = request.args.get('filter', 'month')
     now = datetime.utcnow()
     
-    # 1. Вибираємо транзакції (Особисті або Спільні)
     if is_shared:
         partner_id = get_partner_id(current_user.id)
         user_ids = [current_user.id, partner_id] if partner_id else [current_user.id]
@@ -340,31 +340,32 @@ def export():
         
     transactions = query.order_by(Transaction.date.desc()).all()
     
-    # 2. ФІЛЬТРУЄМО ЇХ ТАК САМО, ЯК НА ГОЛОВНІЙ СТОРІНЦІ
     filtered_tx = []
     for t in transactions:
-        if filter_type == 'day' and t.date.date() == now.date():
-            filtered_tx.append(t)
-        elif filter_type == 'month' and t.date.month == now.month and t.date.year == now.year:
-            filtered_tx.append(t)
-        elif filter_type == 'year' and t.date.year == now.year:
-            filtered_tx.append(t)
-        elif filter_type == 'all':
-            filtered_tx.append(t)
+        if filter_type == 'day' and t.date.date() == now.date(): filtered_tx.append(t)
+        elif filter_type == 'month' and t.date.month == now.month and t.date.year == now.year: filtered_tx.append(t)
+        elif filter_type == 'year' and t.date.year == now.year: filtered_tx.append(t)
+        elif filter_type == 'all': filtered_tx.append(t)
             
-    # 3. Генеруємо Excel тільки з відфільтрованих даних
     data = []
     for t in filtered_tx:
+        # Зрізаємо смайлики (все до першого пробілу)
+        cat_clean = t.category.split(' ', 1)[-1] if ' ' in t.category else t.category
+        acc_clean = t.account.name.split(' ', 1)[-1] if t.account and ' ' in t.account.name else (t.account.name if t.account else '---')
+        
         data.append({
             'Дата': t.date.strftime('%Y-%m-%d'),
-            'Рахунок': t.account.name if t.account else '---',
+            'Рахунок': acc_clean,
             'Тип': t.type,
-            'Категорія': t.category,
+            'Категорія': cat_clean,
             'Сума (ГРН)': t.amount,
             'Опис': t.description
         })
         
-    df = pd.DataFrame(data)
+    # ДОДАНО ЖОРСТКІ КОЛОНКИ, ЩОБ ЗАПОБІГТИ ЗАВИСАННЮ ПОРОЖНЬОГО EXCEL
+    columns = ['Дата', 'Рахунок', 'Тип', 'Категорія', 'Сума (ГРН)', 'Опис']
+    df = pd.DataFrame(data, columns=columns)
+    
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         df.to_excel(writer, index=False, sheet_name=f'Виписка ({filter_type})')

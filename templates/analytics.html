@@ -280,26 +280,9 @@
           <div style="display: flex; align-items: center; gap: 10px">
             <strong>Бюджет:</strong>
             <select name="budget_type" style="width: 200px">
-              <option
-                value="personal"
-                {%
-                if
-                not
-                is_shared_view
-                %}selected{%
-                endif
-                %}
-              >
-                Особистий
-              </option>
+              <option value="personal" selected>Особистий</option>
               <option
                 value="shared"
-                {%
-                if
-                is_shared_view
-                %}selected{%
-                endif
-                %}
                 {%
                 if
                 not
