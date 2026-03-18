@@ -7,3 +7,4 @@ python-dotenv
 gunicorn
 Flask-WTF
 requests
+google-generativeai

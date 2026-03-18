@@ -1,3 +1,5 @@
+import google.generativeai as genai
+from flask import session
 import os
 import requests
 import time
@@ -9,6 +11,11 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 import calendar
+
+# Инициализация Gemini AI
+api_key = os.environ.get("GEMINI_API_KEY")
+if api_key:
+    genai.configure(api_key=api_key)
 
 # ЗАГРУЖАЕМ НАШИ СЕКРЕТЫ ИЗ .env
 load_dotenv()
@@ -48,6 +55,12 @@ class Account(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     is_shared = db.Column(db.Boolean, default=False)
     transactions = db.relationship('Transaction', backref='account', lazy=True)
+
+class AILimit(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    date = db.Column(db.String(20), nullable=False) # Сохраняем дату как строку "YYYY-MM-DD"
+    count = db.Column(db.Integer, default=0)
 
 class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -97,8 +110,70 @@ def register():
         else:
             db.session.add(User(username=request.form['username'], password=generate_password_hash(request.form['password'])))
             db.session.commit(); return redirect(url_for('login'))
+            # ДОБАВИТЬ ВОТ ЭТУ СТРОЧКУ:
+    ai_text = session.pop('ai_response', None)
+    
+    # И передать ai_response в render_template:
+    return render_template('analytics.html', ..., ai_response=ai_text)
     return render_template('register.html', error=error)
 
+@app.route('/analyze_ai', methods=['POST'])
+@login_required
+def analyze_ai():
+    # 1. Защита: проверяем лимит (максимум 10 запросов в день)
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    limit_record = AILimit.query.filter_by(user_id=current_user.id, date=today_str).first()
+    
+    if not limit_record:
+        limit_record = AILimit(user_id=current_user.id, date=today_str, count=0)
+        db.session.add(limit_record)
+        
+    if limit_record.count >= 10:
+        session['ai_response'] = "🛑 Захист системи: Ви досягли денного ліміту (10/10) на поради від ШІ. Повертайтеся завтра!"
+        return redirect(url_for('analytics'))
+
+    # 2. Собираем финансовые данные пользователя
+    transactions = Transaction.query.filter_by(user_id=current_user.id).all()
+    income = sum(t.amount for t in transactions if t.type == 'Дохід')
+    expenses = sum(t.amount for t in transactions if t.type == 'Витрата')
+    balance = income - expenses
+
+    # 3. ФОРМИРУЕМ НАУЧНЫЙ ПРОМПТ
+    prompt = f"""
+    Ти — ШІ-асистент та професійний фінансовий аналітик. 
+    Твій клієнт: {current_user.username}.
+    
+    Його фінансові дані за весь час:
+    Загальний дохід: {income} грн.
+    Загальні витрати: {expenses} грн.
+    Поточний баланс (різниця): {balance} грн.
+    
+    Завдання:
+    Дай коротку, науково обґрунтовану пораду щодо фінансової грамотності (максимум 4 речення).
+    1. Обов'язково звернися до клієнта на ім'я.
+    2. Обов'язково використай 1-2 професійних економічних терміни (наприклад: "диверсифікація активів", "коефіцієнт заощаджень", "дефіцит ліквідності", "оптимізація грошових потоків", "інфляційні ризики"), але поясни їхній сенс так, щоб було зрозуміло звичайній людині.
+    3. Враховуй його реальні цифри: якщо витрати більші за доходи - жорстко попередь про ризики. Якщо є профіцит - радь, як зберегти або примножити капітал.
+    4. Не використовуй формальні привітання типу "Чим можу допомогти", відповідай одразу по суті як суворий експерт.
+    """
+
+    # 4. Отправляем запрос в Gemini
+    try:
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        response = model.generate_content(prompt)
+        
+        # Сохраняем текст ответа в сессию
+        session['ai_response'] = response.text.replace('*', '') # Убираем лишние звездочки форматирования
+        
+        # Списываем 1 попытку из 10
+        limit_record.count += 1
+        db.session.commit()
+        
+    except Exception as e:
+        print("Помилка ШІ:", e)
+        session['ai_response'] = "⚙️ Вибачте, сервери нейромережі зараз перевантажені або API-ключ не налаштовано. Спробуйте пізніше."
+
+    return redirect(url_for('analytics'))
+    
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
