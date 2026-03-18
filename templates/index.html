@@ -217,19 +217,6 @@
       <div
         style="margin-left: auto; display: flex; gap: 10px; align-items: center"
       >
-        {% if is_shared_view %}
-        <a
-          href="/leave_partnership"
-          class="btn"
-          style="
-            background-color: #555;
-            font-size: 12px;
-            padding: 10px;
-            color: white;
-          "
-          >Розірвати бюджет</a
-        >
-        {% endif %}
         <button
           onclick="toggleTheme()"
           class="btn"
@@ -779,7 +766,7 @@
             text-align: left;
             table-layout: fixed;
             border-top: 1px solid var(--border-color);
-            margin-bottom: 40px;
+            margin-bottom: 20px;
           "
         >
           <tr style="border-bottom: 1px solid var(--border-color)">
@@ -832,6 +819,42 @@
         </table>
       </div>
     </div>
+
+    {% if is_shared_view %}
+    <div
+      class="no-print card"
+      style="
+        text-align: center;
+        margin-top: 40px;
+        margin-bottom: 40px;
+        border: 1px solid #ff4d4d;
+        background: rgba(255, 77, 77, 0.05);
+      "
+    >
+      <h3 style="color: #ff4d4d; margin-top: 0">Небезпечна зона</h3>
+      <p style="color: #aaa; font-size: 14px; margin-bottom: 20px">
+        Бажаєте припинити ведення спільного бюджету з цим користувачем? Ваші
+        особисті фінанси залишаться недоторканими.
+      </p>
+      <a
+        href="/leave_partnership"
+        onclick="
+          return confirm(
+            'Ви впевнені, що хочете розірвати спільний бюджет? Цю дію неможливо скасувати.',
+          );
+        "
+        class="btn"
+        style="
+          background-color: #ff4d4d;
+          color: white;
+          padding: 12px 25px;
+          font-size: 15px;
+        "
+      >
+        💔 Розірвати спільний бюджет
+      </a>
+    </div>
+    {% endif %}
 
     <script>
       function toggleTheme() {
