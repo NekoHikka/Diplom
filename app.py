@@ -322,15 +322,13 @@ def edit_account(id):
     if request.method == 'POST':
         name = request.form.get('name')
         emoji = request.form.get('emoji', '💳')
-        acc.name = f"{emoji} {name}" # Знову склеюємо при збереженні
+        acc.name = f"{emoji} {name}"
         acc.balance = float(request.form.get('balance', acc.balance))
         db.session.commit()
         return redirect(url_for('shared' if acc.is_shared else 'home'))
         
-    # Розумне розділення емодзі та тексту для відображення у формі
     current_emoji = '💳'
     current_name = acc.name
-    # Перевіряємо, чи перший символ - це наш емодзі
     if acc.name and acc.name[0] in '💳💵🏦🐖🗄️📱🪙💼':
         current_emoji = acc.name[0]
         current_name = acc.name[1:].strip()
@@ -434,7 +432,7 @@ def export():
     output.seek(0)
     filename = f"export_{filter_type}_{now.strftime('%Y%m%d')}.xlsx"
     return send_file(output, download_name=filename, as_attachment=True)
-    
+
 # --- СПІЛЬНИЙ БЮДЖЕТ (ГОЛОВНА) ---
 @app.route('/shared', methods=['GET', 'POST'])
 @login_required
