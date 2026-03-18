@@ -103,8 +103,8 @@
       <h2 style="text-align: center; margin-top: 0; margin-bottom: 25px">
         🎯 Редагувати ціль
       </h2>
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <form action="/edit_goal/{{ g.id }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <label>Назва цілі:</label>
         <input type="text" name="name" value="{{ g.name }}" required />
         <label>Необхідна сума (грн):</label>

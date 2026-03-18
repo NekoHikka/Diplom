@@ -494,72 +494,112 @@ def home():
     return render_template('index.html', transactions=ts, username=current_user.username, labels=list(cat_data.keys()), values=list(cat_data.values()), balance=total_balance, accounts=user_accounts, goals=goals_data, exp_cats=[c.name for c in user_categories if c.type=='Витрата'], inc_cats=[c.name for c in user_categories if c.type=='Дохід'], user_categories=user_categories, current_filter=f, filter_name=filter_name, pending_invite=pending_invite, invite_sender=invite_sender)
 
 # --- ІНТЕГРАЦІЯ З MONOBANK ---
+@app.route('/unlink_monobank', methods=['POST'])
+@login_required
+def unlink_monobank():
+    """Функція для відв'язки банку (видаляє токен)"""
+    token_record = MonobankToken.query.filter_by(user_id=current_user.id).first()
+    if token_record:
+        db.session.delete(token_record)
+        db.session.commit()
+    return redirect(url_for('integrations'))
+
+
 @app.route('/sync_monobank', methods=['POST'])
 @login_required
 def sync_monobank():
-    # 1. Отримуємо токен з форми або з бази
-    token = request.form.get('monobank_token')
-    if token:
-        existing_token = MonobankToken.query.filter_by(user_id=current_user.id).first()
-        if existing_token:
-            existing_token.token = token
-        else:
-            db.session.add(MonobankToken(user_id=current_user.id, token=token))
-        db.session.commit()
+    """Функція для синхронізації реального балансу та транзакцій"""
+    # 1. Отримуємо токен (новий з форми або старий з БД)
+    form_token = request.form.get('monobank_token')
+    db_token = MonobankToken.query.filter_by(user_id=current_user.id).first()
     
-    user_token = MonobankToken.query.filter_by(user_id=current_user.id).first()
-    if not user_token:
+    token = None
+    if form_token:
+        token = form_token
+        if not db_token:
+            new_token = MonobankToken(user_id=current_user.id, token=token)
+            db.session.add(new_token)
+        else:
+            db_token.token = token
+        db.session.commit()
+    elif db_token:
+        token = db_token.token
+        
+    if not token:
         return redirect(url_for('integrations'))
 
-    # 2. Налаштовуємо час (забираємо виписку за останні 3 дні)
-    to_time = int(time.time())
-    from_time = to_time - (3 * 24 * 60 * 60)
-    headers = {'X-Token': user_token.token}
-
-    try:
-        # Звертаємося до відкритого API Монобанку (0 - це головна чорна картка)
-        resp = requests.get(f'https://api.monobank.ua/personal/statement/0/{from_time}/{to_time}', headers=headers)
-        if resp.status_code == 200:
-            transactions = resp.json()
+    headers = {'X-Token': token}
+    
+    # 2. СПОЧАТКУ ОТРИМУЄМО РЕАЛЬНИЙ БАЛАНС
+    client_info_resp = requests.get('https://api.monobank.ua/personal/client-info', headers=headers)
+    
+    if client_info_resp.status_code == 200:
+        accounts_data = client_info_resp.json().get('accounts', [])
+        if accounts_data:
+            # Беремо першу карту користувача (найчастіше це чорна гривнева)
+            main_card = accounts_data[0]
+            real_balance = main_card.get('balance', 0) / 100.0  # Монобанк віддає баланс у копійках
             
-            # 3. Перевіряємо, чи є вже рахунок "Monobank" у нас в базі
-            mono_acc = Account.query.filter_by(user_id=current_user.id, name="Monobank", is_shared=False).first()
-            if not mono_acc:
-                mono_acc = Account(name="Monobank", balance=0.0, user_id=current_user.id, is_shared=False)
-                db.session.add(mono_acc)
+            # Шукаємо рахунок Монобанку в базі або створюємо новий
+            mono_account = Account.query.filter_by(user_id=current_user.id, name='Monobank').first()
+            if not mono_account:
+                mono_account = Account(name='Monobank', balance=real_balance, user_id=current_user.id)
+                db.session.add(mono_account)
                 db.session.commit()
-
-            # 4. Обробляємо кожну транзакцію
-            for t in transactions:
-                # У монобанку сума в копійках, ділимо на 100
-                amount = t['amount'] / 100.0
-                t_type = "Дохід" if amount > 0 else "Витрата"
-                abs_amount = abs(amount)
-                description = t.get('description', 'Monobank')
-                t_date = datetime.fromtimestamp(t['time'])
+            else:
+                mono_account.balance = real_balance # Підсмоктуємо реальний баланс з картки!
+                db.session.commit()
+            
+            account_db_id = mono_account.id
+            
+            # 3. ОТРИМУЄМО ВИПИСКУ ЗА 3 ДНІ (Транзакції)
+            now = datetime.now()
+            three_days_ago = now - timedelta(days=3)
+            
+            to_time = int(now.timestamp())
+            from_time = int(three_days_ago.timestamp())
+            
+            # Запит транзакцій (0 = дефолтний рахунок)
+            statement_resp = requests.get(f'https://api.monobank.ua/personal/statement/0/{from_time}/{to_time}', headers=headers)
+            
+            if statement_resp.status_code == 200:
+                transactions = statement_resp.json()
                 
-                # Захист від дублікатів (щоб не додати одну і ту ж покупку двічі)
-                exists = Transaction.query.filter_by(
-                    user_id=current_user.id, amount=abs_amount, description=description
-                ).first()
+                for t in transactions:
+                    amount_uah = abs(t.get('amount', 0) / 100.0) # Конвертуємо копійки
+                    t_type = 'Витрата' if t.get('amount', 0) < 0 else 'Дохід'
+                    t_desc = t.get('description', 'Monobank')
+                    t_date = datetime.fromtimestamp(t.get('time'))
+                    
+                    # Перевірка на дублікат, щоб не записувати одне й те саме двічі
+                    existing = Transaction.query.filter_by(
+                        user_id=current_user.id,
+                        account_id=account_db_id,
+                        amount=amount_uah,
+                        type=t_type,
+                        description=t_desc
+                    ).first()
+                    
+                    if not existing:
+                        new_tx = Transaction(
+                            user_id=current_user.id,
+                            account_id=account_db_id,
+                            type=t_type,
+                            category='Інше', # Дефолтна категорія для синхронізованих
+                            amount=amount_uah,
+                            date=t_date,
+                            description=t_desc,
+                            is_shared=False
+                        )
+                        db.session.add(new_tx)
                 
-                if not exists:
-                    new_t = Transaction(
-                        type=t_type, category="💸 З картки", amount=abs_amount, 
-                        description=description, date=t_date, user_id=current_user.id, 
-                        account_id=mono_acc.id, is_shared=False
-                    )
-                    db.session.add(new_t)
-                    if t_type == 'Дохід':
-                        mono_acc.balance += abs_amount
-                    else:
-                        mono_acc.balance -= abs_amount
-            db.session.commit()
-    except Exception as e:
-        print(f"Помилка синхронізації: {e}")
+                db.session.commit()
+            else:
+                print("Помилка отримання виписки:", statement_resp.text)
+    else:
+        print("Помилка отримання балансу:", client_info_resp.text)
 
-    return redirect(url_for('home'))
-
+    return redirect(url_for('integrations'))
 # --- АНАЛІТИКА ---
 @app.route('/analytics')
 @login_required
@@ -644,6 +684,16 @@ def analytics():
                            username=current_user.username, 
                            is_shared_view=is_shared,
                            ai_response=ai_text) # <-- ПЕРЕДАЛИ ТЕКСТ У HTML
+
+@app.route('/unlink_monobank', methods=['POST'])
+@login_required
+def unlink_monobank():
+    token_record = MonobankToken.query.filter_by(user_id=current_user.id).first()
+    if token_record:
+        db.session.delete(token_record)
+        db.session.commit()
+    return redirect(url_for('integrations'))
+
 
 with app.app_context():
     db.create_all()

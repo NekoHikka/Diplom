@@ -121,8 +121,8 @@
       <h2 style="text-align: center; margin-top: 0; margin-bottom: 25px">
         ✏️ Редагувати запис
       </h2>
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
       <form action="/edit/{{ t.id }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <label>Тип:</label>
         <select name="type" id="edit_type" required>
           <option value="Витрата">Витрата</option>

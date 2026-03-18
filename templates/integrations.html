@@ -28,7 +28,6 @@
         --input-bg: #ffffff;
       }
 
-      /* Ширина 1100px як на головній */
       body {
         background-color: var(--bg-color);
         color: var(--text-color);
@@ -198,43 +197,81 @@
           "
         >
           Автоматична синхронізація витрат та доходів з вашої чорної картки.
-          Безпечне з'єднання через офіційне API (Read-only).
+          Баланс та транзакції оновлюються автоматично (Read-only).
         </p>
 
-        <form
-          action="/sync_monobank"
-          method="POST"
-          style="display: flex; flex-direction: column; height: 100%"
-        >
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-
-          {% if not is_mono_connected %}
-          <input
-            type="password"
-            name="monobank_token"
-            placeholder="Вставте ваш API токен"
-            required
-          />
-          <div style="font-size: 12px; text-align: center; margin-bottom: 15px">
-            <a
-              href="https://api.monobank.ua/"
-              target="_blank"
-              style="color: #2196f3; text-decoration: none"
-              >🔑 Отримати токен</a
-            >
-          </div>
-          {% endif %}
-
-          <button
-            type="submit"
-            class="btn"
-            style="background-color: #ff3366; color: white; margin-top: auto"
+        <div style="display: flex; flex-direction: column; height: 100%">
+          {% if is_mono_connected %}
+          <form
+            action="/sync_monobank"
+            method="POST"
+            style="margin-top: auto; margin-bottom: 10px"
           >
-            {% if is_mono_connected %}🔄 Оновити дані за 3 дні{% else %}🔗
-            Підключити рахунок{% endif %}
-          </button>
-        </form>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <button
+              type="submit"
+              class="btn"
+              style="background-color: #ff3366; color: white; width: 100%"
+            >
+              🔄 Оновити дані за 3 дні
+            </button>
+          </form>
+
+          <form action="/unlink_monobank" method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <button
+              type="submit"
+              class="btn"
+              style="
+                background-color: transparent;
+                color: #ff4d4d;
+                border: 1px solid #ff4d4d;
+                width: 100%;
+              "
+              onclick="
+                return confirm(
+                  'Ви впевнені, що хочете відключити Monobank? Дані про минулі транзакції залишаться.',
+                );
+              "
+            >
+              ❌ Відв'язати рахунок
+            </button>
+          </form>
+          {% else %}
+          <form
+            action="/sync_monobank"
+            method="POST"
+            style="display: flex; flex-direction: column; height: 100%"
+          >
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <input
+              type="password"
+              name="monobank_token"
+              placeholder="Вставте ваш API токен"
+              required
+            />
+            <div
+              style="font-size: 12px; text-align: center; margin-bottom: 15px"
+            >
+              <a
+                href="https://api.monobank.ua/"
+                target="_blank"
+                style="color: #2196f3; text-decoration: none"
+                >🔑 Отримати токен</a
+              >
+            </div>
+            <button
+              type="submit"
+              class="btn"
+              style="background-color: #ff3366; color: white; margin-top: auto"
+            >
+              🔗 Підключити рахунок
+            </button>
+          </form>
+          {% endif %}
+        </div>
       </div>
+
       <div class="bank-card" style="border-top: 4px solid #7cb342">
         <div class="bank-header">
           <div class="bank-logo">🟩 ПриватБанк</div>
@@ -254,7 +291,12 @@
         <div style="margin-top: auto">
           <button
             class="btn"
-            style="background-color: #333; color: #888; cursor: not-allowed"
+            style="
+              background-color: #333;
+              color: #888;
+              cursor: not-allowed;
+              width: 100%;
+            "
             disabled
           >
             🚧 Очікує оновлення API
