@@ -685,16 +685,6 @@ def analytics():
                            is_shared_view=is_shared,
                            ai_response=ai_text) # <-- ПЕРЕДАЛИ ТЕКСТ У HTML
 
-@app.route('/unlink_monobank', methods=['POST'])
-@login_required
-def unlink_monobank():
-    token_record = MonobankToken.query.filter_by(user_id=current_user.id).first()
-    if token_record:
-        db.session.delete(token_record)
-        db.session.commit()
-    return redirect(url_for('integrations'))
-
-
 with app.app_context():
     db.create_all()
 
