@@ -626,7 +626,24 @@ def analytics():
         elif cat.lower() == 'транспорт' and percent > 15: recommendations.append("🚌 Високі витрати на транспорт.")
     if not recommendations and total_expense > 0: recommendations.append("✅ Витрати виглядають збалансовано.")
 
-    return render_template('analytics.html', top_category=top_category, top_category_amount=top_category_amount, recommendations=recommendations, budget_forecast=budget_forecast, projected_month_total=int(projected_month_total), smart_daily_avg=round(real_daily_avg, 1), trend_msg=trend_msg, trend_color=trend_color, total_expense=total_expense, labels=list(category_totals.keys()), values=list(category_totals.values()), username=current_user.username, is_shared_view=is_shared)
+    # --- 🤖 МАГІЯ ШІ: ДІСТАЄМО ТЕКСТ З СЕСІЇ ---
+    ai_text = session.pop('ai_response', None)
+
+    return render_template('analytics.html', 
+                           top_category=top_category, 
+                           top_category_amount=top_category_amount, 
+                           recommendations=recommendations, 
+                           budget_forecast=budget_forecast, 
+                           projected_month_total=int(projected_month_total), 
+                           smart_daily_avg=round(real_daily_avg, 1), 
+                           trend_msg=trend_msg, 
+                           trend_color=trend_color, 
+                           total_expense=total_expense, 
+                           labels=list(category_totals.keys()), 
+                           values=list(category_totals.values()), 
+                           username=current_user.username, 
+                           is_shared_view=is_shared,
+                           ai_response=ai_text) # <-- ПЕРЕДАЛИ ТЕКСТ У HTML
 
 with app.app_context():
     db.create_all()
