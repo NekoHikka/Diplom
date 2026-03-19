@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>Спільний Бюджет - Розумні Фінанси</title>
+    <title>Спільний Бюджет - Запрошення</title>
     <link
       rel="icon"
       type="image/png"
@@ -23,6 +23,9 @@
         --text-color: #ffffff;
         --border-color: #333333;
         --input-bg: #2a2a2a;
+        --input-text: #ffffff;
+        --input-border: #444444;
+        color-scheme: dark;
       }
       [data-theme="light"] {
         --bg-color: #f4f4f9;
@@ -30,6 +33,9 @@
         --text-color: #333333;
         --border-color: #dddddd;
         --input-bg: #ffffff;
+        --input-text: #333333;
+        --input-border: #cccccc;
+        color-scheme: light;
       }
       body {
         background-color: var(--bg-color);
@@ -42,10 +48,11 @@
       }
       .card {
         background-color: var(--card-bg);
-        padding: 30px;
+        padding: 20px;
         border-radius: 10px;
         border: 1px solid var(--border-color);
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
       }
       .btn {
         padding: 10px 15px;
@@ -64,23 +71,67 @@
         transform: translateY(-1px);
       }
       input {
-        background: var(--input-bg);
-        color: var(--text-color);
-        border: 1px solid var(--border-color);
+        background-color: var(--input-bg);
+        color: var(--input-text);
+        border: 1px solid var(--input-border);
         border-radius: 8px;
-        padding: 12px;
-        width: 100%;
-        box-sizing: border-box;
-        font-size: 16px;
+        padding: 10px 12px;
+        font-size: 15px;
         outline: none;
+        box-sizing: border-box;
+        width: 100%;
         margin-bottom: 10px;
       }
       input:focus {
         border-color: #2196f3;
       }
-      /* 📱 МОБІЛЬНА АДАПТАЦІЯ (АЛЬФА-ВЕРСІЯ) */
+
+      /* УНІВЕРСАЛЬНЕ МЕНЮ */
+      .top-menu {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+        padding: 15px;
+      }
+      .user-greeting {
+        font-weight: bold;
+        font-size: 16px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 200px;
+        padding-right: 10px;
+      }
+      .nav-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 40px;
+        padding: 0 15px;
+        border-radius: 8px;
+        font-weight: bold;
+        text-decoration: none;
+        transition: 0.2s;
+        box-sizing: border-box;
+        white-space: nowrap;
+        border: none;
+        cursor: pointer;
+        background-color: var(--input-bg);
+        color: var(--text-color);
+        font-size: 14px;
+      }
+      .nav-btn:hover {
+        filter: brightness(1.2);
+      }
+      .nav-btn.active-shared {
+        background-color: #2196f3;
+        color: white;
+      }
+
+      /* МОБІЛЬНА АДАПТАЦІЯ */
       @media (max-width: 768px) {
-        /* Зменшуємо відступи по краях екрана */
         body {
           padding: 10px;
           margin: 0;
@@ -89,190 +140,166 @@
           padding: 15px;
           margin-bottom: 15px;
         }
-
-        /* Всі сітки (графіки, статистика) стають в одну колонку */
-        .grid {
-          grid-template-columns: 1fr;
-          gap: 15px;
+        .top-menu {
+          flex-wrap: nowrap !important;
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+          justify-content: flex-start !important;
+          padding-bottom: 10px;
+          gap: 10px !important;
         }
-
-        /* Робимо верхнє меню зручним для пальців */
-        .no-print {
-          flex-direction: column;
-          align-items: stretch !important;
-          gap: 10px;
-          text-align: center;
+        .top-menu::-webkit-scrollbar {
+          display: none;
         }
-        .no-print a,
-        .no-print span {
-          margin-right: 0 !important;
-          width: 100%;
-          display: block;
-          padding: 10px 0;
-          background-color: var(--input-bg);
-          border-radius: 8px;
+        .top-menu > * {
+          flex-shrink: 0;
         }
-        .no-print div {
-          flex-direction: column;
-          width: 100%;
-          gap: 10px;
+        .top-menu .right-buttons {
           margin-left: 0 !important;
+          display: flex;
+          gap: 10px;
+          flex-shrink: 0;
         }
-        .no-print button,
-        .no-print a.btn {
-          width: 100%;
-          box-sizing: border-box;
-        }
-
-        /* Елементи форм і пульту ШІ */
-        form > div {
+        .invite-actions {
           flex-direction: column;
-          align-items: stretch !important;
-        }
-        select,
-        input {
-          width: 100% !important;
-          margin-top: 5px;
-        }
-
-        /* Кнопки ШІ стають одна під одною */
-        form .btn {
           width: 100%;
-          flex: none;
+          gap: 10px;
+          margin-top: 15px;
+        }
+        .invite-actions a {
+          width: 100%;
         }
       }
     </style>
   </head>
   <body>
-    <div
-      class="card no-print"
-      style="
-        display: flex;
-        gap: 15px;
-        align-items: center;
-        flex-wrap: wrap;
-        margin-bottom: 20px;
-        padding: 20px;
-      "
-    >
-      <span style="font-weight: bold; font-size: 18px; margin-right: 20px"
-        >👤 Привіт, {{ username }}!</span
-      >
-
-      <a
-        href="/"
-        style="color: {% if request.path == '/' %}#4caf50{% else %}#888{% endif %}; text-decoration: none; font-weight: bold"
-        >🏠 Особистий</a
-      >
-      <a
-        href="/shared"
-        style="color: {% if request.path == '/shared' %}#2196F3{% else %}#888{% endif %}; text-decoration: none; font-weight: bold"
-        >🤝 Спільний</a
-      >
-      <a
-        href="/analytics"
-        style="color: {% if request.path == '/analytics' %}#9c27b0{% else %}#888{% endif %}; text-decoration: none; font-weight: bold"
-        >🧠 Аналітика</a
-      >
-      <a
-        href="/integrations"
-        style="color: {% if request.path == '/integrations' %}#ff9800{% else %}#888{% endif %}; text-decoration: none; font-weight: bold"
-        >🏦 Інтеграції</a
-      >
-
-      <div
-        style="margin-left: auto; display: flex; gap: 10px; align-items: center"
-      >
+    <div class="card no-print top-menu">
+      <div class="user-greeting" title="Привіт, {{ username }}!">
+        👤 {{ username }}
+      </div>
+      <a href="/" class="nav-btn">🏠 Особистий</a>
+      <a href="/shared" class="nav-btn active-shared">🤝 Спільний</a>
+      <a href="/analytics" class="nav-btn">🧠 Аналітика</a>
+      <a href="/integrations" class="nav-btn">🏦 Інтеграції</a>
+      <div class="right-buttons" style="margin-left: auto">
         <button
           onclick="toggleTheme()"
-          class="btn"
+          class="nav-btn"
           style="background-color: #ff9800; color: white"
         >
           🌓 Тема
         </button>
         <a
           href="/logout"
-          class="btn"
-          style="background-color: #ff4d4d; color: white !important"
+          class="nav-btn"
+          style="background-color: #ff4d4d; color: white"
           >🚪 Вийти</a
         >
       </div>
     </div>
 
-    <div
-      class="card"
-      style="text-align: center; max-width: 500px; margin: 50px auto"
+    <h2 style="text-align: center; color: #2196f3">🤝 Спільний Бюджет</h2>
+    <p
+      style="
+        text-align: center;
+        color: #888;
+        max-width: 600px;
+        margin: 0 auto 30px auto;
+      "
     >
-      <h2 style="color: #2196f3; margin-top: 0">🤝 Спільний Бюджет</h2>
+      Тут ви можете вести спільну бухгалтерію з партнером, родичем або другом.
+      Ваші особисті фінанси залишаться приватними.
+    </p>
 
-      {% if sent_invite %}
-      <p style="font-size: 16px; line-height: 1.5">
-        Ви відправили запрошення користувачу
-        <strong style="color: #4caf50">{{ receiver.username }}</strong>.
-      </p>
-      <p
+    <div style="max-width: 500px; margin: 0 auto">
+      {% if error %}
+      <div
         style="
-          color: #aaa;
-          margin-bottom: 30px;
-          font-size: 14px;
-          line-height: 1.5;
+          background-color: rgba(255, 77, 77, 0.1);
+          border: 1px solid #ff4d4d;
+          color: #ff4d4d;
+          padding: 15px;
+          border-radius: 8px;
+          margin-bottom: 20px;
+          text-align: center;
         "
       >
-        Очікуємо на його підтвердження. Він побачить ваше запрошення на своїй
-        Головній сторінці.
-      </p>
-      <a
-        href="/reject_invite/{{ sent_invite.id }}"
-        class="btn"
-        style="background-color: #ff4d4d; color: white; width: 100%"
-        >Скасувати запрошення</a
+        {{ error }}
+      </div>
+      {% endif %} {% if pending_invite %}
+      <div
+        class="card"
+        style="border-top: 4px solid #4caf50; text-align: center"
       >
-      {% else %}
-      <p
-        style="
-          margin-bottom: 25px;
-          font-size: 14px;
-          color: #aaa;
-          line-height: 1.5;
-        "
-      >
-        Запросіть партнера, друга або члена сім'ї, щоб вести спільні рахунки,
-        цілі та витрати. Це ідеально для планування сімейного бюджету!
-      </p>
-
-      <form
-        action="/send_invite"
-        method="POST"
-        style="display: flex; flex-direction: column"
-      >
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-
-        <input
-          type="text"
-          name="username"
-          placeholder="Введіть нікнейм користувача"
-          required
-        />
-        {% if error %}
-        <span
-          style="
-            color: #ff4d4d;
-            font-weight: bold;
-            font-size: 13px;
-            margin-bottom: 10px;
-            display: block;
-          "
-          >{{ error }}</span
+        <h3 style="margin-top: 0; color: #4caf50">Вхідне запрошення!</h3>
+        <p>
+          Користувач <strong>{{ invite_sender.username }}</strong> пропонує вам
+          вести спільний бюджет.
+        </p>
+        <div
+          class="invite-actions"
+          style="display: flex; gap: 10px; justify-content: center"
         >
-        {% endif %}
-        <button
-          type="submit"
+          <a
+            href="/accept_invite/{{ pending_invite.id }}"
+            class="btn"
+            style="background-color: #4caf50; color: white; flex: 1"
+            >✅ Прийняти</a
+          >
+          <a
+            href="/reject_invite/{{ pending_invite.id }}"
+            class="btn"
+            style="background-color: #ff4d4d; color: white; flex: 1"
+            >❌ Відхилити</a
+          >
+        </div>
+      </div>
+      {% elif sent_invite %}
+      <div
+        class="card"
+        style="border-top: 4px solid #ff9800; text-align: center"
+      >
+        <h3 style="margin-top: 0; color: #ff9800">Запрошення надіслано!</h3>
+        <p>Ви запросили <strong>{{ receiver.username }}</strong>.</p>
+        <p style="color: #aaa; font-size: 14px">
+          Очікуємо на підтвердження від користувача...
+        </p>
+        <a
+          href="/reject_invite/{{ sent_invite.id }}"
           class="btn"
-          style="background-color: #2196f3; color: white; margin-top: 10px"
+          style="background-color: #ff4d4d; color: white; margin-top: 10px"
+          >Скасувати запрошення</a
         >
-          Відправити запрошення
-        </button>
-      </form>
+      </div>
+      {% else %}
+      <div class="card" style="border-top: 4px solid #2196f3">
+        <h3 style="margin-top: 0">Надіслати запрошення</h3>
+        <form action="/send_invite" method="POST">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <label
+            style="
+              font-size: 14px;
+              color: #aaa;
+              margin-bottom: 5px;
+              display: block;
+            "
+            >Логін партнера:</label
+          >
+          <input
+            type="text"
+            name="username"
+            placeholder="Введіть логін..."
+            required
+          />
+          <button
+            type="submit"
+            class="btn"
+            style="background-color: #2196f3; color: white; width: 100%"
+          >
+            Надіслати 🚀
+          </button>
+        </form>
+      </div>
       {% endif %}
     </div>
 
