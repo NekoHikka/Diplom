@@ -41,49 +41,73 @@
         background-color: var(--bg-color);
         color: var(--text-color);
         font-family: Arial, sans-serif;
-        text-align: center;
-        padding-top: 50px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        padding: 15px;
+        box-sizing: border-box;
       }
       .card {
         background-color: var(--card-bg);
         padding: 30px;
         border-radius: 12px;
         border: 1px solid var(--border-color);
-        display: inline-block;
-        text-align: left;
-        width: 350px;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        width: 100%;
+        max-width: 400px;
       }
+
       .btn {
-        padding: 10px;
-        color: white;
+        padding: 14px;
         border: none;
-        border-radius: 6px;
+        border-radius: 8px;
         cursor: pointer;
-        flex: 1;
         font-weight: bold;
-        text-decoration: none;
+        width: 100%;
+        color: white;
+        font-size: 15px;
+        display: inline-block;
         text-align: center;
+        text-decoration: none;
+        box-sizing: border-box;
+        transition: 0.2s;
       }
-      input {
+      .btn:hover {
+        opacity: 0.8;
+      }
+
+      input,
+      select {
         background-color: var(--input-bg);
-        color: var(--text-color);
+        color: var(--input-text);
         border: 1px solid var(--input-border);
         border-radius: 8px;
-        padding: 10px 12px;
+        padding: 14px;
         font-size: 15px;
         outline: none;
         width: 100%;
         box-sizing: border-box;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
+        transition: 0.2s;
+        cursor: text;
       }
+      input:focus,
+      select:focus {
+        border-color: #2196f3;
+        box-shadow: 0 0 8px rgba(33, 150, 243, 0.4);
+        background-color: var(--card-bg);
+      }
+
       label {
-        font-size: 14px;
-        font-weight: bold;
-        margin-bottom: 5px;
         display: block;
-        opacity: 0.8;
+        margin-bottom: 5px;
+        color: #aaa;
+        font-size: 13px;
+        font-weight: bold;
       }
+
       .acc-pill {
         background-color: var(--input-bg);
         border: 1px solid var(--border-color);
@@ -94,92 +118,35 @@
         user-select: none;
         transition: 0.2s;
         color: var(--text-color);
+        margin-bottom: 5px;
       }
       .acc-pill.active {
         background-color: #2196f3;
         color: white;
         border-color: #2196f3;
       }
-      /* 📱 МОБІЛЬНА АДАПТАЦІЯ (АЛЬФА-ВЕРСІЯ) */
-      @media (max-width: 768px) {
-        /* Зменшуємо відступи по краях екрана */
-        body {
-          padding: 10px;
-          margin: 0;
-        }
-        .card {
-          padding: 15px;
-          margin-bottom: 15px;
-        }
-
-        /* Всі сітки (графіки, статистика) стають в одну колонку */
-        .grid {
-          grid-template-columns: 1fr;
-          gap: 15px;
-        }
-
-        /* Робимо верхнє меню зручним для пальців */
-        .no-print {
-          flex-direction: column;
-          align-items: stretch !important;
-          gap: 10px;
-          text-align: center;
-        }
-        .no-print a,
-        .no-print span {
-          margin-right: 0 !important;
-          width: 100%;
-          display: block;
-          padding: 10px 0;
-          background-color: var(--input-bg);
-          border-radius: 8px;
-        }
-        .no-print div {
-          flex-direction: column;
-          width: 100%;
-          gap: 10px;
-          margin-left: 0 !important;
-        }
-        .no-print button,
-        .no-print a.btn {
-          width: 100%;
-          box-sizing: border-box;
-        }
-
-        /* Елементи форм і пульту ШІ */
-        form > div {
-          flex-direction: column;
-          align-items: stretch !important;
-        }
-        select,
-        input {
-          width: 100% !important;
-          margin-top: 5px;
-        }
-
-        /* Кнопки ШІ стають одна під одною */
-        form .btn {
-          width: 100%;
-          flex: none;
-        }
-      }
     </style>
   </head>
   <body>
     <div class="card">
-      <h2 style="text-align: center; margin-top: 0; margin-bottom: 25px">
+      <h2 style="text-align: center; margin-top: 0; color: #2196f3">
         🎯 Редагувати ціль
       </h2>
+
       <form action="/edit_goal/{{ g.id }}" method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
         <label>Назва цілі:</label>
         <input type="text" name="name" value="{{ g.name }}" required />
+
         <label>Необхідна сума (грн):</label>
         <input
-          type="number"
+          type="text"
+          inputmode="numeric"
           name="target_amount"
-          value="{{ g.target_amount }}"
+          value="{{ g.target_amount | int }}"
           required
+          oninput="this.value = this.value.replace(/[^0-9]/g, '')"
         />
 
         <label>Звідки рахувати гроші:</label>
@@ -225,10 +192,15 @@
         </div>
 
         <div style="display: flex; gap: 10px">
+          <a
+            href="javascript:history.back()"
+            class="btn"
+            style="background-color: #555"
+            >Скасувати</a
+          >
           <button type="submit" class="btn" style="background-color: #2196f3">
             Зберегти
           </button>
-          <a href="/" class="btn" style="background-color: #555">Скасувати</a>
         </div>
       </form>
     </div>

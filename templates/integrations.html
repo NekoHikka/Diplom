@@ -23,6 +23,8 @@
         --text-color: #ffffff;
         --border-color: #333333;
         --input-bg: #2a2a2a;
+        --input-text: #ffffff;
+        --input-border: #444444;
         color-scheme: dark;
       }
       [data-theme="light"] {
@@ -31,9 +33,10 @@
         --text-color: #333333;
         --border-color: #dddddd;
         --input-bg: #ffffff;
+        --input-text: #333333;
+        --input-border: #cccccc;
         color-scheme: light;
       }
-
       body {
         background-color: var(--bg-color);
         color: var(--text-color);
@@ -68,7 +71,6 @@
         transform: translateY(-1px);
       }
 
-      /* ДИЗАЙН БАНКІВСЬКИХ КАРТОК */
       .integration-grid {
         display: flex;
         gap: 20px;
@@ -114,29 +116,60 @@
         color: #aaa;
         border: 1px solid #888;
       }
+
       input {
-        width: 100%;
-        padding: 12px;
-        margin-bottom: 15px;
+        background-color: var(--input-bg);
+        color: var(--input-text);
+        border: 1px solid var(--input-border);
         border-radius: 8px;
-        border: 1px solid var(--border-color);
-        background: var(--input-bg);
-        color: var(--text-color);
-        box-sizing: border-box;
+        padding: 10px 12px;
+        font-size: 15px;
         outline: none;
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+        width: 100%;
       }
       input:focus {
         border-color: #4caf50;
+        box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
+        background-color: var(--card-bg);
       }
 
-      /* --- ІДЕАЛЬНЕ УНІВЕРСАЛЬНЕ МЕНЮ --- */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background-color: var(--input-bg);
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background-color: var(--border-color);
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background-color: var(--input-border);
+      }
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--border-color) var(--input-bg);
+      }
+
+      /* --- ІДЕАЛЬНЕ ФІКСОВАНЕ МЕНЮ --- */
       .top-menu {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
         display: flex;
-        gap: 10px;
-        align-items: center;
-        flex-wrap: wrap;
-        margin-bottom: 20px;
+        flex-direction: row;
+        gap: 15px;
         padding: 15px;
+        background-color: var(--card-bg);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        margin-top: -20px;
+        border-radius: 0 0 10px 10px;
+        border-top: none;
+        align-items: center;
       }
       .user-greeting {
         font-weight: bold;
@@ -146,6 +179,10 @@
         text-overflow: ellipsis;
         max-width: 200px;
         padding-right: 10px;
+        display: flex;
+        align-items: center;
+        height: 40px; /* Рівняємо по висоті з кнопками */
+        margin: 0;
       }
       .nav-btn {
         display: inline-flex;
@@ -185,7 +222,7 @@
         color: white;
       }
 
-      /* 📱 МОБІЛЬНА АДАПТАЦІЯ */
+      /* --- МОБІЛЬНА АДАПТАЦІЯ --- */
       @media (max-width: 768px) {
         body {
           padding: 10px;
@@ -194,32 +231,37 @@
         .card,
         .bank-card {
           padding: 15px;
-          margin-bottom: 15px;
-          max-width: 100%;
+          margin-bottom: 12px;
         }
 
+        /* МЕНЮ НА ТЕЛЕФОНІ */
         .top-menu {
-          flex-wrap: nowrap !important;
-          overflow-x: auto;
-          -webkit-overflow-scrolling: touch;
-          justify-content: flex-start !important;
-          padding-bottom: 10px;
-          gap: 10px !important;
+          flex-direction: column;
+          top: 0;
+          margin-top: 0;
+          padding: 10px;
+          align-items: stretch;
         }
-        .top-menu::-webkit-scrollbar {
-          display: none;
+        .user-greeting {
+          max-width: 100%;
+          text-align: center;
+          margin-bottom: 5px;
+          padding-right: 0;
+          justify-content: center;
         }
-        .top-menu > * {
-          flex-shrink: 0;
+        .top-menu > a.nav-btn {
+          width: 100%;
+          margin-bottom: 5px;
         }
         .top-menu .right-buttons {
           margin-left: 0 !important;
           display: flex;
           gap: 10px;
-          flex-shrink: 0;
+          width: 100%;
+          flex-direction: row;
         }
-        .user-greeting {
-          max-width: 120px;
+        .top-menu .right-buttons > * {
+          flex: 1;
         }
 
         .integration-grid {
@@ -248,7 +290,7 @@
         >🤝 Спільний</a
       >
       <a
-        href="/analytics"
+        href="/analytics{% if is_shared_view %}?shared=1{% endif %}"
         class="nav-btn {% if request.path == '/analytics' %}active-analytics{% endif %}"
         >🧠 Аналітика</a
       >
@@ -257,6 +299,7 @@
         class="nav-btn {% if request.path == '/integrations' %}active-integrations{% endif %}"
         >🏦 Інтеграції</a
       >
+
       <div class="right-buttons" style="margin-left: auto">
         <button
           onclick="toggleTheme()"
@@ -345,6 +388,7 @@
               name="monobank_token"
               placeholder="Вставте ваш API токен"
               required
+              style="margin-bottom: 10px"
             />
             <div
               style="font-size: 12px; text-align: center; margin-bottom: 15px"

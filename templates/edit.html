@@ -41,75 +41,84 @@
         background-color: var(--bg-color);
         color: var(--text-color);
         font-family: Arial, sans-serif;
-        text-align: center;
-        padding-top: 50px;
-        transition: 0.3s;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+        padding: 15px;
+        box-sizing: border-box;
       }
       .card {
         background-color: var(--card-bg);
         padding: 30px;
         border-radius: 12px;
         border: 1px solid var(--border-color);
-        display: inline-block;
-        text-align: left;
-        width: 350px;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        width: 100%;
+        max-width: 400px;
       }
+
       .btn {
-        padding: 10px;
-        color: white;
+        padding: 14px;
         border: none;
-        border-radius: 6px;
+        border-radius: 8px;
         cursor: pointer;
-        flex: 1;
         font-weight: bold;
-        text-decoration: none;
+        width: 100%;
+        color: white;
+        font-size: 15px;
+        display: inline-block;
         text-align: center;
+        text-decoration: none;
+        box-sizing: border-box;
         transition: 0.2s;
       }
       .btn:hover {
-        opacity: 0.9;
+        opacity: 0.8;
       }
+
       input,
       select {
         background-color: var(--input-bg);
         color: var(--input-text);
         border: 1px solid var(--input-border);
         border-radius: 8px;
-        padding: 10px 12px;
+        padding: 14px;
         font-size: 15px;
         outline: none;
-        transition: all 0.3s ease;
-        box-sizing: border-box;
         width: 100%;
+        box-sizing: border-box;
         margin-bottom: 15px;
+        transition: 0.2s;
+        cursor: text;
       }
       input:focus,
       select:focus {
         border-color: #4caf50;
+        box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
+        background-color: var(--card-bg);
       }
+
       label {
-        color: var(--text-color);
-        font-size: 14px;
-        font-weight: bold;
-        margin-bottom: 5px;
         display: block;
-        opacity: 0.8;
+        margin-bottom: 5px;
+        color: #aaa;
+        font-size: 13px;
+        font-weight: bold;
       }
+
       select {
         appearance: none;
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='gray' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
         background-repeat: no-repeat;
         background-position: right 12px center;
         background-size: 16px;
+        padding-right: 35px !important;
+        cursor: pointer;
       }
       [data-theme="light"] select {
         background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-      }
-      input[type="number"]::-webkit-outer-spin-button,
-      input[type="number"]::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
       }
       ::-webkit-calendar-picker-indicator {
         filter: invert(1);
@@ -118,88 +127,49 @@
       [data-theme="light"] ::-webkit-calendar-picker-indicator {
         filter: none;
       }
-      /* 📱 МОБІЛЬНА АДАПТАЦІЯ (АЛЬФА-ВЕРСІЯ) */
-      @media (max-width: 768px) {
-        /* Зменшуємо відступи по краях екрана */
-        body {
-          padding: 10px;
-          margin: 0;
-        }
-        .card {
-          padding: 15px;
-          margin-bottom: 15px;
-        }
-
-        /* Всі сітки (графіки, статистика) стають в одну колонку */
-        .grid {
-          grid-template-columns: 1fr;
-          gap: 15px;
-        }
-
-        /* Робимо верхнє меню зручним для пальців */
-        .no-print {
-          flex-direction: column;
-          align-items: stretch !important;
-          gap: 10px;
-          text-align: center;
-        }
-        .no-print a,
-        .no-print span {
-          margin-right: 0 !important;
-          width: 100%;
-          display: block;
-          padding: 10px 0;
-          background-color: var(--input-bg);
-          border-radius: 8px;
-        }
-        .no-print div {
-          flex-direction: column;
-          width: 100%;
-          gap: 10px;
-          margin-left: 0 !important;
-        }
-        .no-print button,
-        .no-print a.btn {
-          width: 100%;
-          box-sizing: border-box;
-        }
-
-        /* Елементи форм і пульту ШІ */
-        form > div {
-          flex-direction: column;
-          align-items: stretch !important;
-        }
-        select,
-        input {
-          width: 100% !important;
-          margin-top: 5px;
-        }
-
-        /* Кнопки ШІ стають одна під одною */
-        form .btn {
-          width: 100%;
-          flex: none;
-        }
-      }
     </style>
   </head>
   <body>
     <div class="card">
-      <h2 style="text-align: center; margin-top: 0; margin-bottom: 25px">
+      <h2
+        style="
+          text-align: center;
+          margin-top: 0;
+          margin-bottom: 25px;
+          color: #4caf50;
+        "
+      >
         ✏️ Редагувати запис
       </h2>
+
       <form action="/edit/{{ t.id }}" method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        <label>Тип:</label>
-        <select name="type" id="edit_type" required>
-          <option value="Витрата">Витрата</option>
-          <option value="Дохід">Дохід</option>
-        </select>
+
+        <div style="display: flex; gap: 10px">
+          <div style="flex: 1">
+            <label>Тип:</label>
+            <select name="type" id="edit_type" required>
+              <option value="Витрата">Витрата</option>
+              <option value="Дохід">Дохід</option>
+            </select>
+          </div>
+          <div style="flex: 1">
+            <label>Сума (грн):</label>
+            <input
+              type="text"
+              inputmode="numeric"
+              name="amount"
+              value="{{ t.amount | int }}"
+              required
+              oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+            />
+          </div>
+        </div>
 
         <label>Рахунок:</label>
         <select name="account_id" id="edit_account" required>
           {% for acc in accounts %}
-          <option value="{{ acc.id }}">💳 {{ acc.name }}</option>
+          <option value="{{ acc.id }}">{{ acc.name }}</option>
           {% endfor %}
         </select>
 
@@ -214,23 +184,19 @@
           required
         />
 
-        <label>Сума (грн):</label>
-        <input
-          type="number"
-          name="amount"
-          step="0.01"
-          value="{{ t.amount }}"
-          required
-        />
-
         <label>Опис:</label>
         <input type="text" name="description" value="{{ t.description }}" />
 
         <div style="display: flex; gap: 10px; margin-top: 10px">
+          <a
+            href="javascript:history.back()"
+            class="btn"
+            style="background-color: #555"
+            >Скасувати</a
+          >
           <button type="submit" class="btn" style="background-color: #4caf50">
             Зберегти
           </button>
-          <a href="/" class="btn" style="background-color: #555">Скасувати</a>
         </div>
       </form>
     </div>

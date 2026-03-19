@@ -89,10 +89,11 @@
         transition: all 0.3s ease;
         box-sizing: border-box;
         cursor: pointer;
+        width: 100%;
       }
       select {
         appearance: none;
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='gray' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
         background-repeat: no-repeat;
         background-position: right 12px center;
         background-size: 16px;
@@ -123,14 +124,20 @@
         background-color: var(--input-border);
       }
 
-      /* --- ІДЕАЛЬНЕ УНІВЕРСАЛЬНЕ МЕНЮ --- */
       .top-menu {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
         display: flex;
-        gap: 10px;
-        align-items: center;
-        flex-wrap: wrap;
-        margin-bottom: 20px;
+        flex-direction: row;
+        gap: 15px;
         padding: 15px;
+        background-color: var(--card-bg);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        margin-top: -20px;
+        border-radius: 0 0 10px 10px;
+        border-top: none;
+        align-items: center;
       }
       .user-greeting {
         font-weight: bold;
@@ -140,6 +147,10 @@
         text-overflow: ellipsis;
         max-width: 200px;
         padding-right: 10px;
+        display: flex;
+        align-items: center;
+        height: 40px;
+        margin: 0;
       }
       .nav-btn {
         display: inline-flex;
@@ -179,7 +190,6 @@
         color: white;
       }
 
-      /* --- МОБІЛЬНА АДАПТАЦІЯ ДЛЯ ВСІХ СТОРІНОК --- */
       @media (max-width: 768px) {
         body {
           padding: 10px;
@@ -195,27 +205,32 @@
         }
 
         .top-menu {
-          flex-wrap: nowrap !important;
-          overflow-x: auto;
-          -webkit-overflow-scrolling: touch;
-          justify-content: flex-start !important;
-          padding-bottom: 10px;
-          gap: 10px !important;
+          flex-direction: column;
+          top: 0;
+          margin-top: 0;
+          padding: 10px;
+          align-items: stretch;
         }
-        .top-menu::-webkit-scrollbar {
-          display: none;
+        .user-greeting {
+          max-width: 100%;
+          text-align: center;
+          margin-bottom: 5px;
+          padding-right: 0;
+          justify-content: center;
         }
-        .top-menu > * {
-          flex-shrink: 0;
+        .top-menu > a.nav-btn {
+          width: 100%;
+          margin-bottom: 5px;
         }
         .top-menu .right-buttons {
           margin-left: 0 !important;
           display: flex;
           gap: 10px;
-          flex-shrink: 0;
+          width: 100%;
+          flex-direction: row;
         }
-        .user-greeting {
-          max-width: 120px;
+        .top-menu .right-buttons > * {
+          flex: 1;
         }
 
         .card form > div[style*="display: flex"],
@@ -224,7 +239,7 @@
           align-items: stretch !important;
           gap: 10px !important;
         }
-        input:not([type="hidden"]):not([type="checkbox"]),
+        input:not([type="hidden"]),
         select,
         .btn {
           width: 100% !important;
@@ -258,6 +273,7 @@
         class="nav-btn {% if request.path == '/integrations' %}active-integrations{% endif %}"
         >🏦 Інтеграції</a
       >
+
       <div class="right-buttons" style="margin-left: auto">
         <button
           onclick="toggleTheme()"
@@ -361,18 +377,22 @@
             align-items: center;
           "
         >
-          <div style="display: flex; align-items: center; gap: 10px">
-            <strong>Враховувати дані за:</strong>
-            <select name="period" style="width: 200px">
+          <div
+            style="display: flex; align-items: center; gap: 10px; width: 100%"
+          >
+            <strong style="white-space: nowrap">Період:</strong>
+            <select name="period" style="flex: 1">
               <option value="7">Останні 7 днів</option>
               <option value="30" selected>Останні 30 днів</option>
               <option value="90">Останні 90 днів</option>
               <option value="365">Останній рік</option>
             </select>
           </div>
-          <div style="display: flex; align-items: center; gap: 10px">
-            <strong>Бюджет:</strong>
-            <select name="budget_type" style="width: 200px">
+          <div
+            style="display: flex; align-items: center; gap: 10px; width: 100%"
+          >
+            <strong style="white-space: nowrap">Бюджет:</strong>
+            <select name="budget_type" style="flex: 1">
               <option value="personal" selected>Особистий</option>
               <option
                 value="shared"
@@ -473,19 +493,30 @@
     </div>
 
     <div class="card" style="text-align: center">
-      <h3 style="margin-top: 0">Розподіл витрат (Поточний місяць)</h3>
+      <h3 style="margin-top: 0; margin-bottom: 15px">Розподіл витрат 📊</h3>
       {% if values|length > 0 %}
       <div
         style="
-          position: relative;
+          display: flex;
+          justify-content: center;
+          align-items: center;
           width: 100%;
-          max-width: 400px;
-          height: 300px;
-          margin: auto;
         "
       >
-        <canvas id="analyticsChart"></canvas>
+        <div
+          style="
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+          "
+        >
+          <canvas id="analyticsChart"></canvas>
+        </div>
       </div>
+      <p style="font-size: 12px; color: #aaa; margin-top: 15px">
+        *Наведіть на сектор, щоб побачити %
+      </p>
       {% else %}
       <p style="color: #aaa; padding: 40px 0">
         Немає витрат для побудови графіка.
@@ -505,10 +536,33 @@
       const data = {{ values | tojson | safe }};
 
       if (labels.length > 0) {
+          const totalSum = data.reduce((a, b) => a + b, 0);
           new Chart(document.getElementById('analyticsChart').getContext('2d'), {
               type: 'doughnut',
-              data: { labels: labels, datasets: [{ data: data, backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8BC34A', '#E91E63'], borderWidth: 0 }] },
-              options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: document.documentElement.getAttribute('data-theme') === 'light' ? '#333' : '#fff' } } } }
+              data: {
+                  labels: labels,
+                  datasets: [{
+                      data: data,
+                      backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8BC34A', '#E91E63'],
+                      borderWidth: 0
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                      legend: { position: 'bottom', labels: { color: document.documentElement.getAttribute('data-theme') === 'light' ? '#333' : '#fff' } },
+                      tooltip: {
+                          callbacks: {
+                              label: function(context) {
+                                  let value = Math.round(context.parsed);
+                                  let percentage = ((context.parsed / totalSum) * 100).toFixed(1);
+                                  return context.label + ': ' + value.toLocaleString('uk-UA') + ' ₴ (' + percentage + '%)';
+                              }
+                          }
+                      }
+                  }
+              }
           });
       }
     </script>

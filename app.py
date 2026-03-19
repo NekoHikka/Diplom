@@ -195,9 +195,20 @@ def accept_invite(id):
     p = Partnership.query.get_or_404(id)
     if p.user2_id == current_user.id:
         p.status = 'accepted'
-        db.session.add(Account(name="Спільна Картка", balance=0.0, user_id=p.user1_id, is_shared=True))
-        cats = [('🍔 Спільна Їжа', 'Витрата'), ('🏠 Оренда', 'Витрата'), ('🛒 Продукти', 'Витрата'), ('💰 Загальний Дохід', 'Дохід')]
-        for n, t in cats: db.session.add(Category(name=n, type=t, user_id=p.user1_id, is_shared=True))
+        
+        # 1. ПЕРЕВІРЯЄМО, чи є вже створений спільний рахунок у партнера
+        existing_account = Account.query.filter_by(user_id=p.user1_id, is_shared=True).first()
+        if not existing_account:
+            # Якщо немає - створюємо новий ЗІ СМАЙЛИКОМ
+            db.session.add(Account(name="💳 Спільна Картка", balance=0.0, user_id=p.user1_id, is_shared=True))
+            
+        # 2. ПЕРЕВІРЯЄМО, чи є вже створені спільні категорії
+        existing_categories = Category.query.filter_by(user_id=p.user1_id, is_shared=True).first()
+        if not existing_categories:
+            cats = [('🍔 Спільна Їжа', 'Витрата'), ('🏠 Оренда', 'Витрата'), ('🛒 Продукти', 'Витрата'), ('💰 Загальний Дохід', 'Дохід')]
+            for n, t in cats: 
+                db.session.add(Category(name=n, type=t, user_id=p.user1_id, is_shared=True))
+                
         db.session.commit()
     return redirect(url_for('shared_budget'))
 
@@ -570,14 +581,18 @@ def sync_monobank():
             main_card = accounts_data[0]
             real_balance = main_card.get('balance', 0) / 100.0  # Монобанк віддає баланс у копійках
             
-            # Шукаємо рахунок Монобанку в базі або створюємо новий
-            mono_account = Account.query.filter_by(user_id=current_user.id, name='Monobank').first()
+            # Шукаємо рахунок Монобанку в базі ЗІ СМАЙЛИКОМ!
+            account_name = '💳 Monobank'
+            mono_account = Account.query.filter_by(user_id=current_user.id, name=account_name).first()
+            
             if not mono_account:
-                mono_account = Account(name='Monobank', balance=real_balance, user_id=current_user.id)
+                # Якщо немає - створюємо ЗІ СМАЙЛИКОМ
+                mono_account = Account(name=account_name, balance=real_balance, user_id=current_user.id)
                 db.session.add(mono_account)
                 db.session.commit()
             else:
-                mono_account.balance = real_balance # Підсмоктуємо реальний баланс з картки!
+                # Оновлюємо баланс існуючого
+                mono_account.balance = real_balance
                 db.session.commit()
             
             account_db_id = mono_account.id
@@ -601,13 +616,14 @@ def sync_monobank():
                     t_desc = t.get('description', 'Monobank')
                     t_date = datetime.fromtimestamp(t.get('time'))
                     
-                    # Перевірка на дублікат, щоб не записувати одне й те саме двічі
+                    # Перевірка на дублікат (додана перевірка по даті)
                     existing = Transaction.query.filter_by(
                         user_id=current_user.id,
                         account_id=account_db_id,
                         amount=amount_uah,
                         type=t_type,
-                        description=t_desc
+                        description=t_desc,
+                        date=t_date # ТЕПЕР ПЕРЕВІРЯЄМО Й ДАТУ
                     ).first()
                     
                     if not existing:

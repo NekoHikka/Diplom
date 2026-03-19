@@ -78,6 +78,7 @@
         background-color: var(--input-bg);
         border: 1px solid var(--border-color);
         color: var(--text-color);
+        margin-right: 5px;
       }
       .btn-filter.active {
         background-color: #2196f3;
@@ -90,8 +91,8 @@
         gap: 20px;
       }
 
-      input,
-      select {
+      select,
+      input {
         background-color: var(--input-bg);
         color: var(--input-text);
         border: 1px solid var(--input-border);
@@ -101,13 +102,8 @@
         outline: none;
         transition: all 0.3s ease;
         box-sizing: border-box;
+        cursor: pointer;
         width: 100%;
-      }
-      input:focus,
-      select:focus {
-        border-color: #4caf50;
-        box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
-        background-color: var(--card-bg);
       }
       select {
         appearance: none;
@@ -120,6 +116,13 @@
       [data-theme="light"] select {
         background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
       }
+      select:focus,
+      input:focus {
+        border-color: #9c27b0;
+        box-shadow: 0 0 8px rgba(156, 39, 176, 0.4);
+        background-color: var(--card-bg);
+      }
+
       ::-webkit-calendar-picker-indicator {
         filter: invert(1);
         cursor: pointer;
@@ -180,14 +183,21 @@
         border-color: #2196f3;
       }
 
-      /* УНІВЕРСАЛЬНЕ МЕНЮ */
+      /* --- ІДЕАЛЬНЕ ФІКСОВАНЕ МЕНЮ --- */
       .top-menu {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
         display: flex;
-        gap: 10px;
-        align-items: center;
-        flex-wrap: wrap;
-        margin-bottom: 20px;
+        flex-direction: row;
+        gap: 15px;
         padding: 15px;
+        background-color: var(--card-bg);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        margin-top: -20px;
+        border-radius: 0 0 10px 10px;
+        border-top: none;
+        align-items: center;
       }
       .user-greeting {
         font-weight: bold;
@@ -197,6 +207,10 @@
         text-overflow: ellipsis;
         max-width: 200px;
         padding-right: 10px;
+        display: flex;
+        align-items: center;
+        height: 40px;
+        margin: 0;
       }
       .nav-btn {
         display: inline-flex;
@@ -236,7 +250,7 @@
         color: white;
       }
 
-      /* 📱 МОБІЛЬНА АДАПТАЦІЯ ДЛЯ ВСІХ СТОРІНОК */
+      /* --- МОБІЛЬНА АДАПТАЦІЯ --- */
       @media (max-width: 768px) {
         body {
           padding: 10px;
@@ -244,35 +258,40 @@
         }
         .card {
           padding: 15px;
-          margin-bottom: 15px;
+          margin-bottom: 12px;
         }
         .grid {
           grid-template-columns: 1fr;
-          gap: 15px;
+          gap: 12px;
         }
 
         .top-menu {
-          flex-wrap: nowrap !important;
-          overflow-x: auto;
-          -webkit-overflow-scrolling: touch;
-          justify-content: flex-start !important;
-          padding-bottom: 10px;
-          gap: 10px !important;
+          flex-direction: column;
+          top: 0;
+          margin-top: 0;
+          padding: 10px;
+          align-items: stretch;
         }
-        .top-menu::-webkit-scrollbar {
-          display: none;
+        .user-greeting {
+          max-width: 100%;
+          text-align: center;
+          margin-bottom: 5px;
+          padding-right: 0;
+          justify-content: center;
         }
-        .top-menu > * {
-          flex-shrink: 0;
+        .top-menu > a.nav-btn {
+          width: 100%;
+          margin-bottom: 5px;
         }
         .top-menu .right-buttons {
           margin-left: 0 !important;
           display: flex;
           gap: 10px;
-          flex-shrink: 0;
+          width: 100%;
+          flex-direction: row;
         }
-        .user-greeting {
-          max-width: 120px;
+        .top-menu .right-buttons > * {
+          flex: 1;
         }
 
         .card form > div[style*="display: flex"],
@@ -288,7 +307,6 @@
           box-sizing: border-box;
         }
 
-        /* Ідеальні фільтри та експорт для мобілок */
         .filter-container {
           flex-direction: column !important;
           align-items: stretch !important;
@@ -307,15 +325,18 @@
           text-align: center;
           padding: 8px;
           font-size: 13px;
+          margin-right: 0 !important;
         }
         .export-btns {
           display: flex;
           gap: 10px;
           width: 100%;
+          justify-content: space-between;
         }
         .export-btns > * {
           flex: 1;
           margin: 0 !important;
+          text-align: center;
         }
       }
     </style>
@@ -345,6 +366,7 @@
         class="nav-btn {% if request.path == '/integrations' %}active-integrations{% endif %}"
         >🏦 Інтеграції</a
       >
+
       <div class="right-buttons" style="margin-left: auto">
         <button
           onclick="toggleTheme()"
@@ -362,7 +384,46 @@
       </div>
     </div>
 
-    {% if is_shared_view %}
+    {% if pending_invite %}
+    <div
+      class="card no-print"
+      style="
+        border-left: 5px solid #2196f3;
+        background: rgba(33, 150, 243, 0.1);
+        margin-bottom: 20px;
+      "
+    >
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        "
+      >
+        <div>
+          <h3 style="margin: 0 0 5px 0; color: #2196f3">🤝 Запрошення!</h3>
+          <span
+            >Користувач <strong>{{ invite_sender.username }}</strong> пропонує
+            вам вести Спільний Бюджет.</span
+          >
+        </div>
+        <div style="display: flex; gap: 10px">
+          <a
+            href="/accept_invite/{{ pending_invite.id }}"
+            class="btn"
+            style="background: #4caf50; color: white"
+            >Прийняти</a
+          >
+          <a
+            href="/reject_invite/{{ pending_invite.id }}"
+            class="btn"
+            style="background: #ff4d4d; color: white"
+            >Відхилити</a
+          >
+        </div>
+      </div>
+    </div>
+    {% endif %} {% if is_shared_view %}
     <h2 style="text-align: center; color: #2196f3; margin-bottom: 20px">
       🤝 Спільний бюджет з {{ partner.username }}
     </h2>
@@ -461,12 +522,13 @@
           <select name="category" id="category_select" required></select>
           <div style="display: flex; gap: 10px">
             <input
-              type="number"
+              type="text"
+              inputmode="numeric"
               name="amount"
-              step="0.01"
               placeholder="Сума (грн)"
               required
               style="flex: 1"
+              oninput="this.value = this.value.replace(/[^0-9]/g, '')"
             />
             <input
               type="date"
@@ -595,12 +657,13 @@
             style="flex: 2; padding: 8px"
           />
           <input
-            type="number"
+            type="text"
+            inputmode="numeric"
             name="balance"
             placeholder="₴"
-            step="0.01"
             required
             style="flex: 1; padding: 8px"
+            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
           />
           <button
             type="submit"
@@ -621,18 +684,9 @@
             justify-content: center;
             align-items: center;
             width: 100%;
-            height: 180px;
           "
         >
-          <div
-            style="
-              position: relative;
-              width: 160px;
-              height: 160px;
-              margin: 0 auto;
-              display: block;
-            "
-          >
+          <div style="position: relative; width: 160px; height: 160px">
             <canvas id="expensesChart"></canvas>
           </div>
         </div>
@@ -678,11 +732,13 @@
               style="flex: 1.5"
             />
             <input
-              type="number"
+              type="text"
+              inputmode="numeric"
               name="target_amount"
               placeholder="Сума"
               required
               style="flex: 1"
+              oninput="this.value = this.value.replace(/[^0-9]/g, '')"
             />
             <button
               type="submit"
@@ -1036,15 +1092,21 @@
               beforeDraw: function(chart) {
                   const ctx = chart.ctx; const width = chart.width; const height = chart.height;
                   ctx.restore();
-                  ctx.font = "bold 20px Arial"; ctx.textBaseline = "middle"; ctx.fillStyle = "#ff4d4d";
-                  const text1 = totalSum + " ₴";
+                  const displaySum = Math.round(totalSum).toLocaleString('uk-UA');
+                  const text1 = displaySum + " ₴";
+                  let fontSize = 20;
+                  if (text1.length > 9) fontSize = 16;
+                  if (text1.length > 12) fontSize = 13;
+                  ctx.font = "bold " + fontSize + "px Arial";
+                  ctx.textBaseline = "middle";
+                  ctx.fillStyle = "#ff4d4d";
                   const text1X = Math.round((width - ctx.measureText(text1).width) / 2);
                   const text1Y = height / 2 - 8;
                   ctx.fillText(text1, text1X, text1Y);
                   ctx.font = "10px Arial"; ctx.fillStyle = "#aaaaaa";
                   const text2 = "ВИТРАТ";
                   const text2X = Math.round((width - ctx.measureText(text2).width) / 2);
-                  const text2Y = height / 2 + 12;
+                  const text2Y = height / 2 + 14;
                   ctx.fillText(text2, text2X, text2Y);
                   ctx.save();
               }
@@ -1053,7 +1115,7 @@
           new Chart(document.getElementById('expensesChart').getContext('2d'), {
               type: 'doughnut',
               data: { labels: labels, datasets: [{ data: data, backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8BC34A', '#E91E63'], borderWidth: 0 }] },
-              options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { let value = context.parsed; let percentage = ((value / totalSum) * 100).toFixed(1); return context.label + ': ' + value + ' ₴ (' + percentage + '%)'; }}}}},
+              options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { let value = Math.round(context.parsed); let percentage = ((context.parsed / totalSum) * 100).toFixed(1); return context.label + ': ' + value.toLocaleString('uk-UA') + ' ₴ (' + percentage + '%)'; }}}}},
               plugins: [centerTextPlugin]
           });
       }

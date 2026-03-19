@@ -86,14 +86,21 @@
         border-color: #2196f3;
       }
 
-      /* УНІВЕРСАЛЬНЕ МЕНЮ */
+      /* ІДЕАЛЬНЕ ФІКСОВАНЕ МЕНЮ */
       .top-menu {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
         display: flex;
-        gap: 10px;
-        align-items: center;
-        flex-wrap: wrap;
-        margin-bottom: 20px;
+        flex-direction: row;
+        gap: 15px;
         padding: 15px;
+        background-color: var(--card-bg);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        margin-top: -20px;
+        border-radius: 0 0 10px 10px;
+        border-top: none;
+        align-items: center;
       }
       .user-greeting {
         font-weight: bold;
@@ -103,6 +110,10 @@
         text-overflow: ellipsis;
         max-width: 200px;
         padding-right: 10px;
+        display: flex;
+        align-items: center;
+        height: 40px;
+        margin: 0;
       }
       .nav-btn {
         display: inline-flex;
@@ -140,26 +151,36 @@
           padding: 15px;
           margin-bottom: 15px;
         }
+
         .top-menu {
-          flex-wrap: nowrap !important;
-          overflow-x: auto;
-          -webkit-overflow-scrolling: touch;
-          justify-content: flex-start !important;
-          padding-bottom: 10px;
-          gap: 10px !important;
+          flex-direction: column;
+          top: 0;
+          margin-top: 0;
+          padding: 10px;
+          align-items: stretch;
         }
-        .top-menu::-webkit-scrollbar {
-          display: none;
+        .user-greeting {
+          max-width: 100%;
+          text-align: center;
+          margin-bottom: 5px;
+          padding-right: 0;
+          justify-content: center;
         }
-        .top-menu > * {
-          flex-shrink: 0;
+        .top-menu > a.nav-btn {
+          width: 100%;
+          margin-bottom: 5px;
         }
         .top-menu .right-buttons {
           margin-left: 0 !important;
           display: flex;
           gap: 10px;
-          flex-shrink: 0;
+          width: 100%;
+          flex-direction: row;
         }
+        .top-menu .right-buttons > * {
+          flex: 1;
+        }
+
         .invite-actions {
           flex-direction: column;
           width: 100%;
