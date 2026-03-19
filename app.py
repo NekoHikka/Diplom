@@ -835,5 +835,11 @@ def analytics():
 with app.app_context():
     db.create_all()
 
+import os
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Отримуємо порт, який нам видає Render, або беремо 5000 для локального запуску
+    port = int(os.environ.get("PORT", 5000))
+    
+    # host='0.0.0.0' - це саме та магія, яка каже Render, що ми готові приймати гостей
+    app.run(host='0.0.0.0', port=port, debug=False)
