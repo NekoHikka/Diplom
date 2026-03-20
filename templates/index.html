@@ -14,14 +14,15 @@
       type="image/png"
       href="{{ url_for('static', filename='logo.png') }}"
     />
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="[https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js](https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js)"></script>
+
     <script>
       if (localStorage.getItem("theme") === "light")
         document.documentElement.setAttribute("data-theme", "light");
 
-      // ДОЗВОЛЯЄ ВВОДИТИ КОПІЙКИ (КРАПКА АБО КОМА) І НЕ БІЛЬШЕ 2 ЦИФР ПІСЛЯ НЕЇ
+      // ДОЗВОЛЯЄ ВВОДИТИ КОПІЙКИ
       function formatMoneyInput(input) {
         let val = input.value.replace(",", ".");
         val = val.replace(/[^0-9.]/g, "");
@@ -119,14 +120,14 @@
       }
       select {
         appearance: none;
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)' viewBox='0 0 24 24' fill='none' stroke='gray' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='gray' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
         background-repeat: no-repeat;
         background-position: right 12px center;
         background-size: 16px;
         padding-right: 40px !important;
       }
       [data-theme="light"] select {
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)' viewBox='0 0 24 24' fill='none' stroke='%23333333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
       }
       select:focus,
       input:focus {
@@ -587,7 +588,7 @@
           <div style="display: flex; gap: 10px; margin-top: 5px">
             <button
               type="submit"
-              class="btn"
+              class="btn optimistic-submit"
               style="background-color: #4caf50; color: white; flex: 2"
             >
               Записати операцію
@@ -665,6 +666,7 @@
                 <a
                   href="/delete_account/{{ acc.id }}"
                   style="text-decoration: none"
+                  class="optimistic-delete"
                   onclick="return confirm('Видалити рахунок?');"
                   >❌</a
                 >
@@ -724,7 +726,7 @@
           />
           <button
             type="submit"
-            class="btn"
+            class="btn optimistic-submit"
             style="background-color: #ff9800; color: white; padding: 8px"
           >
             +
@@ -799,7 +801,7 @@
             />
             <button
               type="submit"
-              class="btn"
+              class="btn optimistic-submit"
               style="background-color: #2196f3; color: white; flex: 0.5"
             >
               +
@@ -882,6 +884,7 @@
             <a
               href="/delete_goal/{{ goal.id }}"
               style="text-decoration: none; font-size: 13px; color: #ff4d4d"
+              class="optimistic-delete"
               onclick="return confirm('Видалити ціль?');"
               >🗑️ Видалити</a
             >
@@ -934,7 +937,7 @@
           />
           <button
             type="submit"
-            class="btn"
+            class="btn optimistic-submit"
             style="background-color: #9c27b0; color: white"
           >
             Створити
@@ -967,6 +970,7 @@
               ><a
                 href="/delete_category/{{ cat.id }}"
                 style="text-decoration: none"
+                class="optimistic-delete"
                 onclick="return confirm('Видалити категорію?');"
                 >❌</a
               >
@@ -990,6 +994,7 @@
               ><a
                 href="/delete_category/{{ cat.id }}"
                 style="text-decoration: none"
+                class="optimistic-delete"
                 onclick="return confirm('Видалити категорію?');"
                 >❌</a
               >
@@ -1057,6 +1062,7 @@
               <a
                 href="/delete/{{ t.id }}"
                 style="text-decoration: none; font-size: 16px"
+                class="optimistic-delete"
                 onclick="return confirm('Видалити запис?');"
                 >🗑️</a
               >
@@ -1234,7 +1240,7 @@
           <div style="display: flex; gap: 10px; margin-top: 10px">
             <button
               type="submit"
-              class="btn"
+              class="btn optimistic-submit"
               style="background-color: #9c27b0; width: 100%"
               onclick="this.innerHTML = '⏳ Аналізую фото...'"
             >
@@ -1246,6 +1252,45 @@
     </div>
 
     <script>
+      // 🚀 МАГІЯ: Збереження позиції скролу
+      document.addEventListener("DOMContentLoaded", function() {
+          const scrollpos = sessionStorage.getItem('scrollpos');
+          if (scrollpos) {
+              window.scrollTo(0, parseInt(scrollpos));
+              sessionStorage.removeItem('scrollpos');
+          }
+      });
+
+      window.addEventListener("beforeunload", function() {
+          sessionStorage.setItem('scrollpos', window.scrollY);
+      });
+
+      // 🚀 МАГІЯ: Оптимістичне видалення (рядок пропадає миттєво при кліку)
+      document.querySelectorAll('.optimistic-delete').forEach(link => {
+          link.addEventListener('click', function(e) {
+              setTimeout(() => {
+                  let row = this.closest('tr') || this.closest('div[style*="justify-content: space-between"]');
+                  if (row) {
+                      row.style.transition = 'all 0.3s ease';
+                      row.style.opacity = '0';
+                      row.style.transform = 'translateX(-20px)';
+                  }
+              }, 10);
+          });
+      });
+
+      // 🚀 МАГІЯ: Анімація кнопок під час відправки форми
+      document.querySelectorAll('form').forEach(form => {
+          form.addEventListener('submit', function() {
+              let btn = this.querySelector('.optimistic-submit');
+              if (btn && !btn.innerHTML.includes('Аналізую')) {
+                  btn.innerHTML = '⏳...';
+                  btn.style.opacity = '0.7';
+                  btn.style.pointerEvents = 'none';
+              }
+          });
+      });
+
       // ФІКС ДАТ: Обмеження календаря (від -10 до +20 років)
       document.addEventListener("DOMContentLoaded", function() {
           const dateInputs = document.querySelectorAll('input[type="date"]');

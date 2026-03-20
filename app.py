@@ -355,8 +355,11 @@ def add_receipt_ai():
                     db.session.add(new_cat)
                     known_cat_names.append(cat_name)
 
-                if t_type == 'Витрата': acc.balance -= amount
-                else: acc.balance += amount
+                # ФІКС: Округлюємо баланс при роботі ШІ
+                if t_type == 'Витрата': 
+                    acc.balance = round(acc.balance - amount, 2)
+                else: 
+                    acc.balance = round(acc.balance + amount, 2)
 
                 t_date_str = td.get('date', 'TODAY')
                 if t_date_str == 'TODAY':
@@ -392,8 +395,9 @@ def delete_transaction(id):
     if t:
         acc = db.session.get(Account, t.account_id)
         if acc:
-            if t.type == 'Дохід': acc.balance -= t.amount
-            else: acc.balance += t.amount
+            # ФІКС: Округлюємо баланс при видаленні
+            if t.type == 'Дохід': acc.balance = round(acc.balance - t.amount, 2)
+            else: acc.balance = round(acc.balance + t.amount, 2)
         db.session.delete(t)
         db.session.commit()
     return redirect(request.referrer or url_for('home'))
@@ -477,8 +481,9 @@ def edit_transaction(id):
     if request.method == 'POST':
         old_acc = db.session.get(Account, t.account_id)
         if old_acc:
-            if t.type == 'Дохід': old_acc.balance -= t.amount
-            else: old_acc.balance += t.amount
+            # ФІКС: Округлюємо баланс при відміні старої транзакції
+            if t.type == 'Дохід': old_acc.balance = round(old_acc.balance - t.amount, 2)
+            else: old_acc.balance = round(old_acc.balance + t.amount, 2)
             
         t.type = request.form['type']; t.category = request.form['category']
         
@@ -492,8 +497,9 @@ def edit_transaction(id):
         
         new_acc = db.session.get(Account, t.account_id)
         if new_acc:
-            if t.type == 'Дохід': new_acc.balance += t.amount
-            else: new_acc.balance -= t.amount
+            # ФІКС: Округлюємо баланс при накладанні нової
+            if t.type == 'Дохід': new_acc.balance = round(new_acc.balance + t.amount, 2)
+            else: new_acc.balance = round(new_acc.balance - t.amount, 2)
         db.session.commit()
         return redirect(url_for('shared_budget') if t.is_shared else url_for('home'))
         
@@ -567,8 +573,9 @@ def shared_budget():
         date_str = request.form.get('date')
         t_date = datetime.combine(datetime.strptime(date_str, '%Y-%m-%d').date(), get_current_time().time()) if date_str else get_current_time()
         if acc:
-            if t_type == 'Дохід': acc.balance += amount
-            else: acc.balance -= amount
+            # ФІКС: Округлення
+            if t_type == 'Дохід': acc.balance = round(acc.balance + amount, 2)
+            else: acc.balance = round(acc.balance - amount, 2)
         db.session.add(Transaction(type=t_type, category=request.form['category'], amount=amount, description=request.form['description'], date=t_date, user_id=current_user.id, account_id=acc.id, is_shared=True))
         db.session.commit(); return redirect(url_for('shared_budget'))
 
@@ -631,8 +638,9 @@ def home():
         date_str = request.form.get('date')
         t_date = datetime.combine(datetime.strptime(date_str, '%Y-%m-%d').date(), get_current_time().time()) if date_str else get_current_time()
         if acc:
-            if t_type == 'Дохід': acc.balance += amount
-            else: acc.balance -= amount
+            # ФІКС: Округлення
+            if t_type == 'Дохід': acc.balance = round(acc.balance + amount, 2)
+            else: acc.balance = round(acc.balance - amount, 2)
         db.session.add(Transaction(type=t_type, category=request.form['category'], amount=amount, description=request.form['description'], date=t_date, user_id=current_user.id, account_id=acc.id, is_shared=False))
         db.session.commit(); return redirect(url_for('home'))
 
@@ -785,7 +793,7 @@ def analyze_ai():
         goals = Goal.query.filter_by(user_id=current_user.id, is_shared=False).all()
         context_prefix = "ОСОБИСТИЙ БЮДЖЕТ"
 
-    total_balance = round(sum(a.balance for a in user_accounts), 2)
+    total_balance = sum(a.balance for a in user_accounts)
 
     if goals:
         goals_text_lines = []
@@ -795,7 +803,7 @@ def analyze_ai():
             else:
                 ids_list = [int(x) for x in g.account_ids.split(',')]
                 target_accs = [a for a in user_accounts if a.id in ids_list]
-                curr_val = round(sum(a.balance for a in target_accs), 2)
+                curr_val = sum(a.balance for a in target_accs)
             
             left_to_collect = g.target_amount - curr_val
             if left_to_collect < 0: left_to_collect = 0
@@ -940,7 +948,7 @@ def analytics():
                            top_category_amount=top_category_amount, 
                            recommendations=recommendations, 
                            budget_forecast=budget_forecast, 
-                           projected_month_total=int(total_expense + (real_daily_avg * (30 - now.day))), # Added to fix backwards compatibility
+                           projected_month_total=int(total_expense + (real_daily_avg * (30 - now.day))),
                            smart_daily_avg=round(real_daily_avg, 2), 
                            trend_msg=trend_msg, 
                            trend_color=trend_color, 
