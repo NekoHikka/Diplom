@@ -15,6 +15,16 @@
     <script>
       if (localStorage.getItem("theme") === "light")
         document.documentElement.setAttribute("data-theme", "light");
+
+      function formatMoneyInput(input) {
+        let val = input.value.replace(",", ".");
+        val = val.replace(/[^0-9.]/g, "");
+        let parts = val.split(".");
+        if (parts.length > 2) val = parts[0] + "." + parts.slice(1).join("");
+        if (parts.length === 2 && parts[1].length > 2)
+          val = parts[0] + "." + parts[1].substring(0, 2);
+        input.value = val;
+      }
     </script>
     <style>
       :root {
@@ -58,7 +68,6 @@
         width: 100%;
         max-width: 400px;
       }
-
       .btn {
         padding: 14px;
         border: none;
@@ -77,7 +86,6 @@
       .btn:hover {
         opacity: 0.8;
       }
-
       input,
       select {
         background-color: var(--input-bg);
@@ -99,7 +107,6 @@
         box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
         background-color: var(--card-bg);
       }
-
       label {
         display: block;
         margin-bottom: 5px;
@@ -107,7 +114,6 @@
         font-size: 13px;
         font-weight: bold;
       }
-
       select {
         appearance: none;
         background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='gray' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
@@ -141,7 +147,6 @@
       >
         ✏️ Редагувати запис
       </h2>
-
       <form action="/edit/{{ t.id }}" method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
@@ -157,11 +162,11 @@
             <label>Сума (грн):</label>
             <input
               type="text"
-              inputmode="numeric"
+              inputmode="decimal"
               name="amount"
-              value="{{ t.amount | int }}"
+              value="{{ t.amount if t.amount % 1 != 0 else t.amount|int }}"
               required
-              oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+              oninput="formatMoneyInput(this)"
             />
           </div>
         </div>
@@ -202,6 +207,17 @@
     </div>
 
     <script>
+      document.addEventListener("DOMContentLoaded", function() {
+          const dateInputs = document.querySelectorAll('input[type="date"]');
+          const currentYear = new Date().getFullYear();
+          const minDate = `${currentYear - 10}-01-01`;
+          const maxDate = `${currentYear + 20}-12-31`;
+          dateInputs.forEach(input => {
+              input.setAttribute('min', minDate);
+              input.setAttribute('max', maxDate);
+          });
+      });
+
       const expCats = {{ exp_cats|tojson }};
       const incCats = {{ inc_cats|tojson }};
       const typeSelect = document.getElementById('edit_type');
@@ -218,7 +234,6 @@
 
       typeSelect.addEventListener('change', updateCategories);
 
-      // Встановлюємо старі значення
       typeSelect.value = "{{ t.type }}";
       updateCategories();
       catSelect.value = "{{ t.category }}";

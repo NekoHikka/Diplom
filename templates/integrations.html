@@ -155,7 +155,6 @@
         scrollbar-color: var(--border-color) var(--input-bg);
       }
 
-      /* --- ІДЕАЛЬНЕ ФІКСОВАНЕ МЕНЮ --- */
       .top-menu {
         position: sticky;
         top: 0;
@@ -170,6 +169,7 @@
         border-radius: 0 0 10px 10px;
         border-top: none;
         align-items: center;
+        margin-bottom: 20px;
       }
       .user-greeting {
         font-weight: bold;
@@ -181,7 +181,7 @@
         padding-right: 10px;
         display: flex;
         align-items: center;
-        height: 40px; /* Рівняємо по висоті з кнопками */
+        height: 40px;
         margin: 0;
       }
       .nav-btn {
@@ -222,7 +222,6 @@
         color: white;
       }
 
-      /* --- МОБІЛЬНА АДАПТАЦІЯ --- */
       @media (max-width: 768px) {
         body {
           padding: 10px;
@@ -234,7 +233,6 @@
           margin-bottom: 12px;
         }
 
-        /* МЕНЮ НА ТЕЛЕФОНІ */
         .top-menu {
           flex-direction: column;
           top: 0;
@@ -317,6 +315,23 @@
       </div>
     </div>
 
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %}
+    <div style="max-width: 1100px; margin: 0 auto 20px auto">
+      {% for category, message in messages %}
+      <div
+        class="card no-print"
+        style="margin-bottom: 10px; border: 1px solid {% if category == 'error' %}#ff4d4d{% else %}#4CAF50{% endif %}; border-radius: 8px; background: {% if category == 'error' %}rgba(255, 77, 77, 0.1){% else %}rgba(76, 175, 80, 0.1){% endif %}; padding: 15px; text-align: center; display: flex; justify-content: center; align-items: center;"
+      >
+        <strong
+          style="color: {% if category == 'error' %}#ff4d4d{% else %}#4CAF50{% endif %};"
+          >{{ message }}</strong
+        >
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %} {% endwith %}
+
     <div class="integration-grid">
       <div class="bank-card" style="border-top: 4px solid #ff3366">
         <div class="bank-header">
@@ -349,7 +364,7 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
             <button
               type="submit"
-              class="btn"
+              class="btn sync-btn"
               style="background-color: #ff3366; color: white; width: 100%"
             >
               🔄 Оновити дані за 3 дні
@@ -402,7 +417,7 @@
             </div>
             <button
               type="submit"
-              class="btn"
+              class="btn sync-btn"
               style="background-color: #ff3366; color: white; margin-top: auto"
             >
               🔗 Підключити рахунок
@@ -415,7 +430,7 @@
       <div class="bank-card" style="border-top: 4px solid #7cb342">
         <div class="bank-header">
           <div class="bank-logo">🟩 ПриватБанк</div>
-          <span class="status-badge status-inactive">В розробці</span>
+          <span class="status-badge status-inactive">Розробка</span>
         </div>
         <p
           style="
@@ -446,8 +461,8 @@
 
       <div class="bank-card" style="border-top: 4px solid #3b82f6">
         <div class="bank-header">
-          <div class="bank-logo">🌐 Nordigen API</div>
-          <span class="status-badge status-inactive">В розробці</span>
+          <div class="bank-logo">🌐 Європейські Банки</div>
+          <span class="status-badge status-inactive">Розробка</span>
         </div>
         <p
           style="
@@ -478,6 +493,32 @@
     </div>
 
     <script>
+      // 1. Пам'ять скролу
+      document.addEventListener("DOMContentLoaded", function (event) {
+        var scrollpos = sessionStorage.getItem("scrollpos_integrations");
+        if (scrollpos) window.scrollTo(0, scrollpos);
+        sessionStorage.removeItem("scrollpos_integrations");
+      });
+
+      window.addEventListener("beforeunload", function (e) {
+        sessionStorage.setItem("scrollpos_integrations", window.scrollY);
+      });
+
+      // 2. Анімація кнопок (захист від подвійного кліку)
+      document.querySelectorAll("form").forEach((form) => {
+        form.addEventListener("submit", function () {
+          let btn =
+            this.querySelector(".sync-btn") ||
+            this.querySelector('button[type="submit"]');
+          if (btn && !btn.innerHTML.includes("❌")) {
+            // Не чіпаємо кнопку "Відв'язати"
+            btn.innerHTML = "⏳ Обробка...";
+            btn.style.opacity = "0.7";
+            btn.style.pointerEvents = "none";
+          }
+        });
+      });
+
       function toggleTheme() {
         const currentTheme =
           document.documentElement.getAttribute("data-theme");

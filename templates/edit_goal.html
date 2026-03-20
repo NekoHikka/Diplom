@@ -15,6 +15,16 @@
     <script>
       if (localStorage.getItem("theme") === "light")
         document.documentElement.setAttribute("data-theme", "light");
+
+      function formatMoneyInput(input) {
+        let val = input.value.replace(",", ".");
+        val = val.replace(/[^0-9.]/g, "");
+        let parts = val.split(".");
+        if (parts.length > 2) val = parts[0] + "." + parts.slice(1).join("");
+        if (parts.length === 2 && parts[1].length > 2)
+          val = parts[0] + "." + parts[1].substring(0, 2);
+        input.value = val;
+      }
     </script>
     <style>
       :root {
@@ -58,7 +68,6 @@
         width: 100%;
         max-width: 400px;
       }
-
       .btn {
         padding: 14px;
         border: none;
@@ -77,7 +86,6 @@
       .btn:hover {
         opacity: 0.8;
       }
-
       input,
       select {
         background-color: var(--input-bg);
@@ -99,7 +107,6 @@
         box-shadow: 0 0 8px rgba(33, 150, 243, 0.4);
         background-color: var(--card-bg);
       }
-
       label {
         display: block;
         margin-bottom: 5px;
@@ -107,7 +114,6 @@
         font-size: 13px;
         font-weight: bold;
       }
-
       .acc-pill {
         background-color: var(--input-bg);
         border: 1px solid var(--border-color);
@@ -132,21 +138,18 @@
       <h2 style="text-align: center; margin-top: 0; color: #2196f3">
         🎯 Редагувати ціль
       </h2>
-
       <form action="/edit_goal/{{ g.id }}" method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-
         <label>Назва цілі:</label>
         <input type="text" name="name" value="{{ g.name }}" required />
-
         <label>Необхідна сума (грн):</label>
         <input
           type="text"
-          inputmode="numeric"
+          inputmode="decimal"
           name="target_amount"
-          value="{{ g.target_amount | int }}"
+          value="{{ g.target_amount if g.target_amount % 1 != 0 else g.target_amount|int }}"
           required
-          oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+          oninput="formatMoneyInput(this)"
         />
 
         <label>Звідки рахувати гроші:</label>

@@ -2,346 +2,103 @@
 <html lang="uk">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Аналітика - Розумні Фінанси</title>
-    <link
-      rel="icon"
-      type="image/png"
-      href="{{ url_for('static', filename='logo.png') }}"
-    />
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-      if (localStorage.getItem("theme") === "light")
-        document.documentElement.setAttribute("data-theme", "light");
+      if (localStorage.getItem("theme") === "light") document.documentElement.setAttribute("data-theme", "light");
     </script>
     <style>
       :root {
-        --bg-color: #121212;
-        --card-bg: #1e1e1e;
-        --text-color: #ffffff;
-        --border-color: #333333;
-        --input-bg: #2a2a2a;
-        --input-text: #ffffff;
-        --input-border: #444444;
-        color-scheme: dark;
+        --bg-color: #121212; --card-bg: #1e1e1e; --text-color: #ffffff;
+        --border-color: #333333; --input-bg: #2a2a2a; --input-text: #ffffff; --input-border: #444444; color-scheme: dark;
       }
       [data-theme="light"] {
-        --bg-color: #f4f4f9;
-        --card-bg: #ffffff;
-        --text-color: #333333;
-        --border-color: #dddddd;
-        --input-bg: #ffffff;
-        --input-text: #333333;
-        --input-border: #cccccc;
-        color-scheme: light;
+        --bg-color: #f4f4f9; --card-bg: #ffffff; --text-color: #333333;
+        --border-color: #dddddd; --input-bg: #ffffff; --input-text: #333333; --input-border: #cccccc; color-scheme: light;
       }
-      body {
-        background-color: var(--bg-color);
-        color: var(--text-color);
-        font-family: Arial, sans-serif;
-        max-width: 1100px;
-        margin: auto;
-        padding: 20px;
-        transition: 0.3s;
-      }
-      .card {
-        background-color: var(--card-bg);
-        padding: 20px;
-        border-radius: 10px;
-        border: 1px solid var(--border-color);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        margin-bottom: 20px;
-      }
-      .btn {
-        padding: 10px 15px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: bold;
-        text-align: center;
-        text-decoration: none;
-        transition: 0.2s;
-        box-sizing: border-box;
-        display: inline-block;
-      }
-      .btn:hover {
-        opacity: 0.8;
-        transform: translateY(-1px);
-      }
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 20px;
-      }
+      body { background-color: var(--bg-color); color: var(--text-color); font-family: Arial, sans-serif; max-width: 1100px; margin: auto; padding: 20px; transition: 0.3s; }
+      .card { background-color: var(--card-bg); padding: 20px; border-radius: 10px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); margin-bottom: 20px; }
+      .btn { padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; text-align: center; text-decoration: none; transition: 0.2s; box-sizing: border-box; display: inline-block; }
+      .btn:hover { opacity: 0.8; transform: translateY(-1px); }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+      
+      select, input { background-color: var(--input-bg); color: var(--input-text); border: 1px solid var(--input-border); border-radius: 8px; padding: 10px 12px; font-size: 15px; outline: none; transition: all 0.3s ease; box-sizing: border-box; cursor: pointer; width: 100%; }
+      select { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='gray' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 40px !important; }
+      [data-theme="light"] select { background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); }
+      select:focus, input:focus { border-color: #9c27b0; box-shadow: 0 0 8px rgba(156, 39, 176, 0.4); background-color: var(--card-bg); }
+      ::-webkit-scrollbar { width: 8px; height: 8px; }
+      ::-webkit-scrollbar-track { background-color: var(--input-bg); border-radius: 10px; }
+      ::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 10px; }
+      ::-webkit-scrollbar-thumb:hover { background-color: var(--input-border); }
 
-      select,
-      input {
-        background-color: var(--input-bg);
-        color: var(--input-text);
-        border: 1px solid var(--input-border);
-        border-radius: 8px;
-        padding: 10px 12px;
-        font-size: 15px;
-        outline: none;
-        transition: all 0.3s ease;
-        box-sizing: border-box;
-        cursor: pointer;
-        width: 100%;
-      }
-      select {
-        appearance: none;
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='gray' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-        background-repeat: no-repeat;
-        background-position: right 12px center;
-        background-size: 16px;
-        padding-right: 40px !important;
-      }
-      [data-theme="light"] select {
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-      }
-      select:focus,
-      input:focus {
-        border-color: #9c27b0;
-        box-shadow: 0 0 8px rgba(156, 39, 176, 0.4);
-        background-color: var(--card-bg);
-      }
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background-color: var(--input-bg);
-        border-radius: 10px;
-      }
-      ::-webkit-scrollbar-thumb {
-        background-color: var(--border-color);
-        border-radius: 10px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background-color: var(--input-border);
-      }
-
-      .top-menu {
-        position: sticky;
-        top: 0;
-        z-index: 1000;
-        display: flex;
-        flex-direction: row;
-        gap: 15px;
-        padding: 15px;
-        background-color: var(--card-bg);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        margin-top: -20px;
-        border-radius: 0 0 10px 10px;
-        border-top: none;
-        align-items: center;
-      }
-      .user-greeting {
-        font-weight: bold;
-        font-size: 16px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 200px;
-        padding-right: 10px;
-        display: flex;
-        align-items: center;
-        height: 40px;
-        margin: 0;
-      }
-      .nav-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        height: 40px;
-        padding: 0 15px;
-        border-radius: 8px;
-        font-weight: bold;
-        text-decoration: none;
-        transition: 0.2s;
-        box-sizing: border-box;
-        white-space: nowrap;
-        border: none;
-        cursor: pointer;
-        background-color: var(--input-bg);
-        color: var(--text-color);
-        font-size: 14px;
-      }
-      .nav-btn:hover {
-        filter: brightness(1.2);
-      }
-      .nav-btn.active-home {
-        background-color: #4caf50;
-        color: white;
-      }
-      .nav-btn.active-shared {
-        background-color: #2196f3;
-        color: white;
-      }
-      .nav-btn.active-analytics {
-        background-color: #9c27b0;
-        color: white;
-      }
-      .nav-btn.active-integrations {
-        background-color: #ff9800;
-        color: white;
-      }
+      .top-menu { position: sticky; top: 0; z-index: 1000; display: flex; flex-direction: row; gap: 15px; padding: 15px; background-color: var(--card-bg); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); margin-top: -20px; border-radius: 0 0 10px 10px; border-top: none; align-items: center; margin-bottom: 20px; }
+      .user-greeting { font-weight: bold; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; padding-right: 10px; display: flex; align-items: center; height: 40px; margin: 0; }
+      .nav-btn { display: inline-flex; align-items: center; justify-content: center; height: 40px; padding: 0 15px; border-radius: 8px; font-weight: bold; text-decoration: none; transition: 0.2s; box-sizing: border-box; white-space: nowrap; border: none; cursor: pointer; background-color: var(--input-bg); color: var(--text-color); font-size: 14px; }
+      .nav-btn:hover { filter: brightness(1.2); }
+      .nav-btn.active-home { background-color: #4caf50; color: white; }
+      .nav-btn.active-shared { background-color: #2196f3; color: white; }
+      .nav-btn.active-analytics { background-color: #9c27b0; color: white; }
+      .nav-btn.active-integrations { background-color: #ff9800; color: white; }
 
       @media (max-width: 768px) {
-        body {
-          padding: 10px;
-          margin: 0;
-        }
-        .card {
-          padding: 15px;
-          margin-bottom: 12px;
-        }
-        .grid {
-          grid-template-columns: 1fr;
-          gap: 12px;
-        }
+        body { padding: 10px; margin: 0; }
+        .card { padding: 15px; margin-bottom: 12px; }
+        .grid { grid-template-columns: 1fr; gap: 12px; }
 
-        .top-menu {
-          flex-direction: column;
-          top: 0;
-          margin-top: 0;
-          padding: 10px;
-          align-items: stretch;
-        }
-        .user-greeting {
-          max-width: 100%;
-          text-align: center;
-          margin-bottom: 5px;
-          padding-right: 0;
-          justify-content: center;
-        }
-        .top-menu > a.nav-btn {
-          width: 100%;
-          margin-bottom: 5px;
-        }
-        .top-menu .right-buttons {
-          margin-left: 0 !important;
-          display: flex;
-          gap: 10px;
-          width: 100%;
-          flex-direction: row;
-        }
-        .top-menu .right-buttons > * {
-          flex: 1;
-        }
+        .top-menu { flex-direction: column; top: 0; margin-top: 0; padding: 10px; align-items: stretch; }
+        .user-greeting { max-width: 100%; text-align: center; margin-bottom: 5px; padding-right: 0; justify-content: center; }
+        .top-menu > a.nav-btn { width: 100%; margin-bottom: 5px; } 
+        .top-menu .right-buttons { margin-left: 0 !important; display: flex; gap: 10px; width: 100%; flex-direction: row; }
+        .top-menu .right-buttons > * { flex: 1; }
 
-        .card form > div[style*="display: flex"],
-        .card form[style*="display: flex"] {
-          flex-direction: column !important;
-          align-items: stretch !important;
-          gap: 10px !important;
-        }
-        input:not([type="hidden"]),
-        select,
-        .btn {
-          width: 100% !important;
-          box-sizing: border-box;
-        }
+        .card form > div[style*="display: flex"], .card form[style*="display: flex"] { flex-direction: column !important; align-items: stretch !important; gap: 10px !important; }
+        input:not([type="hidden"]), select, .btn { width: 100% !important; box-sizing: border-box; }
       }
     </style>
   </head>
   <body>
     <div class="card no-print top-menu">
-      <div class="user-greeting" title="Привіт, {{ username }}!">
-        👤 {{ username }}
-      </div>
-      <a
-        href="/"
-        class="nav-btn {% if request.path == '/' %}active-home{% endif %}"
-        >🏠 Особистий</a
-      >
-      <a
-        href="/shared"
-        class="nav-btn {% if request.path == '/shared' %}active-shared{% endif %}"
-        >🤝 Спільний</a
-      >
-      <a
-        href="/analytics{% if is_shared_view %}?shared=1{% endif %}"
-        class="nav-btn {% if request.path == '/analytics' %}active-analytics{% endif %}"
-        >🧠 Аналітика</a
-      >
-      <a
-        href="/integrations"
-        class="nav-btn {% if request.path == '/integrations' %}active-integrations{% endif %}"
-        >🏦 Інтеграції</a
-      >
-
+      <div class="user-greeting" title="Привіт, {{ username }}!">👤 {{ username }}</div>
+      <a href="/" class="nav-btn {% if request.path == '/' %}active-home{% endif %}">🏠 Особистий</a>
+      <a href="/shared" class="nav-btn {% if request.path == '/shared' %}active-shared{% endif %}">🤝 Спільний</a>
+      <a href="/analytics{% if is_shared_view %}?shared=1{% endif %}" class="nav-btn {% if request.path == '/analytics' %}active-analytics{% endif %}">🧠 Аналітика</a>
+      <a href="/integrations" class="nav-btn {% if request.path == '/integrations' %}active-integrations{% endif %}">🏦 Інтеграції</a>
+      
       <div class="right-buttons" style="margin-left: auto">
-        <button
-          onclick="toggleTheme()"
-          class="nav-btn"
-          style="background-color: #ff9800; color: white"
-        >
-          🌓 Тема
-        </button>
-        <a
-          href="/logout"
-          class="nav-btn"
-          style="background-color: #ff4d4d; color: white"
-          >🚪 Вийти</a
-        >
+        <button onclick="toggleTheme()" class="nav-btn" style="background-color: #ff9800; color: white">🌓 Тема</button>
+        <a href="/logout" class="nav-btn" style="background-color: #ff4d4d; color: white">🚪 Вийти</a>
       </div>
     </div>
 
-    <h2 style="text-align: center; color: #9c27b0; margin-bottom: 20px">
-      🧠 Розумна Аналітика
-    </h2>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div style="max-width: 1100px; margin: 0 auto 20px auto;">
+        {% for category, message in messages %}
+          <div class="card no-print" style="margin-bottom: 10px; border: 1px solid {% if category == 'error' %}#ff4d4d{% else %}#4CAF50{% endif %}; border-radius: 8px; background: {% if category == 'error' %}rgba(255, 77, 77, 0.1){% else %}rgba(76, 175, 80, 0.1){% endif %}; padding: 15px; text-align: center; display: flex; justify-content: center; align-items: center;">
+            <strong style="color: {% if category == 'error' %}#ff4d4d{% else %}#4CAF50{% endif %};">{{ message }}</strong>
+          </div>
+        {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <h2 style="text-align: center; color: #9c27b0; margin-bottom: 20px">🧠 Розумна Аналітика</h2>
 
     <div class="grid">
       <div class="card">
-        <h3
-          style="
-            margin-top: 0;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 10px;
-          "
-        >
-          📊 Статистика місяця
-        </h3>
-        <p>
-          <strong>Сума витрат:</strong>
-          <span style="font-size: 18px; color: #ff4d4d"
-            >{{ total_expense | int }} ₴</span
-          >
-        </p>
-        <p>
-          <strong>Прогноз на кінець місяця:</strong> {{ projected_month_total |
-          int }} ₴
-        </p>
-        <p>
-          <strong>Топ категорія:</strong> {{ top_category }} ({{
-          top_category_amount | int }} ₴)
-        </p>
-        <p>
-          <strong>Реальна середня витрата:</strong> {{ smart_daily_avg }} ₴/день
-        </p>
+        <h3 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">📊 Статистика за {{ period_days }} дн.</h3>
+        <p><strong>Сума витрат:</strong> <span style="font-size: 18px; color: #ff4d4d">{{ total_expense if total_expense % 1 != 0 else total_expense|int }} ₴</span></p>
+        <p><strong>Топ категорія:</strong> {{ top_category }} ({{ top_category_amount if top_category_amount % 1 != 0 else top_category_amount|int }} ₴)</p>
+        <p><strong>Середня витрата:</strong> {{ smart_daily_avg }} ₴/день</p>
         <p><strong>Запас міцності:</strong> {{ budget_forecast }}</p>
       </div>
 
       <div class="card">
-        <h3
-          style="
-            margin-top: 0;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 10px;
-          "
-        >
-          📈 Тренди та Поради
-        </h3>
+        <h3 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">📈 Тренди та Поради</h3>
         {% if trend_msg %}
-        <p
-          style="color: {{ trend_color }}; font-weight: bold; font-size: 16px;"
-        >
-          {{ trend_msg }}
-        </p>
+        <p style="color: {{ trend_color }}; font-weight: bold; font-size: 16px;">{{ trend_msg }}</p>
         {% else %}
         <p style="color: #aaa">Недостатньо даних для розрахунку трендів.</p>
         {% endif %}
@@ -354,177 +111,103 @@
       </div>
     </div>
 
-    <div
-      class="card no-print"
-      style="margin-top: 20px; border: 1px solid #9c27b0; margin-bottom: 20px"
-    >
+    <div class="card no-print" style="margin-top: 20px; border: 1px solid #9c27b0; margin-bottom: 20px">
       <h3 style="color: #9c27b0; margin-top: 0">🤖 ШІ Фінансовий Аналітик</h3>
-      <p style="font-size: 14px; color: #aaa">
-        Оберіть період та тип аналізу. Нейромережа проаналізує ваші баланси,
-        категорії витрат, цілі та останні 20 транзакцій для створення
-        персоналізованого звіту.
-      </p>
+      <p style="font-size: 14px; color: #aaa">Оберіть період та тип бюджету. Нейромережа проаналізує ваші баланси, категорії витрат та останні транзакції для персоналізованого звіту.</p>
 
       <form action="/analyze_ai" method="POST" style="margin-top: 20px">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-        <div
-          style="
-            margin-bottom: 20px;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            align-items: center;
-          "
-        >
-          <div
-            style="display: flex; align-items: center; gap: 10px; width: 100%"
-          >
-            <strong style="white-space: nowrap">Період:</strong>
-            <select name="period" style="flex: 1">
-              <option value="7">Останні 7 днів</option>
-              <option value="30" selected>Останні 30 днів</option>
-              <option value="90">Останні 90 днів</option>
-              <option value="365">Останній рік</option>
+        <div style="margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
+          <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+            <strong style="white-space: nowrap;">Період:</strong>
+            <select name="period" id="period_select" style="flex: 1;" onchange="updateAnalyticsPage()">
+              <option value="7" {{ 'selected' if period_days == 7 else '' }}>Останні 7 днів</option>
+              <option value="30" {{ 'selected' if period_days == 30 else '' }}>Останні 30 днів</option>
+              <option value="90" {{ 'selected' if period_days == 90 else '' }}>Останні 90 днів</option>
+              <option value="365" {{ 'selected' if period_days == 365 else '' }}>Останній рік</option>
             </select>
           </div>
-          <div
-            style="display: flex; align-items: center; gap: 10px; width: 100%"
-          >
-            <strong style="white-space: nowrap">Бюджет:</strong>
-            <select name="budget_type" style="flex: 1">
-              <option value="personal" selected>Особистий</option>
-              <option
-                value="shared"
-                {%
-                if
-                not
-                has_partner
-                %}disabled
-                title="У вас немає активного спільного бюджету"
-                {%
-                endif
-                %}
-              >
-                Спільний {% if not has_partner %}(Немає пари){% endif %}
-              </option>
+          <div style="display: flex; align-items: center; gap: 10px; width: 100%;">
+            <strong style="white-space: nowrap;">Бюджет:</strong>
+            <select name="budget_type" id="budget_select" style="flex: 1;" onchange="updateAnalyticsPage()">
+              <option value="personal" {{ 'selected' if not is_shared_view else '' }}>Особистий</option>
+              <option value="shared" {{ 'selected' if is_shared_view else '' }} {{ 'disabled' if not has_partner else '' }}>Спільний {% if not has_partner %}(Немає пари){% endif %}</option>
             </select>
           </div>
         </div>
 
         <div style="display: flex; gap: 10px; flex-wrap: wrap">
-          <button
-            type="submit"
-            name="analysis_type"
-            value="evaluation"
-            class="btn"
-            style="
-              background-color: #9c27b0;
-              color: white;
-              flex: 1;
-              min-width: 200px;
-            "
-          >
-            📊 Оцінка витрат
-          </button>
-          <button
-            type="submit"
-            name="analysis_type"
-            value="savings"
-            class="btn"
-            style="
-              background-color: #2196f3;
-              color: white;
-              flex: 1;
-              min-width: 200px;
-            "
-          >
-            💰 Поради з економії
-          </button>
-          <button
-            type="submit"
-            name="analysis_type"
-            value="runway"
-            class="btn"
-            style="
-              background-color: #ff9800;
-              color: white;
-              flex: 1;
-              min-width: 200px;
-            "
-          >
-            ⏳ Аналіз стійкості
-          </button>
-          <button
-            type="submit"
-            name="analysis_type"
-            value="goals"
-            class="btn"
-            style="
-              background-color: #4caf50;
-              color: white;
-              flex: 1;
-              min-width: 200px;
-            "
-          >
-            🎯 Розрахунок цілей
-          </button>
+          <button type="submit" name="analysis_type" value="evaluation" class="btn ai-btn" style="background-color: #9c27b0; color: white; flex: 1; min-width: 200px;">📊 Оцінка витрат</button>
+          <button type="submit" name="analysis_type" value="savings" class="btn ai-btn" style="background-color: #2196f3; color: white; flex: 1; min-width: 200px;">💰 Поради з економії</button>
+          <button type="submit" name="analysis_type" value="runway" class="btn ai-btn" style="background-color: #ff9800; color: white; flex: 1; min-width: 200px;">⏳ Аналіз стійкості</button>
+          <button type="submit" name="analysis_type" value="goals" class="btn ai-btn" style="background-color: #4caf50; color: white; flex: 1; min-width: 200px;">🎯 Розрахунок цілей</button>
         </div>
       </form>
 
       {% if ai_response %}
-      <div
-        style="
-          margin-top: 25px;
-          padding: 20px;
-          background-color: var(--input-bg);
-          border-radius: 8px;
-          border-left: 5px solid #9c27b0;
-          font-size: 15px;
-          line-height: 1.6;
-        "
-      >
-        <strong style="color: #9c27b0; font-size: 18px"
-          >💡 Висновок нейромережі:</strong
-        ><br /><br />
+      <div style="margin-top: 25px; padding: 20px; background-color: var(--input-bg); border-radius: 8px; border-left: 5px solid #9c27b0; font-size: 15px; line-height: 1.6;">
+        <strong style="color: #9c27b0; font-size: 18px">💡 Висновок нейромережі:</strong><br /><br />
         {{ ai_response | safe }}
       </div>
       {% endif %}
     </div>
 
     <div class="card" style="text-align: center">
-      <h3 style="margin-top: 0; margin-bottom: 15px">Розподіл витрат 📊</h3>
+      <h3 style="margin-top: 0; margin-bottom: 15px;">Розподіл витрат 📊</h3>
       {% if values|length > 0 %}
-      <div
-        style="
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          width: 100%;
-        "
-      >
-        <div
-          style="
-            position: relative;
-            width: 200px;
-            height: 200px;
-            margin: 0 auto;
-          "
-        >
+      <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
+        <div style="position: relative; width: 200px; height: 200px; margin: 0 auto;">
           <canvas id="analyticsChart"></canvas>
         </div>
       </div>
-      <p style="font-size: 12px; color: #aaa; margin-top: 15px">
-        *Наведіть на сектор, щоб побачити %
-      </p>
+      <p style="font-size: 12px; color: #aaa; margin-top: 15px">*Наведіть на сектор, щоб побачити %</p>
       {% else %}
-      <p style="color: #aaa; padding: 40px 0">
-        Немає витрат для побудови графіка.
-      </p>
+      <p style="color: #aaa; padding: 40px 0">Немає витрат за обраний період.</p>
       {% endif %}
     </div>
 
     <script>
+      function updateAnalyticsPage() {
+          const period = document.getElementById('period_select').value;
+          const isShared = document.getElementById('budget_select').value === 'shared' ? '1' : '0';
+          window.location.href = `/analytics?shared=${isShared}&period=${period}`;
+      }
+
+      document.addEventListener("DOMContentLoaded", function(event) {
+          var scrollpos = sessionStorage.getItem('scrollpos_analytics');
+          if (scrollpos) window.scrollTo(0, scrollpos);
+          sessionStorage.removeItem('scrollpos_analytics');
+      });
+
+      window.addEventListener("beforeunload", function(e) {
+          sessionStorage.setItem('scrollpos_analytics', window.scrollY);
+      });
+
+      // Анімація кнопок під час роботи ШІ
+      document.querySelectorAll('.ai-btn').forEach(btn => {
+          btn.addEventListener('click', function(e) {
+              let form = this.closest('form');
+              // Щоб ШІ зрозумів, яку кнопку натиснули, створимо прихований інпут
+              let hiddenInput = document.createElement('input');
+              hiddenInput.type = 'hidden';
+              hiddenInput.name = this.name;
+              hiddenInput.value = this.value;
+              form.appendChild(hiddenInput);
+
+              // Візуально змінюємо ВСІ кнопки, щоб юзер бачив, що йде процес
+              document.querySelectorAll('.ai-btn').forEach(b => {
+                  if(b === this) {
+                      b.innerHTML = '⏳ Аналізую...';
+                  }
+                  b.style.opacity = '0.5';
+                  b.style.pointerEvents = 'none';
+              });
+              
+              form.submit();
+          });
+      });
+
       function toggleTheme() {
           const currentTheme = document.documentElement.getAttribute('data-theme');
           const newTheme = currentTheme === 'light' ? 'dark' : 'light';
@@ -555,9 +238,11 @@
                       tooltip: {
                           callbacks: {
                               label: function(context) {
-                                  let value = Math.round(context.parsed);
+                                  let value = context.parsed;
+                                  value = value % 1 !== 0 ? value.toFixed(2) : value;
+                                  value = parseFloat(value).toLocaleString('uk-UA');
                                   let percentage = ((context.parsed / totalSum) * 100).toFixed(1);
-                                  return context.label + ': ' + value.toLocaleString('uk-UA') + ' ₴ (' + percentage + '%)';
+                                  return context.label + ': ' + value + ' ₴ (' + percentage + '%)';
                               }
                           }
                       }

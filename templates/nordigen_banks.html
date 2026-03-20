@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Вибір Банку - Nordigen</title>
+    <style>
+      body {
+        background-color: #121212;
+        color: white;
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding: 20px;
+      }
+      .card {
+        background-color: #1e1e1e;
+        padding: 30px;
+        border-radius: 12px;
+        max-width: 500px;
+        margin: auto;
+      }
+      .bank-btn {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 15px;
+        background: #2a2a2a;
+        border: 1px solid #333;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        color: white;
+        width: 100%;
+        transition: 0.2s;
+      }
+      .bank-btn:hover {
+        background: #3b82f6;
+        border-color: #3b82f6;
+      }
+      img {
+        max-width: 40px;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2 style="color: #3b82f6">Оберіть свій банк</h2>
+      <p style="color: #aaa; margin-bottom: 20px">
+        Ви будете перенаправлені на офіційну сторінку банку для безпечного
+        підтвердження.
+      </p>
+
+      <form action="/nordigen_redirect" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+        <div style="max-height: 400px; overflow-y: auto">
+          {% for bank in banks %}
+          <button
+            type="submit"
+            name="institution_id"
+            value="{{ bank.id }}"
+            class="bank-btn"
+          >
+            <span style="font-weight: bold; text-align: left"
+              >{{ bank.name }}</span
+            >
+            <img
+              src="{{ bank.logo }}"
+              alt="logo"
+              onerror="this.style.display = 'none'"
+            />
+          </button>
+          {% endfor %}
+        </div>
+
+        <a
+          href="/integrations"
+          style="
+            display: block;
+            margin-top: 20px;
+            color: #ff4d4d;
+            text-decoration: none;
+          "
+          >Скасувати</a
+        >
+      </form>
+    </div>
+  </body>
+</html>

@@ -84,6 +84,7 @@
       }
       input:focus {
         border-color: #2196f3;
+        box-shadow: 0 0 8px rgba(33, 150, 243, 0.4);
       }
 
       /* ІДЕАЛЬНЕ ФІКСОВАНЕ МЕНЮ */
@@ -101,6 +102,7 @@
         border-radius: 0 0 10px 10px;
         border-top: none;
         align-items: center;
+        margin-bottom: 20px;
       }
       .user-greeting {
         font-weight: bold;
@@ -219,11 +221,28 @@
       </div>
     </div>
 
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %}
+    <div style="max-width: 500px; margin: 0 auto 20px auto">
+      {% for category, message in messages %}
+      <div
+        class="card no-print"
+        style="margin-bottom: 10px; border: 1px solid {% if category == 'error' %}#ff4d4d{% else %}#4CAF50{% endif %}; border-radius: 8px; background: {% if category == 'error' %}rgba(255, 77, 77, 0.1){% else %}rgba(76, 175, 80, 0.1){% endif %}; padding: 15px; text-align: center;"
+      >
+        <strong
+          style="color: {% if category == 'error' %}#ff4d4d{% else %}#4CAF50{% endif %};"
+          >{{ message }}</strong
+        >
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %} {% endwith %}
+
     <h2 style="text-align: center; color: #2196f3">🤝 Спільний Бюджет</h2>
     <p
       style="
         text-align: center;
-        color: #888;
+        color: #aaa;
         max-width: 600px;
         margin: 0 auto 30px auto;
       "
@@ -233,21 +252,7 @@
     </p>
 
     <div style="max-width: 500px; margin: 0 auto">
-      {% if error %}
-      <div
-        style="
-          background-color: rgba(255, 77, 77, 0.1);
-          border: 1px solid #ff4d4d;
-          color: #ff4d4d;
-          padding: 15px;
-          border-radius: 8px;
-          margin-bottom: 20px;
-          text-align: center;
-        "
-      >
-        {{ error }}
-      </div>
-      {% endif %} {% if pending_invite %}
+      {% if pending_invite %}
       <div
         class="card"
         style="border-top: 4px solid #4caf50; text-align: center"
@@ -303,6 +308,7 @@
               color: #aaa;
               margin-bottom: 5px;
               display: block;
+              font-weight: bold;
             "
             >Логін партнера:</label
           >
