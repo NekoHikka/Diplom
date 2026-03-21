@@ -898,11 +898,6 @@ def analytics():
 
 with app.app_context():
     db.create_all()
-    try:
-        db.session.execute(text("ALTER TABLE category ADD COLUMN color VARCHAR(7) DEFAULT '#9c27b0'"))
-        db.session.commit()
-    except:
-        db.session.rollback()
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
