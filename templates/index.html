@@ -22,7 +22,6 @@
       if (localStorage.getItem("theme") === "light")
         document.documentElement.setAttribute("data-theme", "light");
 
-      // ДОЗВОЛЯЄ ВВОДИТИ КОПІЙКИ
       function formatMoneyInput(input) {
         let val = input.value.replace(",", ".");
         val = val.replace(/[^0-9.]/g, "");
@@ -105,7 +104,7 @@
       }
 
       select,
-      input:not([type="file"]) {
+      input:not([type="file"]):not([type="color"]) {
         background-color: var(--input-bg);
         color: var(--input-text);
         border: 1px solid var(--input-border);
@@ -194,6 +193,7 @@
       body.generating-pdf .no-print {
         display: none !important;
       }
+
       .acc-pill {
         background-color: var(--input-bg);
         border: 1px solid var(--border-color);
@@ -211,34 +211,40 @@
         border-color: #2196f3;
       }
 
+      /* === ГОЛОВНЕ МЕНЮ (ПК) === */
       .top-menu {
         position: sticky;
         top: 0;
         z-index: 1000;
         display: flex;
         flex-direction: row;
-        gap: 15px;
+        align-items: center;
         padding: 15px;
         background-color: var(--card-bg);
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
         margin-top: -20px;
         border-radius: 0 0 10px 10px;
         border-top: none;
-        align-items: center;
         margin-bottom: 20px;
+        gap: 15px;
       }
       .user-greeting {
         font-weight: bold;
         font-size: 16px;
+        margin: 0;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         max-width: 200px;
-        padding-right: 10px;
+      }
+      .page-buttons {
         display: flex;
-        align-items: center;
-        height: 40px;
-        margin: 0;
+        gap: 10px;
+      }
+      .right-buttons {
+        display: flex;
+        gap: 10px;
+        margin-left: auto;
       }
       .nav-btn {
         display: inline-flex;
@@ -277,7 +283,11 @@
         background-color: #ff9800;
         color: white;
       }
+      .nav-text {
+        margin-left: 6px;
+      }
 
+      /* === ГОЛОВНЕ МЕНЮ ТА АДАПТИВНІСТЬ (ТЕЛЕФОН) === */
       @media (max-width: 768px) {
         body {
           padding: 10px;
@@ -291,41 +301,47 @@
           grid-template-columns: 1fr;
           gap: 12px;
         }
+
         .top-menu {
           flex-direction: column;
-          top: 0;
-          margin-top: 0;
           padding: 10px;
-          align-items: stretch;
+          gap: 10px;
         }
         .user-greeting {
           max-width: 100%;
           text-align: center;
-          margin-bottom: 5px;
-          padding-right: 0;
-          justify-content: center;
         }
-        .top-menu > a.nav-btn {
+        .page-buttons {
           width: 100%;
-          margin-bottom: 5px;
+          justify-content: space-between;
+          gap: 8px;
         }
-        .top-menu .right-buttons {
-          margin-left: 0 !important;
-          display: flex;
-          gap: 10px;
+        .page-buttons .nav-btn {
+          flex: 1;
+          padding: 0;
+          font-size: 20px; /* Збільшений емодзі */
+        }
+        .nav-text {
+          display: none; /* Ховаємо текст на телефоні (залишається тільки емодзі) */
+        }
+        .right-buttons {
           width: 100%;
-          flex-direction: row;
+          justify-content: space-between;
+          margin-left: 0;
         }
-        .top-menu .right-buttons > * {
+        .right-buttons .nav-btn {
           flex: 1;
         }
+
         .card form > div[style*="display: flex"],
         .card form[style*="display: flex"] {
           flex-direction: column !important;
           align-items: stretch !important;
           gap: 10px !important;
         }
-        input:not([type="hidden"]):not([type="checkbox"]):not([type="file"]),
+        input:not([type="hidden"]):not([type="checkbox"]):not(
+            [type="file"]
+          ):not([type="color"]),
         select,
         .btn {
           width: 100% !important;
@@ -370,41 +386,49 @@
       <div class="user-greeting" title="Привіт, {{ username }}!">
         👤 {{ username }}
       </div>
-      <a
-        href="/"
-        class="nav-btn {% if request.path == '/' %}active-home{% endif %}"
-        >🏠 Особистий</a
-      >
-      <a
-        href="/shared"
-        class="nav-btn {% if request.path == '/shared' %}active-shared{% endif %}"
-        >🤝 Спільний</a
-      >
-      <a
-        href="/analytics{% if is_shared_view %}?shared=1{% endif %}"
-        class="nav-btn {% if request.path == '/analytics' %}active-analytics{% endif %}"
-        >🧠 Аналітика</a
-      >
-      <a
-        href="/integrations"
-        class="nav-btn {% if request.path == '/integrations' %}active-integrations{% endif %}"
-        >🏦 Інтеграції</a
-      >
 
-      <div class="right-buttons" style="margin-left: auto">
+      <div class="page-buttons">
+        <a
+          href="/"
+          class="nav-btn {% if request.path == '/' %}active-home{% endif %}"
+        >
+          🏠<span class="nav-text">Особистий</span>
+        </a>
+        <a
+          href="/shared"
+          class="nav-btn {% if request.path == '/shared' %}active-shared{% endif %}"
+        >
+          🤝<span class="nav-text">Спільний</span>
+        </a>
+        <a
+          href="/analytics{% if is_shared_view %}?shared=1{% endif %}"
+          class="nav-btn {% if request.path == '/analytics' %}active-analytics{% endif %}"
+        >
+          🧠<span class="nav-text">Аналітика</span>
+        </a>
+        <a
+          href="/integrations"
+          class="nav-btn {% if request.path == '/integrations' %}active-integrations{% endif %}"
+        >
+          🏦<span class="nav-text">Інтеграції</span>
+        </a>
+      </div>
+
+      <div class="right-buttons">
         <button
           onclick="toggleTheme()"
           class="nav-btn"
           style="background-color: #ff9800; color: white"
         >
-          🌓 Тема
+          🌓 <span class="nav-text-mobile-keep">Тема</span>
         </button>
         <a
           href="/logout"
           class="nav-btn"
           style="background-color: #ff4d4d; color: white"
-          >🚪 Вийти</a
         >
+          🚪 <span class="nav-text-mobile-keep">Вийти</span>
+        </a>
       </div>
     </div>
 
@@ -535,6 +559,7 @@
             name="is_shared"
             value="{{ 'true' if is_shared_view else 'false' }}"
           />
+
           <div style="display: flex; gap: 10px">
             <select
               name="type"
@@ -559,7 +584,9 @@
               {% endfor %}
             </select>
           </div>
+
           <select name="category" id="category_select" required></select>
+
           <div style="display: flex; gap: 10px">
             <input
               type="text"
@@ -713,6 +740,8 @@
             name="name"
             placeholder="Назва"
             required
+            pattern=".*\S+.*"
+            title="Введіть назву без пустих пробілів"
             style="flex: 2; padding: 8px"
           />
           <input
@@ -788,6 +817,8 @@
               name="name"
               placeholder="Назва"
               required
+              pattern=".*\S+.*"
+              title="Введіть назву без пустих пробілів"
               style="flex: 1.5"
             />
             <input
@@ -898,7 +929,12 @@
         <form
           action="/add_category"
           method="POST"
-          style="display: flex; gap: 8px; margin-bottom: 15px"
+          style="
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            align-items: center;
+          "
         >
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
           <input
@@ -906,6 +942,7 @@
             name="is_shared"
             value="{{ 'true' if is_shared_view else 'false' }}"
           />
+
           <select name="type" required style="width: 25%">
             <option value="Витрата">Витрата</option>
             <option value="Дохід">Дохід</option>
@@ -933,7 +970,24 @@
             name="name"
             placeholder="Назва"
             required
+            pattern=".*\S+.*"
+            title="Введіть назву без пустих пробілів"
             style="flex: 1"
+          />
+          <input
+            type="color"
+            name="color"
+            value="{{ random_color | default('#4caf50') }}"
+            title="Колір графіка"
+            style="
+              width: 42px;
+              height: 42px;
+              padding: 0;
+              border: none;
+              border-radius: 8px;
+              cursor: pointer;
+              background: transparent;
+            "
           />
           <button
             type="submit"
@@ -964,10 +1018,40 @@
                 justify-content: space-between;
                 font-size: 13px;
                 padding: 3px 0;
+                align-items: center;
               "
             >
-              <span>{{ cat.name }}</span
-              ><a
+              <div style="display: flex; align-items: center; gap: 8px">
+                <form
+                  action="/update_category_color/{{ cat.id }}"
+                  method="POST"
+                  style="margin: 0; display: flex; align-items: center"
+                >
+                  <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token() }}"
+                  />
+                  <input
+                    type="color"
+                    name="color"
+                    value="{{ cat.color or '#9c27b0' }}"
+                    onchange="this.form.submit()"
+                    style="
+                      width: 18px;
+                      height: 18px;
+                      border: none;
+                      padding: 0;
+                      cursor: pointer;
+                      outline: none;
+                      background: transparent;
+                    "
+                    title="Змінити колір"
+                  />
+                </form>
+                <span>{{ cat.name }}</span>
+              </div>
+              <a
                 href="/delete_category/{{ cat.id }}"
                 style="text-decoration: none"
                 class="optimistic-delete"
@@ -988,10 +1072,40 @@
                 justify-content: space-between;
                 font-size: 13px;
                 padding: 3px 0;
+                align-items: center;
               "
             >
-              <span>{{ cat.name }}</span
-              ><a
+              <div style="display: flex; align-items: center; gap: 8px">
+                <form
+                  action="/update_category_color/{{ cat.id }}"
+                  method="POST"
+                  style="margin: 0; display: flex; align-items: center"
+                >
+                  <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token() }}"
+                  />
+                  <input
+                    type="color"
+                    name="color"
+                    value="{{ cat.color or '#9c27b0' }}"
+                    onchange="this.form.submit()"
+                    style="
+                      width: 18px;
+                      height: 18px;
+                      border: none;
+                      padding: 0;
+                      cursor: pointer;
+                      outline: none;
+                      background: transparent;
+                    "
+                    title="Змінити колір"
+                  />
+                </form>
+                <span>{{ cat.name }}</span>
+              </div>
+              <a
                 href="/delete_category/{{ cat.id }}"
                 style="text-decoration: none"
                 class="optimistic-delete"
@@ -1021,13 +1135,24 @@
           "
         >
           <tr style="border-bottom: 1px solid var(--border-color)">
-            <th style="width: 15%; padding: 12px 0">Дата</th>
-            <th style="width: 15%">Рахунок</th>
+            <th style="width: 12%; padding: 12px 0">Дата</th>
+            <th style="width: 13%">Рахунок</th>
+            {% if is_shared_view %}
+            <th style="width: 12%">Хто додав</th>
+            {% endif %}
             <th style="width: 10%">Тип</th>
-            <th style="width: 20%">Категорія</th>
-            <th style="width: 15%">Сума</th>
-            <th style="width: 20%">Опис</th>
-            <th style="width: 10%; text-align: center" class="no-print">Дія</th>
+            <th style="width: 18%">Категорія</th>
+            <th
+              style="width: {% if is_shared_view %}12%{% else %}15%{% endif %}"
+            >
+              Сума
+            </th>
+            <th
+              style="width: {% if is_shared_view %}15%{% else %}20%{% endif %}"
+            >
+              Опис
+            </th>
+            <th style="width: 8%; text-align: center" class="no-print">Дія</th>
           </tr>
           {% for t in transactions %}
           <tr
@@ -1041,6 +1166,13 @@
             <td style="color: #ff9800; font-weight: bold">
               {{ t.account.name if t.account else '---' }}
             </td>
+
+            {% if is_shared_view %}
+            <td style="color: #4db8ff; font-weight: bold; font-size: 13px">
+              👤 {{ t.user.username }}
+            </td>
+            {% endif %}
+
             <td
               style="color: {% if t.type == 'Витрата' %}#ff4d4d{% else %}#4CAF50{% endif %}; font-weight: bold;"
             >
@@ -1163,7 +1295,6 @@
         >
           ✖
         </button>
-
         <h3 style="margin-top: 0; color: #9c27b0; text-align: center">
           🤖 Розпізнати по фото
         </h3>
@@ -1175,8 +1306,8 @@
             margin-bottom: 20px;
           "
         >
-          Завантажте фото чека або скріншот виписки з банку (Приват/Моно), і
-          нейромережа сама створить записи.
+          Завантажте фото чека або скріншот виписки з банку, і нейромережа сама
+          створить записи.
         </p>
 
         <form
@@ -1191,7 +1322,6 @@
             name="is_shared"
             value="{{ 'true' if is_shared_view else 'false' }}"
           />
-
           <div>
             <label
               style="
@@ -1212,7 +1342,6 @@
               {% endfor %}
             </select>
           </div>
-
           <div
             style="
               border: 2px dashed var(--border-color);
@@ -1236,7 +1365,6 @@
               "
             />
           </div>
-
           <div style="display: flex; gap: 10px; margin-top: 10px">
             <button
               type="submit"
@@ -1252,20 +1380,22 @@
     </div>
 
     <script>
-      // 🚀 МАГІЯ: Збереження позиції скролу
+      // 🚀 МАГІЯ: Збереження позиції скролу за URL-шляхом
       document.addEventListener("DOMContentLoaded", function() {
-          const scrollpos = sessionStorage.getItem('scrollpos');
+          const path = window.location.pathname;
+          const scrollpos = sessionStorage.getItem('scrollpos_' + path);
           if (scrollpos) {
               window.scrollTo(0, parseInt(scrollpos));
-              sessionStorage.removeItem('scrollpos');
+              sessionStorage.removeItem('scrollpos_' + path);
           }
       });
 
       window.addEventListener("beforeunload", function() {
-          sessionStorage.setItem('scrollpos', window.scrollY);
+          const path = window.location.pathname;
+          sessionStorage.setItem('scrollpos_' + path, window.scrollY);
       });
 
-      // 🚀 МАГІЯ: Оптимістичне видалення (рядок пропадає миттєво при кліку)
+      // 🚀 МАГІЯ: Оптимістичне видалення
       document.querySelectorAll('.optimistic-delete').forEach(link => {
           link.addEventListener('click', function(e) {
               setTimeout(() => {
@@ -1279,11 +1409,10 @@
           });
       });
 
-      // 🚀 МАГІЯ: Анімація кнопок під час відправки форми
-      document.querySelectorAll('form').forEach(form => {
-          form.addEventListener('submit', function() {
-              let btn = this.querySelector('.optimistic-submit');
-              if (btn && !btn.innerHTML.includes('Аналізую')) {
+      // 🚀 МАГІЯ: Анімація кнопок під час відправки
+      document.querySelectorAll('.optimistic-submit').forEach(btn => {
+          btn.closest('form').addEventListener('submit', function() {
+              if(!btn.innerHTML.includes('Аналізую')) {
                   btn.innerHTML = '⏳...';
                   btn.style.opacity = '0.7';
                   btn.style.pointerEvents = 'none';
@@ -1291,7 +1420,7 @@
           });
       });
 
-      // ФІКС ДАТ: Обмеження календаря (від -10 до +20 років)
+      // ФІКС ДАТ: Обмеження календаря
       document.addEventListener("DOMContentLoaded", function() {
           const dateInputs = document.querySelectorAll('input[type="date"]');
           const currentYear = new Date().getFullYear();
@@ -1305,7 +1434,7 @@
 
       function toggleTheme() {
           const currentTheme = document.documentElement.getAttribute('data-theme');
-          const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+          const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
           document.documentElement.setAttribute('data-theme', newTheme);
           localStorage.setItem('theme', newTheme);
       }
@@ -1351,52 +1480,62 @@
           });
       }
 
-      const labels = {{ labels | tojson | safe }};
-      const data = {{ values | tojson | safe }};
-      if (labels.length > 0) {
-          const totalSum = data.reduce((a, b) => a + b, 0);
-          const centerTextPlugin = {
-              id: 'centerText',
-              beforeDraw: function(chart) {
-                  const ctx = chart.ctx; const width = chart.width; const height = chart.height;
-                  ctx.restore();
+      // ГРАФІК З ЧИСТИМИ КОЛЬОРАМИ
+      document.addEventListener("DOMContentLoaded", function() {
+          try {
+              const labels = {{ labels | tojson | safe }};
+              const data = {{ values | tojson | safe }};
+              const bgColors = {{ chart_colors | default([]) | tojson | safe }};
 
-                  // Гарно форматуємо суму в центрі графіка
-                  let displaySum = totalSum % 1 !== 0 ? totalSum.toFixed(2) : totalSum;
-                  displaySum = parseFloat(displaySum).toLocaleString('uk-UA');
-                  const text1 = displaySum + " ₴";
+              if (labels.length > 0) {
+                  const totalSum = data.reduce((a, b) => a + b, 0);
+                  const centerTextPlugin = {
+                      id: 'centerText',
+                      beforeDraw: function(chart) {
+                          const ctx = chart.ctx; const width = chart.width; const height = chart.height;
+                          ctx.restore();
 
-                  let fontSize = 20;
-                  if (text1.length > 9) fontSize = 16;
-                  if (text1.length > 12) fontSize = 13;
-                  ctx.font = "bold " + fontSize + "px Arial";
-                  ctx.textBaseline = "middle";
-                  ctx.fillStyle = "#ff4d4d";
-                  const text1X = Math.round((width - ctx.measureText(text1).width) / 2);
-                  const text1Y = height / 2 - 8;
-                  ctx.fillText(text1, text1X, text1Y);
-                  ctx.font = "10px Arial"; ctx.fillStyle = "#aaaaaa";
-                  const text2 = "ВИТРАТ";
-                  const text2X = Math.round((width - ctx.measureText(text2).width) / 2);
-                  const text2Y = height / 2 + 14;
-                  ctx.fillText(text2, text2X, text2Y);
-                  ctx.save();
+                          let displaySum = totalSum % 1 !== 0 ? totalSum.toFixed(2) : totalSum;
+                          displaySum = parseFloat(displaySum).toLocaleString('uk-UA');
+                          const text1 = displaySum + " ₴";
+
+                          let fontSize = 20;
+                          if (text1.length > 9) fontSize = 16;
+                          if (text1.length > 12) fontSize = 13;
+                          ctx.font = "bold " + fontSize + "px Arial";
+                          ctx.textBaseline = "middle";
+                          ctx.fillStyle = "#ff4d4d";
+                          const text1X = Math.round((width - ctx.measureText(text1).width) / 2);
+                          const text1Y = height / 2 - 8;
+                          ctx.fillText(text1, text1X, text1Y);
+                          ctx.font = "10px Arial"; ctx.fillStyle = "#aaaaaa";
+                          const text2 = "ВИТРАТ";
+                          const text2X = Math.round((width - ctx.measureText(text2).width) / 2);
+                          const text2Y = height / 2 + 14;
+                          ctx.fillText(text2, text2X, text2Y);
+                          ctx.save();
+                      }
+                  };
+
+                  const currentColors = bgColors.length > 0 ? bgColors : ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8BC34A', '#E91E63'];
+
+                  new Chart(document.getElementById('expensesChart').getContext('2d'), {
+                      type: 'doughnut',
+                      data: { labels: labels, datasets: [{ data: data, backgroundColor: currentColors, borderWidth: 0 }] },
+                      options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) {
+                          let value = context.parsed;
+                          value = value % 1 !== 0 ? value.toFixed(2) : value;
+                          value = parseFloat(value).toLocaleString('uk-UA');
+                          let percentage = ((context.parsed / totalSum) * 100).toFixed(1);
+                          return context.label + ': ' + value + ' ₴ (' + percentage + '%)';
+                      }}}}},
+                      plugins: [centerTextPlugin]
+                  });
               }
-          };
-
-          new Chart(document.getElementById('expensesChart').getContext('2d'), {
-              type: 'doughnut',
-              data: { labels: labels, datasets: [{ data: data, backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8BC34A', '#E91E63'], borderWidth: 0 }] },
-              options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) {
-                  let value = context.parsed;
-                  value = value % 1 !== 0 ? value.toFixed(2) : value;
-                  value = parseFloat(value).toLocaleString('uk-UA');
-                  let percentage = ((context.parsed / totalSum) * 100).toFixed(1);
-                  return context.label + ': ' + value + ' ₴ (' + percentage + '%)';
-              }}}}},
-              plugins: [centerTextPlugin]
-          });
-      }
+          } catch(e) {
+              console.error("Помилка генерації графіка:", e);
+          }
+      });
     </script>
   </body>
 </html>

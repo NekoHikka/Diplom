@@ -139,14 +139,7 @@
             <option value="{{ e }}">{{ e }}</option>
             {% endif %} {% endfor %}
           </select>
-          <input
-            type="text"
-            name="name"
-            value="{{ current_name }}"
-            required
-            style="margin-bottom: 0; flex: 1; cursor: text"
-          />
-        </div>
+        <input type="text" name="name" value="{{ current_name }}" required pattern=".*\S+.*" title="Введіть назву без пустих пробілів" style="margin-bottom: 0; flex: 1; cursor: text" />
 
         <label style="margin-top: 15px">Поточний Баланс (₴)</label>
         <input

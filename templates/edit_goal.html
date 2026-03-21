@@ -141,7 +141,14 @@
       <form action="/edit_goal/{{ g.id }}" method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <label>Назва цілі:</label>
-        <input type="text" name="name" value="{{ g.name }}" required />
+        <input
+          type="text"
+          name="name"
+          value="{{ g.name }}"
+          required
+          pattern=".*\S+.*"
+          title="Введіть назву без пустих пробілів"
+        />
         <label>Необхідна сума (грн):</label>
         <input
           type="text"

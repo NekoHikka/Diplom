@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Аналітика - Розумні Фінанси</title>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}" />
+    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <script>
       if (localStorage.getItem("theme") === "light") document.documentElement.setAttribute("data-theme", "light");
     </script>
@@ -33,25 +35,55 @@
       ::-webkit-scrollbar-thumb { background-color: var(--border-color); border-radius: 10px; }
       ::-webkit-scrollbar-thumb:hover { background-color: var(--input-border); }
 
-      .top-menu { position: sticky; top: 0; z-index: 1000; display: flex; flex-direction: row; gap: 15px; padding: 15px; background-color: var(--card-bg); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); margin-top: -20px; border-radius: 0 0 10px 10px; border-top: none; align-items: center; margin-bottom: 20px; }
-      .user-greeting { font-weight: bold; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; padding-right: 10px; display: flex; align-items: center; height: 40px; margin: 0; }
+      /* === ГОЛОВНЕ МЕНЮ (ПК) === */
+      .top-menu {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        padding: 15px;
+        background-color: var(--card-bg);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        margin-top: -20px;
+        border-radius: 0 0 10px 10px;
+        border-top: none;
+        margin-bottom: 20px;
+        gap: 15px;
+      }
+      .user-greeting {
+        font-weight: bold;
+        font-size: 16px;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 200px;
+      }
+      .page-buttons { display: flex; gap: 10px; }
+      .right-buttons { display: flex; gap: 10px; margin-left: auto; }
       .nav-btn { display: inline-flex; align-items: center; justify-content: center; height: 40px; padding: 0 15px; border-radius: 8px; font-weight: bold; text-decoration: none; transition: 0.2s; box-sizing: border-box; white-space: nowrap; border: none; cursor: pointer; background-color: var(--input-bg); color: var(--text-color); font-size: 14px; }
       .nav-btn:hover { filter: brightness(1.2); }
       .nav-btn.active-home { background-color: #4caf50; color: white; }
       .nav-btn.active-shared { background-color: #2196f3; color: white; }
       .nav-btn.active-analytics { background-color: #9c27b0; color: white; }
       .nav-btn.active-integrations { background-color: #ff9800; color: white; }
+      .nav-text { margin-left: 6px; }
 
+      /* === ГОЛОВНЕ МЕНЮ (ТЕЛЕФОН) === */
       @media (max-width: 768px) {
         body { padding: 10px; margin: 0; }
         .card { padding: 15px; margin-bottom: 12px; }
         .grid { grid-template-columns: 1fr; gap: 12px; }
 
-        .top-menu { flex-direction: column; top: 0; margin-top: 0; padding: 10px; align-items: stretch; }
-        .user-greeting { max-width: 100%; text-align: center; margin-bottom: 5px; padding-right: 0; justify-content: center; }
-        .top-menu > a.nav-btn { width: 100%; margin-bottom: 5px; } 
-        .top-menu .right-buttons { margin-left: 0 !important; display: flex; gap: 10px; width: 100%; flex-direction: row; }
-        .top-menu .right-buttons > * { flex: 1; }
+        .top-menu { flex-direction: column; padding: 10px; gap: 10px; }
+        .user-greeting { max-width: 100%; text-align: center; }
+        .page-buttons { width: 100%; justify-content: space-between; gap: 8px; }
+        .page-buttons .nav-btn { flex: 1; padding: 0; font-size: 20px; } /* Великі емодзі */
+        .nav-text { display: none; } /* Текст зникає */
+        .right-buttons { width: 100%; justify-content: space-between; margin-left: 0; }
+        .right-buttons .nav-btn { flex: 1; }
 
         .card form > div[style*="display: flex"], .card form[style*="display: flex"] { flex-direction: column !important; align-items: stretch !important; gap: 10px !important; }
         input:not([type="hidden"]), select, .btn { width: 100% !important; box-sizing: border-box; }
@@ -61,14 +93,29 @@
   <body>
     <div class="card no-print top-menu">
       <div class="user-greeting" title="Привіт, {{ username }}!">👤 {{ username }}</div>
-      <a href="/" class="nav-btn {% if request.path == '/' %}active-home{% endif %}">🏠 Особистий</a>
-      <a href="/shared" class="nav-btn {% if request.path == '/shared' %}active-shared{% endif %}">🤝 Спільний</a>
-      <a href="/analytics{% if is_shared_view %}?shared=1{% endif %}" class="nav-btn {% if request.path == '/analytics' %}active-analytics{% endif %}">🧠 Аналітика</a>
-      <a href="/integrations" class="nav-btn {% if request.path == '/integrations' %}active-integrations{% endif %}">🏦 Інтеграції</a>
       
-      <div class="right-buttons" style="margin-left: auto">
-        <button onclick="toggleTheme()" class="nav-btn" style="background-color: #ff9800; color: white">🌓 Тема</button>
-        <a href="/logout" class="nav-btn" style="background-color: #ff4d4d; color: white">🚪 Вийти</a>
+      <div class="page-buttons">
+        <a href="/" class="nav-btn {% if request.path == '/' %}active-home{% endif %}">
+          🏠<span class="nav-text">Особистий</span>
+        </a>
+        <a href="/shared" class="nav-btn {% if request.path == '/shared' %}active-shared{% endif %}">
+          🤝<span class="nav-text">Спільний</span>
+        </a>
+        <a href="/analytics{% if is_shared_view %}?shared=1{% endif %}" class="nav-btn {% if request.path == '/analytics' %}active-analytics{% endif %}">
+          🧠<span class="nav-text">Аналітика</span>
+        </a>
+        <a href="/integrations" class="nav-btn {% if request.path == '/integrations' %}active-integrations{% endif %}">
+          🏦<span class="nav-text">Інтеграції</span>
+        </a>
+      </div>
+
+      <div class="right-buttons">
+        <button onclick="toggleTheme()" class="nav-btn" style="background-color: #ff9800; color: white">
+          🌓 <span class="nav-text-mobile-keep">Тема</span>
+        </button>
+        <a href="/logout" class="nav-btn" style="background-color: #ff4d4d; color: white">
+          🚪 <span class="nav-text-mobile-keep">Вийти</span>
+        </a>
       </div>
     </div>
 
@@ -157,7 +204,7 @@
       <h3 style="margin-top: 0; margin-bottom: 15px;">Розподіл витрат 📊</h3>
       {% if values|length > 0 %}
       <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
-        <div style="position: relative; width: 200px; height: 200px; margin: 0 auto;">
+        <div style="position: relative; width: 250px; height: 250px; margin: 0 auto;">
           <canvas id="analyticsChart"></canvas>
         </div>
       </div>
@@ -184,18 +231,15 @@
           sessionStorage.setItem('scrollpos_analytics', window.scrollY);
       });
 
-      // Анімація кнопок під час роботи ШІ
       document.querySelectorAll('.ai-btn').forEach(btn => {
           btn.addEventListener('click', function(e) {
               let form = this.closest('form');
-              // Щоб ШІ зрозумів, яку кнопку натиснули, створимо прихований інпут
               let hiddenInput = document.createElement('input');
               hiddenInput.type = 'hidden';
               hiddenInput.name = this.name;
               hiddenInput.value = this.value;
               form.appendChild(hiddenInput);
 
-              // Візуально змінюємо ВСІ кнопки, щоб юзер бачив, що йде процес
               document.querySelectorAll('.ai-btn').forEach(b => {
                   if(b === this) {
                       b.innerHTML = '⏳ Аналізую...';
@@ -210,46 +254,55 @@
 
       function toggleTheme() {
           const currentTheme = document.documentElement.getAttribute('data-theme');
-          const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+          const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
           document.documentElement.setAttribute('data-theme', newTheme);
           localStorage.setItem('theme', newTheme);
       }
 
-      const labels = {{ labels | tojson | safe }};
-      const data = {{ values | tojson | safe }};
+      document.addEventListener("DOMContentLoaded", function() {
+          try {
+              const labels = {{ labels | tojson | safe }};
+              const data = {{ values | tojson | safe }};
+              const bgColors = {{ chart_colors | default([]) | tojson | safe }};
 
-      if (labels.length > 0) {
-          const totalSum = data.reduce((a, b) => a + b, 0);
-          new Chart(document.getElementById('analyticsChart').getContext('2d'), {
-              type: 'doughnut',
-              data: {
-                  labels: labels,
-                  datasets: [{
-                      data: data,
-                      backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8BC34A', '#E91E63'],
-                      borderWidth: 0
-                  }]
-              },
-              options: {
-                  responsive: true,
-                  maintainAspectRatio: false,
-                  plugins: {
-                      legend: { position: 'bottom', labels: { color: document.documentElement.getAttribute('data-theme') === 'light' ? '#333' : '#fff' } },
-                      tooltip: {
-                          callbacks: {
-                              label: function(context) {
-                                  let value = context.parsed;
-                                  value = value % 1 !== 0 ? value.toFixed(2) : value;
-                                  value = parseFloat(value).toLocaleString('uk-UA');
-                                  let percentage = ((context.parsed / totalSum) * 100).toFixed(1);
-                                  return context.label + ': ' + value + ' ₴ (' + percentage + '%)';
+              if (labels.length > 0) {
+                  const totalSum = data.reduce((a, b) => a + b, 0);
+                  const currentColors = bgColors.length > 0 ? bgColors : ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8BC34A', '#E91E63'];
+
+                  new Chart(document.getElementById('analyticsChart').getContext('2d'), {
+                      type: 'doughnut',
+                      data: {
+                          labels: labels,
+                          datasets: [{
+                              data: data,
+                              backgroundColor: currentColors,
+                              borderWidth: 0
+                          }]
+                      },
+                      options: {
+                          responsive: true,
+                          maintainAspectRatio: false,
+                          plugins: {
+                              legend: { position: 'bottom', labels: { color: document.documentElement.getAttribute('data-theme') === 'light' ? '#333' : '#fff' } },
+                              tooltip: {
+                                  callbacks: {
+                                      label: function(context) {
+                                          let value = context.parsed;
+                                          value = value % 1 !== 0 ? value.toFixed(2) : value;
+                                          value = parseFloat(value).toLocaleString('uk-UA');
+                                          let percentage = ((context.parsed / totalSum) * 100).toFixed(1);
+                                          return context.label + ': ' + value + ' ₴ (' + percentage + '%)';
+                                      }
+                                  }
                               }
                           }
                       }
-                  }
+                  });
               }
-          });
-      }
+          } catch(e) {
+              console.error("Помилка графіка:", e);
+          }
+      });
     </script>
   </body>
 </html>
