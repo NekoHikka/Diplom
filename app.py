@@ -13,15 +13,26 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta, timezone
 import calendar
 
+# Додаємо ProxyFix для правильної роботи кукі через HTTPS на Render
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 from PIL import Image
 from google import genai
 
 load_dotenv()
 
 app = Flask(__name__)
+
+# Повідомляємо Flask, що він працює за проксі-сервером Render (важливо для сесій)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
+
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'fallback-secret-key')
 
+# --- ЗАЛІЗОБЕТОННЕ ЗБЕРЕЖЕННЯ СЕСІЇ ДЛЯ ТЕЛЕФОНІВ ---
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
+app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=30)
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['REMEMBER_COOKIE_SAMESITE'] = 'Lax'
 
 csrf = CSRFProtect(app)
 
@@ -355,7 +366,6 @@ def add_receipt_ai():
                     db.session.add(new_cat)
                     known_cat_names.append(cat_name)
 
-                # ФІКС: Округлюємо баланс при роботі ШІ
                 if t_type == 'Витрата': 
                     acc.balance = round(acc.balance - amount, 2)
                 else: 
@@ -395,7 +405,6 @@ def delete_transaction(id):
     if t:
         acc = db.session.get(Account, t.account_id)
         if acc:
-            # ФІКС: Округлюємо баланс при видаленні
             if t.type == 'Дохід': acc.balance = round(acc.balance - t.amount, 2)
             else: acc.balance = round(acc.balance + t.amount, 2)
         db.session.delete(t)
@@ -481,7 +490,6 @@ def edit_transaction(id):
     if request.method == 'POST':
         old_acc = db.session.get(Account, t.account_id)
         if old_acc:
-            # ФІКС: Округлюємо баланс при відміні старої транзакції
             if t.type == 'Дохід': old_acc.balance = round(old_acc.balance - t.amount, 2)
             else: old_acc.balance = round(old_acc.balance + t.amount, 2)
             
@@ -497,7 +505,6 @@ def edit_transaction(id):
         
         new_acc = db.session.get(Account, t.account_id)
         if new_acc:
-            # ФІКС: Округлюємо баланс при накладанні нової
             if t.type == 'Дохід': new_acc.balance = round(new_acc.balance + t.amount, 2)
             else: new_acc.balance = round(new_acc.balance - t.amount, 2)
         db.session.commit()
@@ -573,7 +580,6 @@ def shared_budget():
         date_str = request.form.get('date')
         t_date = datetime.combine(datetime.strptime(date_str, '%Y-%m-%d').date(), get_current_time().time()) if date_str else get_current_time()
         if acc:
-            # ФІКС: Округлення
             if t_type == 'Дохід': acc.balance = round(acc.balance + amount, 2)
             else: acc.balance = round(acc.balance - amount, 2)
         db.session.add(Transaction(type=t_type, category=request.form['category'], amount=amount, description=request.form['description'], date=t_date, user_id=current_user.id, account_id=acc.id, is_shared=True))
@@ -638,7 +644,6 @@ def home():
         date_str = request.form.get('date')
         t_date = datetime.combine(datetime.strptime(date_str, '%Y-%m-%d').date(), get_current_time().time()) if date_str else get_current_time()
         if acc:
-            # ФІКС: Округлення
             if t_type == 'Дохід': acc.balance = round(acc.balance + amount, 2)
             else: acc.balance = round(acc.balance - amount, 2)
         db.session.add(Transaction(type=t_type, category=request.form['category'], amount=amount, description=request.form['description'], date=t_date, user_id=current_user.id, account_id=acc.id, is_shared=False))
@@ -793,7 +798,7 @@ def analyze_ai():
         goals = Goal.query.filter_by(user_id=current_user.id, is_shared=False).all()
         context_prefix = "ОСОБИСТИЙ БЮДЖЕТ"
 
-    total_balance = sum(a.balance for a in user_accounts)
+    total_balance = round(sum(a.balance for a in user_accounts), 2)
 
     if goals:
         goals_text_lines = []
@@ -803,7 +808,7 @@ def analyze_ai():
             else:
                 ids_list = [int(x) for x in g.account_ids.split(',')]
                 target_accs = [a for a in user_accounts if a.id in ids_list]
-                curr_val = sum(a.balance for a in target_accs)
+                curr_val = round(sum(a.balance for a in target_accs), 2)
             
             left_to_collect = g.target_amount - curr_val
             if left_to_collect < 0: left_to_collect = 0
