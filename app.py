@@ -36,7 +36,14 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:/
 if app.config['SQLALCHEMY_DATABASE_URI'].startswith("postgres://"):
     app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace("postgres://", "postgresql://", 1)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {"pool_pre_ping": True, "pool_recycle": 280}
+
+# ФІКС ДЛЯ СТАБІЛЬНОСТІ НА RENDER (ЩОБ НЕ ВИСНУВ)
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    "pool_pre_ping": True,
+    "pool_recycle": 300,
+    "pool_size": 5,
+    "max_overflow": 0
+}
 
 db = SQLAlchemy(app)
 login_manager = LoginManager(app)
@@ -576,7 +583,6 @@ def shared_budget():
     partner = db.session.get(User, partner_id)
     user_ids = [current_user.id, partner_id]
     
-    # ФІКС: Лікуємо старі фіолетові категорії
     user_categories = Category.query.filter(Category.user_id.in_(user_ids), Category.is_shared==True).all()
     fixed_colors = False
     for c in user_categories:
@@ -653,7 +659,6 @@ def home():
     pending_invite = Partnership.query.filter_by(user2_id=current_user.id, status='pending').first()
     invite_sender = db.session.get(User, pending_invite.user1_id) if pending_invite else None
 
-    # ФІКС: Лікуємо старі фіолетові категорії
     user_categories = Category.query.filter_by(user_id=current_user.id, is_shared=False).all()
     fixed_colors = False
     for c in user_categories:
