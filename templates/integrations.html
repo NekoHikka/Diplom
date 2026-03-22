@@ -155,34 +155,40 @@
         scrollbar-color: var(--border-color) var(--input-bg);
       }
 
+      /* === ГОЛОВНЕ МЕНЮ (ПК) === */
       .top-menu {
         position: sticky;
         top: 0;
         z-index: 1000;
         display: flex;
         flex-direction: row;
-        gap: 15px;
+        align-items: center;
         padding: 15px;
         background-color: var(--card-bg);
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
         margin-top: -20px;
         border-radius: 0 0 10px 10px;
         border-top: none;
-        align-items: center;
         margin-bottom: 20px;
+        gap: 15px;
       }
       .user-greeting {
         font-weight: bold;
         font-size: 16px;
+        margin: 0;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         max-width: 200px;
-        padding-right: 10px;
+      }
+      .page-buttons {
         display: flex;
-        align-items: center;
-        height: 40px;
-        margin: 0;
+        gap: 10px;
+      }
+      .right-buttons {
+        display: flex;
+        gap: 10px;
+        margin-left: auto;
       }
       .nav-btn {
         display: inline-flex;
@@ -221,8 +227,11 @@
         background-color: #ff9800;
         color: white;
       }
+      .nav-text {
+        margin-left: 6px;
+      }
 
-      /* === ГОЛОВНЕ МЕНЮ (ТЕЛЕФОН) === */
+      /* === ГОЛОВНЕ МЕНЮ ТА АДАПТИВНІСТЬ (ТЕЛЕФОН) === */
       @media (max-width: 768px) {
         body {
           padding: 10px;
@@ -235,42 +244,33 @@
 
         .top-menu {
           flex-direction: column;
-          gap: 10px;
           padding: 10px;
-          position: relative;
-          margin-top: 0;
+          gap: 10px;
         }
         .user-greeting {
-          font-size: 20px;
-          width: 100%;
-          text-align: center;
           max-width: 100%;
+          text-align: center;
         }
         .page-buttons {
           width: 100%;
-          display: flex;
           justify-content: space-between;
           gap: 8px;
         }
         .page-buttons .nav-btn {
           flex: 1;
-          height: 42px;
-          font-size: 20px;
           padding: 0;
+          font-size: 20px; /* Збільшений емодзі */
         }
         .nav-text {
-          display: none;
+          display: none; /* Ховаємо текст на телефоні (залишається тільки емодзі) */
         }
         .right-buttons {
           width: 100%;
-          display: flex;
           justify-content: space-between;
-          gap: 10px;
           margin-left: 0;
         }
         .right-buttons .nav-btn {
           flex: 1;
-          font-size: 14px;
         }
       }
     </style>
@@ -280,41 +280,49 @@
       <div class="user-greeting" title="Привіт, {{ username }}!">
         👤 {{ username }}
       </div>
-      <a
-        href="/"
-        class="nav-btn {% if request.path == '/' %}active-home{% endif %}"
-        >🏠 Особистий</a
-      >
-      <a
-        href="/shared"
-        class="nav-btn {% if request.path == '/shared' %}active-shared{% endif %}"
-        >🤝 Спільний</a
-      >
-      <a
-        href="/analytics{% if is_shared_view %}?shared=1{% endif %}"
-        class="nav-btn {% if request.path == '/analytics' %}active-analytics{% endif %}"
-        >🧠 Аналітика</a
-      >
-      <a
-        href="/integrations"
-        class="nav-btn {% if request.path == '/integrations' %}active-integrations{% endif %}"
-        >🏦 Інтеграції</a
-      >
 
-      <div class="right-buttons" style="margin-left: auto">
+      <div class="page-buttons">
+        <a
+          href="/"
+          class="nav-btn {% if request.path == '/' %}active-home{% endif %}"
+        >
+          🏠<span class="nav-text">Особистий</span>
+        </a>
+        <a
+          href="/shared"
+          class="nav-btn {% if request.path == '/shared' %}active-shared{% endif %}"
+        >
+          🤝<span class="nav-text">Спільний</span>
+        </a>
+        <a
+          href="/analytics{% if is_shared_view %}?shared=1{% endif %}"
+          class="nav-btn {% if request.path == '/analytics' %}active-analytics{% endif %}"
+        >
+          🧠<span class="nav-text">Аналітика</span>
+        </a>
+        <a
+          href="/integrations"
+          class="nav-btn {% if request.path == '/integrations' %}active-integrations{% endif %}"
+        >
+          🏦<span class="nav-text">Інтеграції</span>
+        </a>
+      </div>
+
+      <div class="right-buttons">
         <button
           onclick="toggleTheme()"
           class="nav-btn"
           style="background-color: #ff9800; color: white"
         >
-          🌓 Тема
+          🌓 <span class="nav-text-mobile-keep">Тема</span>
         </button>
         <a
           href="/logout"
           class="nav-btn"
           style="background-color: #ff4d4d; color: white"
-          >🚪 Вийти</a
         >
+          🚪 <span class="nav-text-mobile-keep">Вийти</span>
+        </a>
       </div>
     </div>
 
