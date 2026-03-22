@@ -744,7 +744,8 @@ def sync_monobank():
     if not token: return redirect(url_for('integrations'))
 
     headers = {'X-Token': token}
-    client_info_resp = requests.get('[https://api.monobank.ua/personal/client-info](https://api.monobank.ua/personal/client-info)', headers=headers)
+    client_info_resp = requests.get('https://api.monobank.ua/personal/client-info', headers=headers)
+    
     if client_info_resp.status_code == 200:
         accounts_data = client_info_resp.json().get('accounts', [])
         if accounts_data:
@@ -759,7 +760,10 @@ def sync_monobank():
             db.session.commit()
             account_db_id = mono_account.id
             now = get_current_time(); to_time = int(now.timestamp()); from_time = int((now - timedelta(days=3)).timestamp())
-            statement_resp = requests.get(f'[https://api.monobank.ua/personal/statement/0/](https://api.monobank.ua/personal/statement/0/){from_time}/{to_time}', headers=headers)
+            
+            # ВИПРАВЛЕНЕ ПОСИЛАННЯ ТУТ:
+            statement_resp = requests.get(f'https://api.monobank.ua/personal/statement/0/{from_time}/{to_time}', headers=headers)
+            
             if statement_resp.status_code == 200:
                 for t in statement_resp.json():
                     amount_uah = round(abs(t.get('amount', 0) / 100.0), 2) 
