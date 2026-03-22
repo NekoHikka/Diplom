@@ -323,6 +323,7 @@ def add_receipt_ai():
     file = request.files.get('receipt_image')
     account_id = request.form.get('account_id')
     is_shared = request.form.get('is_shared') == 'true'
+    user_prompt = request.form.get('user_prompt', '').strip()
 
     if not file or file.filename == '':
         flash("❌ Ви не вибрали фотографію чека!", "error")
@@ -344,9 +345,14 @@ def add_receipt_ai():
         [{cat_names_str}]
         Твоє завдання — підібрати НАЙБІЛЬШ ВІДПОВІДНУ категорію з існуючих (пиши її назву ТОЧНО так само).
         ЯКЩО ЖОДНА КАТЕГОРІЯ З ІСНУЮЧИХ НЕ ПІДХОДИТЬ, тоді придумай і створи нову (з емодзі).
-        Поверни результат СУВОРО як валідний JSON масив. Без розмітки markdown.
+        """
+
+        if user_prompt:
+            prompt += f"\n🚨 ДОДАТКОВІ ВКАЗІВКИ ВІД КОРИСТУВАЧА (ОБОВ'ЯЗКОВО ВИКОНАЙ ЇХ, це найвищий пріоритет):\n{user_prompt}\n"
+
+        prompt += """\nПоверни результат СУВОРО як валідний JSON масив. Без розмітки markdown.
         Приклад:
-        [ {{"type": "Витрата", "amount": 345.50, "category": "🛒 Супермаркет", "description": "АТБ", "date": "2026-03-18"}} ]
+        [ {"type": "Витрата", "amount": 345.50, "category": "🛒 Супермаркет", "description": "АТБ", "date": "2026-03-18"} ]
         """
 
         response = client.models.generate_content(model='gemini-2.5-flash', contents=[img, prompt])
@@ -396,7 +402,7 @@ def add_receipt_ai():
             db.session.commit()
             flash(f"🤖 Успішно розпізнано та додано {len(transactions_data)} записів!", "success")
         else:
-            flash("🤖 ШІ не зміг знайти чіткі транзакції на фото. Спробуйте інше.", "error")
+            flash("🤖 ШІ не зміг знайти чіткі транзакції на фото (або ви їх відфільтрували). Спробуйте інше.", "error")
 
     except Exception as e:
         print("Помилка розпізнавання чека ШІ:", e)
@@ -654,6 +660,7 @@ def shared_budget():
                            exp_labels=exp_labels, exp_values=exp_values, exp_colors=exp_colors,
                            inc_labels=inc_labels, inc_values=inc_values, inc_colors=inc_colors,
                            random_color=new_cat_color, balance=total_balance, accounts=user_accounts, goals=goals_data, exp_cats=[c.name for c in user_categories if c.type=='Витрата'], inc_cats=[c.name for c in user_categories if c.type=='Дохід'], user_categories=user_categories, current_filter=f, filter_name=filter_name, is_shared_view=True, partner=partner)
+
 
 # --- ОСОБИСТИЙ БЮДЖЕТ (ГОЛОВНА) ---
 @app.route('/', methods=['GET', 'POST'])
