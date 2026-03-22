@@ -628,20 +628,32 @@ def shared_budget():
             acc_name = ", ".join([a.name for a in target_accs])
         goals_data.append({'id': g.id, 'name': g.name, 'target_amount': g.target_amount, 'current': max(0, curr_val), 'acc_name': acc_name})
 
-    cat_data = {}
-    for exp in [t for t in ts if t.type == 'Витрата']:
-        clean_cat = exp.category.split(' ', 1)[-1] if ' ' in exp.category else exp.category
-        cat_data[clean_cat] = round(cat_data.get(clean_cat, 0) + exp.amount, 2)
+    # РОЗРАХУНОК ДОХОДІВ І ВИТРАТ ДЛЯ ГРАФІКІВ
+    exp_cat_data, inc_cat_data = {}, {}
+    for t in ts:
+        clean_cat = t.category.split(' ', 1)[-1] if ' ' in t.category else t.category
+        if t.type == 'Витрата':
+            exp_cat_data[clean_cat] = round(exp_cat_data.get(clean_cat, 0) + t.amount, 2)
+        else:
+            inc_cat_data[clean_cat] = round(inc_cat_data.get(clean_cat, 0) + t.amount, 2)
 
     cat_color_map = {}
     for c in user_categories:
         clean_n = c.name.split(' ', 1)[-1] if ' ' in c.name else c.name
         cat_color_map[clean_n] = c.color or random.choice(COLORS_PALETTE)
         
-    chart_colors = [cat_color_map.get(label, random.choice(COLORS_PALETTE)) for label in list(cat_data.keys())]
+    exp_labels, exp_values = list(exp_cat_data.keys()), list(exp_cat_data.values())
+    exp_colors = [cat_color_map.get(l, random.choice(COLORS_PALETTE)) for l in exp_labels]
+    
+    inc_labels, inc_values = list(inc_cat_data.keys()), list(inc_cat_data.values())
+    inc_colors = [cat_color_map.get(l, random.choice(COLORS_PALETTE)) for l in inc_labels]
+    
     new_cat_color = random.choice(COLORS_PALETTE)
 
-    return render_template('index.html', transactions=ts, username=current_user.username, labels=list(cat_data.keys()), values=list(cat_data.values()), chart_colors=chart_colors, random_color=new_cat_color, balance=total_balance, accounts=user_accounts, goals=goals_data, exp_cats=[c.name for c in user_categories if c.type=='Витрата'], inc_cats=[c.name for c in user_categories if c.type=='Дохід'], user_categories=user_categories, current_filter=f, filter_name=filter_name, is_shared_view=True, partner=partner)
+    return render_template('index.html', transactions=ts, username=current_user.username, 
+                           exp_labels=exp_labels, exp_values=exp_values, exp_colors=exp_colors,
+                           inc_labels=inc_labels, inc_values=inc_values, inc_colors=inc_colors,
+                           random_color=new_cat_color, balance=total_balance, accounts=user_accounts, goals=goals_data, exp_cats=[c.name for c in user_categories if c.type=='Витрата'], inc_cats=[c.name for c in user_categories if c.type=='Дохід'], user_categories=user_categories, current_filter=f, filter_name=filter_name, is_shared_view=True, partner=partner)
 
 # --- ОСОБИСТИЙ БЮДЖЕТ (ГОЛОВНА) ---
 @app.route('/', methods=['GET', 'POST'])
@@ -704,20 +716,32 @@ def home():
             acc_name = ", ".join([a.name for a in target_accs])
         goals_data.append({'id': g.id, 'name': g.name, 'target_amount': g.target_amount, 'current': max(0, curr_val), 'acc_name': acc_name})
 
-    cat_data = {}
-    for exp in [t for t in ts if t.type == 'Витрата']:
-        clean_cat = exp.category.split(' ', 1)[-1] if ' ' in exp.category else exp.category
-        cat_data[clean_cat] = round(cat_data.get(clean_cat, 0) + exp.amount, 2)
+    # РОЗРАХУНОК ДОХОДІВ І ВИТРАТ ДЛЯ ГРАФІКІВ
+    exp_cat_data, inc_cat_data = {}, {}
+    for t in ts:
+        clean_cat = t.category.split(' ', 1)[-1] if ' ' in t.category else t.category
+        if t.type == 'Витрата':
+            exp_cat_data[clean_cat] = round(exp_cat_data.get(clean_cat, 0) + t.amount, 2)
+        else:
+            inc_cat_data[clean_cat] = round(inc_cat_data.get(clean_cat, 0) + t.amount, 2)
 
     cat_color_map = {}
     for c in user_categories:
         clean_n = c.name.split(' ', 1)[-1] if ' ' in c.name else c.name
         cat_color_map[clean_n] = c.color or random.choice(COLORS_PALETTE)
         
-    chart_colors = [cat_color_map.get(label, random.choice(COLORS_PALETTE)) for label in list(cat_data.keys())]
+    exp_labels, exp_values = list(exp_cat_data.keys()), list(exp_cat_data.values())
+    exp_colors = [cat_color_map.get(l, random.choice(COLORS_PALETTE)) for l in exp_labels]
+    
+    inc_labels, inc_values = list(inc_cat_data.keys()), list(inc_cat_data.values())
+    inc_colors = [cat_color_map.get(l, random.choice(COLORS_PALETTE)) for l in inc_labels]
+    
     new_cat_color = random.choice(COLORS_PALETTE)
 
-    return render_template('index.html', transactions=ts, username=current_user.username, labels=list(cat_data.keys()), values=list(cat_data.values()), chart_colors=chart_colors, random_color=new_cat_color, balance=total_balance, accounts=user_accounts, goals=goals_data, exp_cats=[c.name for c in user_categories if c.type=='Витрата'], inc_cats=[c.name for c in user_categories if c.type=='Дохід'], user_categories=user_categories, current_filter=f, filter_name=filter_name, pending_invite=pending_invite, invite_sender=invite_sender)
+    return render_template('index.html', transactions=ts, username=current_user.username, 
+                           exp_labels=exp_labels, exp_values=exp_values, exp_colors=exp_colors,
+                           inc_labels=inc_labels, inc_values=inc_values, inc_colors=inc_colors,
+                           random_color=new_cat_color, balance=total_balance, accounts=user_accounts, goals=goals_data, exp_cats=[c.name for c in user_categories if c.type=='Витрата'], inc_cats=[c.name for c in user_categories if c.type=='Дохід'], user_categories=user_categories, current_filter=f, filter_name=filter_name, pending_invite=pending_invite, invite_sender=invite_sender)
 
 # --- Інтеграції та Аналітика ---
 @app.route('/unlink_monobank', methods=['POST'])
@@ -744,8 +768,7 @@ def sync_monobank():
     if not token: return redirect(url_for('integrations'))
 
     headers = {'X-Token': token}
-    client_info_resp = requests.get('https://api.monobank.ua/personal/client-info', headers=headers)
-    
+    client_info_resp = requests.get('[https://api.monobank.ua/personal/client-info](https://api.monobank.ua/personal/client-info)', headers=headers)
     if client_info_resp.status_code == 200:
         accounts_data = client_info_resp.json().get('accounts', [])
         if accounts_data:
@@ -760,10 +783,7 @@ def sync_monobank():
             db.session.commit()
             account_db_id = mono_account.id
             now = get_current_time(); to_time = int(now.timestamp()); from_time = int((now - timedelta(days=3)).timestamp())
-            
-            # ВИПРАВЛЕНЕ ПОСИЛАННЯ ТУТ:
-            statement_resp = requests.get(f'https://api.monobank.ua/personal/statement/0/{from_time}/{to_time}', headers=headers)
-            
+            statement_resp = requests.get(f'[https://api.monobank.ua/personal/statement/0/](https://api.monobank.ua/personal/statement/0/){from_time}/{to_time}', headers=headers)
             if statement_resp.status_code == 200:
                 for t in statement_resp.json():
                     amount_uah = round(abs(t.get('amount', 0) / 100.0), 2) 

@@ -129,6 +129,7 @@
       </h2>
       <form method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
         <label>Іконка та Назва</label>
         <div style="display: flex; gap: 10px; margin-bottom: 5px">
           <select name="emoji" style="width: 85px; margin-bottom: 0">
@@ -139,8 +140,16 @@
             <option value="{{ e }}">{{ e }}</option>
             {% endif %} {% endfor %}
           </select>
-        <input type="text" name="name" value="{{ current_name }}" required pattern=".*\S+.*" title="Введіть назву без пустих пробілів" style="margin-bottom: 0; flex: 1; cursor: text" />
-
+          <input
+            type="text"
+            name="name"
+            value="{{ current_name }}"
+            required
+            pattern=".*\S+.*"
+            title="Введіть назву без пустих пробілів"
+            style="margin-bottom: 0; flex: 1; cursor: text"
+          />
+        </div>
         <label style="margin-top: 15px">Поточний Баланс (₴)</label>
         <input
           type="text"

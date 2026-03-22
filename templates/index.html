@@ -659,11 +659,12 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 15px;
+            gap: 10px;
           "
         >
-          <h3 style="margin: 0">💳 Мої рахунки</h3>
+          <h3 style="margin: 0; white-space: nowrap">💳 Мої рахунки</h3>
           <span
-            style="font-size: 18px; font-weight: bold; color: {% if balance >= 0 %}#4CAF50{% else %}#ff4d4d{% endif %};"
+            style="font-size: 18px; font-weight: bold; white-space: nowrap; color: {% if balance >= 0 %}#4CAF50{% else %}#ff4d4d{% endif %};"
             >Загалом: {{ balance if balance % 1 != 0 else balance|int }} ₴</span
           >
         </div>
@@ -686,15 +687,32 @@
               margin-bottom: 8px;
               border-radius: 8px;
               border: 1px solid var(--border-color);
+              gap: 10px;
             "
           >
-            <strong>{{ acc.name }}</strong>
-            <div style="display: flex; align-items: center; gap: 12px">
-              <span style="font-weight: bold; color: #4db8ff"
+            <strong
+              style="
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 50%;
+              "
+              >{{ acc.name }}</strong
+            >
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                flex-shrink: 0;
+              "
+            >
+              <span
+                style="font-weight: bold; color: #4db8ff; white-space: nowrap"
                 >{{ acc.balance if acc.balance % 1 != 0 else acc.balance|int }}
                 ₴</span
               >
-              <span class="no-print">
+              <span class="no-print" style="white-space: nowrap">
                 <a
                   href="/edit_account/{{ acc.id }}"
                   style="text-decoration: none; margin-right: 5px"
@@ -760,13 +778,18 @@
             name="balance"
             placeholder="₴"
             required
-            style="flex: 1; padding: 8px"
+            style="flex: 1; padding: 8px; min-width: 60px"
             oninput="formatMoneyInput(this)"
           />
           <button
             type="submit"
             class="btn optimistic-submit"
-            style="background-color: #ff9800; color: white; padding: 8px"
+            style="
+              background-color: #ff9800;
+              color: white;
+              padding: 8px;
+              flex-shrink: 0;
+            "
           >
             +
           </button>
@@ -774,28 +797,59 @@
       </div>
 
       <div class="card" style="flex: 0.8; min-width: 250px; text-align: center">
-        <h3 style="margin-bottom: 10px; margin-top: 0">Розподіл 📊</h3>
-        {% if values|length > 0 %}
         <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+          "
+        >
+          <h3 style="margin: 0">Розподіл 📊</h3>
+          <select
+            id="chartTypeToggle"
+            onchange="toggleChart()"
+            style="
+              width: auto;
+              padding: 5px 30px 5px 10px;
+              font-size: 14px;
+              font-weight: bold;
+              border-color: #ff9800;
+              cursor: pointer;
+            "
+          >
+            <option value="Витрата">Витрати</option>
+            <option value="Дохід">Доходи</option>
+          </select>
+        </div>
+
+        <div
+          id="chartContainer"
           style="
             display: flex;
             justify-content: center;
             align-items: center;
             width: 100%;
+            display: none;
           "
         >
           <div style="position: relative; width: 160px; height: 160px">
             <canvas id="expensesChart"></canvas>
           </div>
         </div>
-        <p style="font-size: 12px; color: #aaa; margin-top: 15px">
+
+        <p
+          id="chartEmptyMsg"
+          style="color: #aaa; margin-top: 40px; font-size: 14px; display: none"
+        >
+          Немає записів для графіка
+        </p>
+        <p
+          id="chartHintMsg"
+          style="font-size: 12px; color: #aaa; margin-top: 15px; display: none"
+        >
           *Наведіть на сектор, щоб побачити %
         </p>
-        {% else %}
-        <p style="color: #aaa; margin-top: 40px; font-size: 14px">
-          Немає витрат для графіка
-        </p>
-        {% endif %}
       </div>
     </div>
 
@@ -1490,58 +1544,126 @@
           });
       }
 
-      // ГРАФІК З ЧИСТИМИ КОЛЬОРАМИ
+      // ГРАФІК З ЧИСТИМИ КОЛЬОРАМИ ТА БЕЗШОВНИМ ПЕРЕМИКАННЯМ
+      let myChart = null;
+
+      const chartData = {
+          'Витрата': {
+              labels: {{ exp_labels | default([]) | tojson | safe }},
+              data: {{ exp_values | default([]) | tojson | safe }},
+              colors: {{ exp_colors | default([]) | tojson | safe }},
+              text: "ВИТРАТ",
+              color: "#ff4d4d"
+          },
+          'Дохід': {
+              labels: {{ inc_labels | default([]) | tojson | safe }},
+              data: {{ inc_values | default([]) | tojson | safe }},
+              colors: {{ inc_colors | default([]) | tojson | safe }},
+              text: "ДОХОДІВ",
+              color: "#4CAF50"
+          }
+      };
+
+      // 💥 Створюємо глобальний об'єкт для зберігання поточних даних тексту
+      let currentCenterText = { text: "ВИТРАТ", color: "#ff4d4d", totalSum: 0 };
+
+      const centerTextPlugin = {
+          id: 'centerText',
+          beforeDraw: function(chart) {
+              const ctx = chart.ctx; const width = chart.width; const height = chart.height;
+              ctx.restore();
+              let displaySum = currentCenterText.totalSum % 1 !== 0 ? currentCenterText.totalSum.toFixed(2) : currentCenterText.totalSum;
+              displaySum = parseFloat(displaySum).toLocaleString('uk-UA');
+              const text1 = displaySum + " ₴";
+
+              let fontSize = 20;
+              if (text1.length > 9) fontSize = 16;
+              if (text1.length > 12) fontSize = 13;
+
+              ctx.font = "bold " + fontSize + "px Arial";
+              ctx.textBaseline = "middle";
+              ctx.fillStyle = currentCenterText.color;
+              const text1X = Math.round((width - ctx.measureText(text1).width) / 2);
+              const text1Y = height / 2 - 8;
+              ctx.fillText(text1, text1X, text1Y);
+
+              ctx.font = "10px Arial"; ctx.fillStyle = "#aaaaaa";
+              const text2 = currentCenterText.text;
+              const text2X = Math.round((width - ctx.measureText(text2).width) / 2);
+              const text2Y = height / 2 + 14;
+              ctx.fillText(text2, text2X, text2Y);
+              ctx.save();
+          }
+      };
+
+      function toggleChart() {
+          const type = document.getElementById('chartTypeToggle').value;
+          const dataObj = chartData[type];
+
+          const canvasContainer = document.getElementById('chartContainer');
+          const emptyMsg = document.getElementById('chartEmptyMsg');
+          const hintMsg = document.getElementById('chartHintMsg');
+
+          if (!dataObj.labels || dataObj.labels.length === 0) {
+              canvasContainer.style.display = 'none';
+              hintMsg.style.display = 'none';
+              emptyMsg.style.display = 'block';
+              return;
+          } else {
+              canvasContainer.style.display = 'flex';
+              hintMsg.style.display = 'block';
+              emptyMsg.style.display = 'none';
+          }
+
+          const totalSum = dataObj.data.reduce((a, b) => a + b, 0);
+
+          // 💥 Оновлюємо глобальні дані для плагіна
+          currentCenterText.totalSum = totalSum;
+          currentCenterText.text = dataObj.text;
+          currentCenterText.color = dataObj.color;
+
+          const currentColors = dataObj.colors.length > 0 ? dataObj.colors : ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8BC34A', '#E91E63'];
+
+          if (myChart) {
+              // Плавне оновлення без перезавантаження
+              myChart.data.labels = dataObj.labels;
+              myChart.data.datasets[0].data = dataObj.data;
+              myChart.data.datasets[0].backgroundColor = currentColors;
+
+              myChart.options.plugins.tooltip.callbacks.label = function(context) {
+                  let value = context.parsed;
+                  value = value % 1 !== 0 ? value.toFixed(2) : value;
+                  value = parseFloat(value).toLocaleString('uk-UA');
+                  let percentage = ((context.parsed / totalSum) * 100).toFixed(1);
+                  return context.label + ': ' + value + ' ₴ (' + percentage + '%)';
+              };
+              myChart.update();
+          } else {
+              // Ініціалізація першого графіка
+              myChart = new Chart(document.getElementById('expensesChart').getContext('2d'), {
+                  type: 'doughnut',
+                  data: { labels: dataObj.labels, datasets: [{ data: dataObj.data, backgroundColor: currentColors, borderWidth: 0 }] },
+                  options: {
+                      responsive: true, maintainAspectRatio: false, cutout: '75%',
+                      plugins: {
+                          legend: { display: false },
+                          tooltip: { callbacks: { label: function(context) {
+                              let value = context.parsed;
+                              value = value % 1 !== 0 ? value.toFixed(2) : value;
+                              value = parseFloat(value).toLocaleString('uk-UA');
+                              let percentage = ((context.parsed / totalSum) * 100).toFixed(1);
+                              return context.label + ': ' + value + ' ₴ (' + percentage + '%)';
+                          }}}
+                      }
+                  },
+                  plugins: [centerTextPlugin]
+              });
+          }
+      }
+
       document.addEventListener("DOMContentLoaded", function() {
           try {
-              const labels = {{ labels | tojson | safe }};
-              const data = {{ values | tojson | safe }};
-              const bgColors = {{ chart_colors | default([]) | tojson | safe }};
-
-              if (labels.length > 0) {
-                  const totalSum = data.reduce((a, b) => a + b, 0);
-                  const centerTextPlugin = {
-                      id: 'centerText',
-                      beforeDraw: function(chart) {
-                          const ctx = chart.ctx; const width = chart.width; const height = chart.height;
-                          ctx.restore();
-
-                          let displaySum = totalSum % 1 !== 0 ? totalSum.toFixed(2) : totalSum;
-                          displaySum = parseFloat(displaySum).toLocaleString('uk-UA');
-                          const text1 = displaySum + " ₴";
-
-                          let fontSize = 20;
-                          if (text1.length > 9) fontSize = 16;
-                          if (text1.length > 12) fontSize = 13;
-                          ctx.font = "bold " + fontSize + "px Arial";
-                          ctx.textBaseline = "middle";
-                          ctx.fillStyle = "#ff4d4d";
-                          const text1X = Math.round((width - ctx.measureText(text1).width) / 2);
-                          const text1Y = height / 2 - 8;
-                          ctx.fillText(text1, text1X, text1Y);
-                          ctx.font = "10px Arial"; ctx.fillStyle = "#aaaaaa";
-                          const text2 = "ВИТРАТ";
-                          const text2X = Math.round((width - ctx.measureText(text2).width) / 2);
-                          const text2Y = height / 2 + 14;
-                          ctx.fillText(text2, text2X, text2Y);
-                          ctx.save();
-                      }
-                  };
-
-                  const currentColors = bgColors.length > 0 ? bgColors : ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8BC34A', '#E91E63'];
-
-                  new Chart(document.getElementById('expensesChart').getContext('2d'), {
-                      type: 'doughnut',
-                      data: { labels: labels, datasets: [{ data: data, backgroundColor: currentColors, borderWidth: 0 }] },
-                      options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) {
-                          let value = context.parsed;
-                          value = value % 1 !== 0 ? value.toFixed(2) : value;
-                          value = parseFloat(value).toLocaleString('uk-UA');
-                          let percentage = ((context.parsed / totalSum) * 100).toFixed(1);
-                          return context.label + ': ' + value + ' ₴ (' + percentage + '%)';
-                      }}}}},
-                      plugins: [centerTextPlugin]
-                  });
-              }
+              toggleChart(); // Запускаємо малювання графіка при завантаженні
           } catch(e) {
               console.error("Помилка генерації графіка:", e);
           }
