@@ -297,6 +297,16 @@
           padding: 15px;
           margin-bottom: 12px;
         }
+
+        /* 🔥 ВИПРАВЛЕННЯ ОБРІЗАНИХ КАРТОК (ГРАФІКА) 🔥 */
+        .card[style*="flex:"] {
+          flex: none !important;
+          width: 100% !important;
+          min-width: 100% !important;
+          max-width: 100% !important;
+          box-sizing: border-box !important;
+        }
+
         .grid {
           grid-template-columns: 1fr;
           gap: 12px;
