@@ -341,6 +341,9 @@ def add_receipt_ai():
         ПРАВИЛА:
         1. Якщо це банківська виписка — знайди всі транзакції.
         2. ЯКЩО ЦЕ ФОТО ЧЕКА З МАГАЗИНУ АБО СУПЕРМАРКЕТУ (де є перелік товарів): СТОП! НЕ ПИШИ КОЖЕН ТОВАР ОКРЕМО! Знайди лише одну загальну суму (ПІДСУМОК, Всього, Сума до сплати) і поверни рівно ОДНУ транзакцію. В 'description' напиши назву магазину.
+        3. ЯКЩО ДАТИ НА ФОТО НЕМАЄ АБО ВОНА НЕЗРОЗУМІЛА: не вигадуй її! Поверни рівно слово "TODAY" у полі "date".
+        4.
+        
         ОСЬ ІСНУЮЧІ КАТЕГОРІЇ КОРИСТУВАЧА:
         [{cat_names_str}]
         Твоє завдання — підібрати НАЙБІЛЬШ ВІДПОВІДНУ категорію з існуючих (пиши її назву ТОЧНО так само).
@@ -571,7 +574,7 @@ def export():
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer: df.to_excel(writer, index=False, sheet_name=f'Виписка ({filter_type})')
     output.seek(0)
-    filename = f"export_{filter_type}_{now.strftime('%Y%m%d')}.xlsx"
+    filename = f"export_{filter_type}_{now.strftime('%Y-%m-%d_%H-%M-%S')}.xlsx"
     return send_file(output, download_name=filename, as_attachment=True)
 
 # --- СПІЛЬНИЙ БЮДЖЕТ (ГОЛОВНА) ---
@@ -864,6 +867,37 @@ def analyze_ai():
         db.session.commit()
     except Exception as e: session['ai_response'] = "⚙️ Вибачте, сервери нейромережі зараз перевантажені або виникла помилка API."
     return redirect(url_for('analytics', shared='1' if budget_type == 'shared' else '0', period=period_days))
+
+@app.route('/delete_multiple', methods=['POST'])
+@login_required
+def delete_multiple():
+    data = request.get_json()
+    ids = data.get('ids', [])
+    
+    if not ids:
+        return {"success": False, "error": "Не вибрано жодного запису"}, 400
+        
+    # Отримуємо ID партнера, якщо є спільний бюджет
+    partner_id = get_partner_id(current_user.id)
+    valid_user_ids = [current_user.id, partner_id] if partner_id else [current_user.id]
+    
+    # Знаходимо всі вибрані транзакції, які належать поточному юзеру АБО його партнеру
+    transactions = Transaction.query.filter(Transaction.id.in_(ids), Transaction.user_id.in_(valid_user_ids)).all()
+    
+    for t in transactions:
+        # Оновлюємо баланс рахунку (повертаємо гроші)
+        acc = db.session.get(Account, t.account_id)
+        if acc:
+            if t.type == 'Дохід': 
+                acc.balance = round(acc.balance - t.amount, 2)
+            else: 
+                acc.balance = round(acc.balance + t.amount, 2)
+        
+        # Видаляємо запис
+        db.session.delete(t)
+        
+    db.session.commit()
+    return {"success": True}
 
 @app.route('/analytics')
 @login_required

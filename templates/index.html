@@ -118,14 +118,14 @@
       }
       select {
         appearance: none;
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)' viewBox='0 0 24 24' fill='none' stroke='gray' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='gray' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
         background-repeat: no-repeat;
         background-position: right 12px center;
         background-size: 16px;
         padding-right: 40px !important;
       }
       [data-theme="light"] select {
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)' viewBox='0 0 24 24' fill='none' stroke='%23333333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
       }
       select:focus,
       input:focus {
@@ -1183,7 +1183,36 @@
     </div>
 
     <div id="pdf-content">
-      <h3>Історія операцій:</h3>
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 15px;
+        "
+      >
+        <h3 style="margin: 0">Історія операцій:</h3>
+
+        <div
+          id="bulk-delete-container"
+          style="display: none; transition: 0.3s"
+          class="no-print"
+        >
+          <button
+            id="bulk-delete-btn"
+            class="btn"
+            style="
+              background-color: #ff4d4d;
+              color: white;
+              padding: 8px 15px;
+              border-radius: 8px;
+            "
+          >
+            🗑️ Видалити вибрані (<span id="selected-count">0</span>)
+          </button>
+        </div>
+      </div>
+
       <div style="overflow-x: auto">
         {% if transactions %}
         <table
@@ -1198,7 +1227,21 @@
           "
         >
           <tr style="border-bottom: 1px solid var(--border-color)">
-            <th style="width: 12%; padding: 12px 0">Дата</th>
+            <th
+              style="width: 5%; text-align: center; padding: 12px 0"
+              class="no-print"
+            >
+              <input
+                type="checkbox"
+                id="select-all"
+                style="
+                  cursor: pointer;
+                  transform: scale(1.2);
+                  accent-color: #ff4d4d;
+                "
+              />
+            </th>
+            <th style="width: 12%">Дата</th>
             <th style="width: 13%">Рахунок</th>
             {% if is_shared_view %}
             <th style="width: 12%">Хто додав</th>
@@ -1225,6 +1268,18 @@
               font-size: 14px;
             "
           >
+            <td style="text-align: center" class="no-print">
+              <input
+                type="checkbox"
+                class="transaction-checkbox"
+                value="{{ t.id }}"
+                style="
+                  cursor: pointer;
+                  transform: scale(1.2);
+                  accent-color: #ff4d4d;
+                "
+              />
+            </td>
             <td style="color: #aaa">{{ t.date.strftime('%d.%m.%Y') }}</td>
             <td style="color: #ff9800; font-weight: bold">
               {{ t.account.name if t.account else '---' }}
@@ -1475,230 +1530,307 @@
     </div>
 
     <script>
-      // 🚀 МАГІЯ: Збереження позиції скролу за URL-шляхом
-      document.addEventListener("DOMContentLoaded", function() {
-          const path = window.location.pathname;
-          const scrollpos = sessionStorage.getItem('scrollpos_' + path);
-          if (scrollpos) {
-              window.scrollTo(0, parseInt(scrollpos));
-              sessionStorage.removeItem('scrollpos_' + path);
-          }
-      });
+            // 🚀 МАГІЯ: Збереження позиції скролу за URL-шляхом
+            document.addEventListener("DOMContentLoaded", function() {
+                const path = window.location.pathname;
+                const scrollpos = sessionStorage.getItem('scrollpos_' + path);
+                if (scrollpos) {
+                    window.scrollTo(0, parseInt(scrollpos));
+                    sessionStorage.removeItem('scrollpos_' + path);
+                }
+            });
 
-      window.addEventListener("beforeunload", function() {
-          const path = window.location.pathname;
-          sessionStorage.setItem('scrollpos_' + path, window.scrollY);
-      });
+            window.addEventListener("beforeunload", function() {
+                const path = window.location.pathname;
+                sessionStorage.setItem('scrollpos_' + path, window.scrollY);
+            });
 
-      // 🚀 МАГІЯ: Оптимістичне видалення
-      document.querySelectorAll('.optimistic-delete').forEach(link => {
-          link.addEventListener('click', function(e) {
-              setTimeout(() => {
-                  let row = this.closest('tr') || this.closest('div[style*="justify-content: space-between"]');
-                  if (row) {
-                      row.style.transition = 'all 0.3s ease';
-                      row.style.opacity = '0';
-                      row.style.transform = 'translateX(-20px)';
-                  }
-              }, 10);
-          });
-      });
+            // 🚀 МАГІЯ: Оптимістичне видалення одиничного запису
+            document.querySelectorAll('.optimistic-delete').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    setTimeout(() => {
+                        let row = this.closest('tr') || this.closest('div[style*="justify-content: space-between"]');
+                        if (row) {
+                            row.style.transition = 'all 0.3s ease';
+                            row.style.opacity = '0';
+                            row.style.transform = 'translateX(-20px)';
+                        }
+                    }, 10);
+                });
+            });
 
-      // 🚀 МАГІЯ: Анімація кнопок під час відправки
-      document.querySelectorAll('.optimistic-submit').forEach(btn => {
-          btn.closest('form').addEventListener('submit', function() {
-              if(!btn.innerHTML.includes('Аналізую')) {
-                  btn.innerHTML = '⏳...';
-                  btn.style.opacity = '0.7';
-                  btn.style.pointerEvents = 'none';
-              }
-          });
-      });
+            // 🚀 МАГІЯ: Масове видалення транзакцій
+            document.addEventListener("DOMContentLoaded", function() {
+                const checkboxes = document.querySelectorAll('.transaction-checkbox');
+                const selectAll = document.getElementById('select-all');
+                const bulkContainer = document.getElementById('bulk-delete-container');
+                const countSpan = document.getElementById('selected-count');
+                const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
 
-      // ФІКС ДАТ: Обмеження календаря
-      document.addEventListener("DOMContentLoaded", function() {
-          const dateInputs = document.querySelectorAll('input[type="date"]');
-          const currentYear = new Date().getFullYear();
-          const minDate = `${currentYear - 10}-01-01`;
-          const maxDate = `${currentYear + 20}-12-31`;
-          dateInputs.forEach(input => {
-              input.setAttribute('min', minDate);
-              input.setAttribute('max', maxDate);
-          });
-      });
+                function updateBulkDeleteUI() {
+                    const selected = document.querySelectorAll('.transaction-checkbox:checked');
+                    if (selected.length > 0) {
+                        bulkContainer.style.display = 'block';
+                        countSpan.innerText = selected.length;
+                    } else {
+                        bulkContainer.style.display = 'none';
+                    }
 
-      function toggleTheme() {
-          const currentTheme = document.documentElement.getAttribute('data-theme');
-          const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-          document.documentElement.setAttribute('data-theme', newTheme);
-          localStorage.setItem('theme', newTheme);
-      }
-      document.getElementById('transaction_date').valueAsDate = new Date();
+                    if (selectAll) {
+                        selectAll.checked = (selected.length === checkboxes.length && checkboxes.length > 0);
+                    }
+                }
 
-      const expenseCategories = {{ exp_cats | tojson | safe }};
-      const incomeCategories = {{ inc_cats | tojson | safe }};
-      function updateCategories() {
-          const selectedType = document.getElementById("type_select").value;
-          const catObj = document.getElementById("category_select");
-          catObj.innerHTML = "";
-          (selectedType === "Витрата" ? expenseCategories : incomeCategories).forEach(cat => {
-              let opt = document.createElement("option");
-              opt.value = cat; opt.innerHTML = cat; catObj.appendChild(opt);
-          });
-      }
-      updateCategories();
+                if (selectAll) {
+                    selectAll.addEventListener('change', function() {
+                        checkboxes.forEach(cb => cb.checked = selectAll.checked);
+                        updateBulkDeleteUI();
+                    });
+                }
+
+                checkboxes.forEach(cb => {
+                    cb.addEventListener('change', updateBulkDeleteUI);
+                });
+
+                if (bulkDeleteBtn) {
+                    bulkDeleteBtn.addEventListener('click', function() {
+                        const selected = document.querySelectorAll('.transaction-checkbox:checked');
+                        const ids = Array.from(selected).map(cb => cb.value);
+
+                        if (confirm("Ви впевнені, що хочете назавжди видалити ці " + ids.length + " записів?")) {
+                            const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+                            fetch('/delete_multiple', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRFToken': csrfToken
+                                },
+                                body: JSON.stringify({ ids: ids })
+                            }).then(response => response.json())
+                              .then(data => {
+                                  if (data.success) {
+                                      window.location.reload();
+                                  } else {
+                                      alert("Сталася помилка при видаленні: " + (data.error || 'Невідома помилка'));
+                                  }
+                              }).catch(err => {
+                                  console.error(err);
+                                  alert("Помилка з'єднання з сервером.");
+                              });
+                        }
+                    });
+                }
+            });
+
+            // 🚀 МАГІЯ: Анімація кнопок під час відправки
+            document.querySelectorAll('.optimistic-submit').forEach(btn => {
+                btn.closest('form').addEventListener('submit', function() {
+                    if(!btn.innerHTML.includes('Аналізую')) {
+                        btn.innerHTML = '⏳...';
+                        btn.style.opacity = '0.7';
+                        btn.style.pointerEvents = 'none';
+                    }
+                });
+            });
+
+            // ФІКС ДАТ: Обмеження календаря
+            document.addEventListener("DOMContentLoaded", function() {
+                const dateInputs = document.querySelectorAll('input[type="date"]');
+                const currentYear = new Date().getFullYear();
+                const minDate = `${currentYear - 10}-01-01`;
+                const maxDate = `${currentYear + 20}-12-31`;
+                dateInputs.forEach(input => {
+                    input.setAttribute('min', minDate);
+                    input.setAttribute('max', maxDate);
+                });
+            });
+
+            function toggleTheme() {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+            }
+            document.getElementById('transaction_date').valueAsDate = new Date();
+
+            const expenseCategories = {{ exp_cats | tojson | safe }};
+            const incomeCategories = {{ inc_cats | tojson | safe }};
+            function updateCategories() {
+                const selectedType = document.getElementById("type_select").value;
+                const catObj = document.getElementById("category_select");
+                catObj.innerHTML = "";
+                (selectedType === "Витрата" ? expenseCategories : incomeCategories).forEach(cat => {
+                    let opt = document.createElement("option");
+                    opt.value = cat; opt.innerHTML = cat; catObj.appendChild(opt);
+                });
+            }
+            updateCategories();
 
       function downloadPDF() {
           document.body.classList.add('generating-pdf');
-          html2pdf().set({ margin: 10, filename: 'finance_report.pdf', html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } }).from(document.body).save().then(() => { document.body.classList.remove('generating-pdf'); });
-      }
 
-      const pillsContainer = document.getElementById('goal-pills');
-      if (pillsContainer) {
-          const pills = pillsContainer.querySelectorAll('.acc-pill');
-          const allPill = pillsContainer.querySelector('input[value="all"]').parentElement;
-          pills.forEach(pill => {
-              const checkbox = pill.querySelector('input');
-              pill.addEventListener('click', (e) => {
-                  e.preventDefault();
-                  if (checkbox.value === 'all') {
-                      pills.forEach(p => { p.classList.remove('active'); p.querySelector('input').checked = false; });
-                      pill.classList.add('active'); checkbox.checked = true;
-                  } else {
-                      allPill.classList.remove('active'); allPill.querySelector('input').checked = false;
-                      checkbox.checked = !checkbox.checked;
-                      if (checkbox.checked) pill.classList.add('active'); else pill.classList.remove('active');
-                      const anyChecked = Array.from(pills).some(p => p.querySelector('input').checked);
-                      if (!anyChecked) { allPill.classList.add('active'); allPill.querySelector('input').checked = true; }
-                  }
-              });
+          // Формуємо дату та час для назви файлу
+          const now = new Date();
+          const pad = (num) => String(num).padStart(2, '0');
+          const timestamp = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+          const dynamicFilename = `finance_report_${timestamp}.pdf`;
+
+          html2pdf().set({
+              margin: 10,
+              filename: dynamicFilename,
+              html2canvas: { scale: 2, useCORS: true },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          }).from(document.body).save().then(() => {
+              document.body.classList.remove('generating-pdf');
           });
       }
 
-      // ГРАФІК З ЧИСТИМИ КОЛЬОРАМИ ТА БЕЗШОВНИМ ПЕРЕМИКАННЯМ
-      let myChart = null;
+            const pillsContainer = document.getElementById('goal-pills');
+            if (pillsContainer) {
+                const pills = pillsContainer.querySelectorAll('.acc-pill');
+                const allPill = pillsContainer.querySelector('input[value="all"]').parentElement;
+                pills.forEach(pill => {
+                    const checkbox = pill.querySelector('input');
+                    pill.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        if (checkbox.value === 'all') {
+                            pills.forEach(p => { p.classList.remove('active'); p.querySelector('input').checked = false; });
+                            pill.classList.add('active'); checkbox.checked = true;
+                        } else {
+                            allPill.classList.remove('active'); allPill.querySelector('input').checked = false;
+                            checkbox.checked = !checkbox.checked;
+                            if (checkbox.checked) pill.classList.add('active'); else pill.classList.remove('active');
+                            const anyChecked = Array.from(pills).some(p => p.querySelector('input').checked);
+                            if (!anyChecked) { allPill.classList.add('active'); allPill.querySelector('input').checked = true; }
+                        }
+                    });
+                });
+            }
 
-      const chartData = {
-          'Витрата': {
-              labels: {{ exp_labels | default([]) | tojson | safe }},
-              data: {{ exp_values | default([]) | tojson | safe }},
-              colors: {{ exp_colors | default([]) | tojson | safe }},
-              text: "ВИТРАТ",
-              color: "#ff4d4d"
-          },
-          'Дохід': {
-              labels: {{ inc_labels | default([]) | tojson | safe }},
-              data: {{ inc_values | default([]) | tojson | safe }},
-              colors: {{ inc_colors | default([]) | tojson | safe }},
-              text: "ДОХОДІВ",
-              color: "#4CAF50"
-          }
-      };
+            // ГРАФІК З ЧИСТИМИ КОЛЬОРАМИ ТА БЕЗШОВНИМ ПЕРЕМИКАННЯМ
+            let myChart = null;
 
-      // 💥 Створюємо глобальний об'єкт для зберігання поточних даних тексту
-      let currentCenterText = { text: "ВИТРАТ", color: "#ff4d4d", totalSum: 0 };
+            const chartData = {
+                'Витрата': {
+                    labels: {{ exp_labels | default([]) | tojson | safe }},
+                    data: {{ exp_values | default([]) | tojson | safe }},
+                    colors: {{ exp_colors | default([]) | tojson | safe }},
+                    text: "ВИТРАТ",
+                    color: "#ff4d4d"
+                },
+                'Дохід': {
+                    labels: {{ inc_labels | default([]) | tojson | safe }},
+                    data: {{ inc_values | default([]) | tojson | safe }},
+                    colors: {{ inc_colors | default([]) | tojson | safe }},
+                    text: "ДОХОДІВ",
+                    color: "#4CAF50"
+                }
+            };
 
-      const centerTextPlugin = {
-          id: 'centerText',
-          beforeDraw: function(chart) {
-              const ctx = chart.ctx; const width = chart.width; const height = chart.height;
-              ctx.restore();
-              let displaySum = currentCenterText.totalSum % 1 !== 0 ? currentCenterText.totalSum.toFixed(2) : currentCenterText.totalSum;
-              displaySum = parseFloat(displaySum).toLocaleString('uk-UA');
-              const text1 = displaySum + " ₴";
+            // 💥 Створюємо глобальний об'єкт для зберігання поточних даних тексту
+            let currentCenterText = { text: "ВИТРАТ", color: "#ff4d4d", totalSum: 0 };
 
-              let fontSize = 20;
-              if (text1.length > 9) fontSize = 16;
-              if (text1.length > 12) fontSize = 13;
+            const centerTextPlugin = {
+                id: 'centerText',
+                beforeDraw: function(chart) {
+                    const ctx = chart.ctx; const width = chart.width; const height = chart.height;
+                    ctx.restore();
+                    let displaySum = currentCenterText.totalSum % 1 !== 0 ? currentCenterText.totalSum.toFixed(2) : currentCenterText.totalSum;
+                    displaySum = parseFloat(displaySum).toLocaleString('uk-UA');
+                    const text1 = displaySum + " ₴";
 
-              ctx.font = "bold " + fontSize + "px Arial";
-              ctx.textBaseline = "middle";
-              ctx.fillStyle = currentCenterText.color;
-              const text1X = Math.round((width - ctx.measureText(text1).width) / 2);
-              const text1Y = height / 2 - 8;
-              ctx.fillText(text1, text1X, text1Y);
+                    let fontSize = 20;
+                    if (text1.length > 9) fontSize = 16;
+                    if (text1.length > 12) fontSize = 13;
 
-              ctx.font = "10px Arial"; ctx.fillStyle = "#aaaaaa";
-              const text2 = currentCenterText.text;
-              const text2X = Math.round((width - ctx.measureText(text2).width) / 2);
-              const text2Y = height / 2 + 14;
-              ctx.fillText(text2, text2X, text2Y);
-              ctx.save();
-          }
-      };
+                    ctx.font = "bold " + fontSize + "px Arial";
+                    ctx.textBaseline = "middle";
+                    ctx.fillStyle = currentCenterText.color;
+                    const text1X = Math.round((width - ctx.measureText(text1).width) / 2);
+                    const text1Y = height / 2 - 8;
+                    ctx.fillText(text1, text1X, text1Y);
 
-      function toggleChart() {
-          const type = document.getElementById('chartTypeToggle').value;
-          const dataObj = chartData[type];
+                    ctx.font = "10px Arial"; ctx.fillStyle = "#aaaaaa";
+                    const text2 = currentCenterText.text;
+                    const text2X = Math.round((width - ctx.measureText(text2).width) / 2);
+                    const text2Y = height / 2 + 14;
+                    ctx.fillText(text2, text2X, text2Y);
+                    ctx.save();
+                }
+            };
 
-          const canvasContainer = document.getElementById('chartContainer');
-          const emptyMsg = document.getElementById('chartEmptyMsg');
-          const hintMsg = document.getElementById('chartHintMsg');
+            function toggleChart() {
+                const type = document.getElementById('chartTypeToggle').value;
+                const dataObj = chartData[type];
 
-          if (!dataObj.labels || dataObj.labels.length === 0) {
-              canvasContainer.style.display = 'none';
-              hintMsg.style.display = 'none';
-              emptyMsg.style.display = 'block';
-              return;
-          } else {
-              canvasContainer.style.display = 'flex';
-              hintMsg.style.display = 'block';
-              emptyMsg.style.display = 'none';
-          }
+                const canvasContainer = document.getElementById('chartContainer');
+                const emptyMsg = document.getElementById('chartEmptyMsg');
+                const hintMsg = document.getElementById('chartHintMsg');
 
-          const totalSum = dataObj.data.reduce((a, b) => a + b, 0);
+                if (!dataObj.labels || dataObj.labels.length === 0) {
+                    canvasContainer.style.display = 'none';
+                    hintMsg.style.display = 'none';
+                    emptyMsg.style.display = 'block';
+                    return;
+                } else {
+                    canvasContainer.style.display = 'flex';
+                    hintMsg.style.display = 'block';
+                    emptyMsg.style.display = 'none';
+                }
 
-          // 💥 Оновлюємо глобальні дані для плагіна
-          currentCenterText.totalSum = totalSum;
-          currentCenterText.text = dataObj.text;
-          currentCenterText.color = dataObj.color;
+                const totalSum = dataObj.data.reduce((a, b) => a + b, 0);
 
-          const currentColors = dataObj.colors.length > 0 ? dataObj.colors : ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8BC34A', '#E91E63'];
+                // 💥 Оновлюємо глобальні дані для плагіна
+                currentCenterText.totalSum = totalSum;
+                currentCenterText.text = dataObj.text;
+                currentCenterText.color = dataObj.color;
 
-          if (myChart) {
-              // Плавне оновлення без перезавантаження
-              myChart.data.labels = dataObj.labels;
-              myChart.data.datasets[0].data = dataObj.data;
-              myChart.data.datasets[0].backgroundColor = currentColors;
+                const currentColors = dataObj.colors.length > 0 ? dataObj.colors : ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8BC34A', '#E91E63'];
 
-              myChart.options.plugins.tooltip.callbacks.label = function(context) {
-                  let value = context.parsed;
-                  value = value % 1 !== 0 ? value.toFixed(2) : value;
-                  value = parseFloat(value).toLocaleString('uk-UA');
-                  let percentage = ((context.parsed / totalSum) * 100).toFixed(1);
-                  return context.label + ': ' + value + ' ₴ (' + percentage + '%)';
-              };
-              myChart.update();
-          } else {
-              // Ініціалізація першого графіка
-              myChart = new Chart(document.getElementById('expensesChart').getContext('2d'), {
-                  type: 'doughnut',
-                  data: { labels: dataObj.labels, datasets: [{ data: dataObj.data, backgroundColor: currentColors, borderWidth: 0 }] },
-                  options: {
-                      responsive: true, maintainAspectRatio: false, cutout: '75%',
-                      plugins: {
-                          legend: { display: false },
-                          tooltip: { callbacks: { label: function(context) {
-                              let value = context.parsed;
-                              value = value % 1 !== 0 ? value.toFixed(2) : value;
-                              value = parseFloat(value).toLocaleString('uk-UA');
-                              let percentage = ((context.parsed / totalSum) * 100).toFixed(1);
-                              return context.label + ': ' + value + ' ₴ (' + percentage + '%)';
-                          }}}
-                      }
-                  },
-                  plugins: [centerTextPlugin]
-              });
-          }
-      }
+                if (myChart) {
+                    // Плавне оновлення без перезавантаження
+                    myChart.data.labels = dataObj.labels;
+                    myChart.data.datasets[0].data = dataObj.data;
+                    myChart.data.datasets[0].backgroundColor = currentColors;
 
-      document.addEventListener("DOMContentLoaded", function() {
-          try {
-              toggleChart(); // Запускаємо малювання графіка при завантаженні
-          } catch(e) {
-              console.error("Помилка генерації графіка:", e);
-          }
-      });
+                    myChart.options.plugins.tooltip.callbacks.label = function(context) {
+                        let value = context.parsed;
+                        value = value % 1 !== 0 ? value.toFixed(2) : value;
+                        value = parseFloat(value).toLocaleString('uk-UA');
+                        let percentage = ((context.parsed / totalSum) * 100).toFixed(1);
+                        return context.label + ': ' + value + ' ₴ (' + percentage + '%)';
+                    };
+                    myChart.update();
+                } else {
+                    // Ініціалізація першого графіка
+                    myChart = new Chart(document.getElementById('expensesChart').getContext('2d'), {
+                        type: 'doughnut',
+                        data: { labels: dataObj.labels, datasets: [{ data: dataObj.data, backgroundColor: currentColors, borderWidth: 0 }] },
+                        options: {
+                            responsive: true, maintainAspectRatio: false, cutout: '75%',
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { callbacks: { label: function(context) {
+                                    let value = context.parsed;
+                                    value = value % 1 !== 0 ? value.toFixed(2) : value;
+                                    value = parseFloat(value).toLocaleString('uk-UA');
+                                    let percentage = ((context.parsed / totalSum) * 100).toFixed(1);
+                                    return context.label + ': ' + value + ' ₴ (' + percentage + '%)';
+                                }}}
+                            }
+                        },
+                        plugins: [centerTextPlugin]
+                    });
+                }
+            }
+
+            document.addEventListener("DOMContentLoaded", function() {
+                try {
+                    toggleChart(); // Запускаємо малювання графіка при завантаженні
+                } catch(e) {
+                    console.error("Помилка генерації графіка:", e);
+                }
+            });
     </script>
   </body>
 </html>
