@@ -210,7 +210,6 @@
         border-color: #2196f3;
       }
 
-      /* === ГОЛОВНЕ МЕНЮ (ПК) === */
       .top-menu {
         position: sticky;
         top: 0;
@@ -286,7 +285,6 @@
         margin-left: 6px;
       }
 
-      /* === ГОЛОВНЕ МЕНЮ ТА АДАПТИВНІСТЬ (ТЕЛЕФОН) === */
       @media (max-width: 768px) {
         body {
           padding: 10px;
@@ -297,7 +295,6 @@
           margin-bottom: 12px;
         }
 
-        /* 🔥 ВИПРАВЛЕННЯ ОБРІЗАНИХ КАРТОК (ГРАФІКА) 🔥 */
         .card[style*="flex:"] {
           flex: none !important;
           width: 100% !important;
@@ -328,10 +325,10 @@
         .page-buttons .nav-btn {
           flex: 1;
           padding: 0;
-          font-size: 20px; /* Збільшений емодзі */
+          font-size: 20px;
         }
         .nav-text {
-          display: none; /* Ховаємо текст на телефоні (залишається тільки емодзі) */
+          display: none;
         }
         .right-buttons {
           width: 100%;
@@ -1826,7 +1823,7 @@
 
             document.addEventListener("DOMContentLoaded", function() {
                 try {
-                    toggleChart(); // Запускаємо малювання графіка при завантаженні
+                    toggleChart();
                 } catch(e) {
                     console.error("Помилка генерації графіка:", e);
                 }

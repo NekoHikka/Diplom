@@ -61,9 +61,7 @@
         text-decoration: none;
         font-size: 14px;
       }
-      /* 📱 МОБІЛЬНА АДАПТАЦІЯ (АЛЬФА-ВЕРСІЯ) */
       @media (max-width: 768px) {
-        /* Зменшуємо відступи по краях екрана */
         body {
           padding: 10px;
           margin: 0;
@@ -73,13 +71,11 @@
           margin-bottom: 15px;
         }
 
-        /* Всі сітки (графіки, статистика) стають в одну колонку */
         .grid {
           grid-template-columns: 1fr;
           gap: 15px;
         }
 
-        /* Робимо верхнє меню зручним для пальців */
         .no-print {
           flex-direction: column;
           align-items: stretch !important;
@@ -107,7 +103,6 @@
           box-sizing: border-box;
         }
 
-        /* Елементи форм і пульту ШІ */
         form > div {
           flex-direction: column;
           align-items: stretch !important;
@@ -118,7 +113,6 @@
           margin-top: 5px;
         }
 
-        /* Кнопки ШІ стають одна під одною */
         form .btn {
           width: 100%;
           flex: none;

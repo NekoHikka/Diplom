@@ -37,7 +37,6 @@ if app.config['SQLALCHEMY_DATABASE_URI'].startswith("postgres://"):
     app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace("postgres://", "postgresql://", 1)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# ФІКС ДЛЯ СТАБІЛЬНОСТІ НА RENDER (ЩОБ НЕ ВИСНУВ)
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     "pool_pre_ping": True,
     "pool_recycle": 300,
@@ -54,7 +53,6 @@ def get_current_time():
 
 COLORS_PALETTE = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8BC34A', '#E91E63', '#009688', '#E65100', '#795548', '#3F51B5']
 
-# --- МОДЕЛІ ---
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
@@ -128,7 +126,6 @@ def has_active_partnership(user_id):
     ).first()
     return p is not None
 
-# --- АВТОРИЗАЦІЯ ---
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     error = None
@@ -180,7 +177,6 @@ def integrations():
     mono_token = MonobankToken.query.filter_by(user_id=current_user.id).first()
     return render_template('integrations.html', username=current_user.username, is_mono_connected=bool(mono_token))
 
-# --- ЗАПРОШЕННЯ (СПІЛЬНИЙ БЮДЖЕТ) ---
 @app.route('/send_invite', methods=['POST'])
 @login_required
 def send_invite():
@@ -250,7 +246,6 @@ def leave_partnership():
     if p: db.session.delete(p); db.session.commit()
     return redirect(url_for('home'))
 
-# --- ДОДАВАННЯ ДАНИХ ---
 @app.route('/add_account', methods=['POST'])
 @login_required
 def add_account():
@@ -413,7 +408,6 @@ def add_receipt_ai():
 
     return redirect(url_for('shared_budget' if is_shared else 'home'))
 
-# --- РЕДАГУВАННЯ ТА ВИДАЛЕННЯ ---
 @app.route('/delete/<int:id>')
 @login_required
 def delete_transaction(id):
@@ -577,7 +571,6 @@ def export():
     filename = f"export_{filter_type}_{now.strftime('%Y-%m-%d_%H-%M-%S')}.xlsx"
     return send_file(output, download_name=filename, as_attachment=True)
 
-# --- СПІЛЬНИЙ БЮДЖЕТ (ГОЛОВНА) ---
 @app.route('/shared', methods=['GET', 'POST'])
 @login_required
 def shared_budget():
@@ -637,7 +630,6 @@ def shared_budget():
             acc_name = ", ".join([a.name for a in target_accs])
         goals_data.append({'id': g.id, 'name': g.name, 'target_amount': g.target_amount, 'current': max(0, curr_val), 'acc_name': acc_name})
 
-    # РОЗРАХУНОК ДОХОДІВ І ВИТРАТ ДЛЯ ГРАФІКІВ
     exp_cat_data, inc_cat_data = {}, {}
     for t in ts:
         clean_cat = t.category.split(' ', 1)[-1] if ' ' in t.category else t.category
@@ -665,7 +657,6 @@ def shared_budget():
                            random_color=new_cat_color, balance=total_balance, accounts=user_accounts, goals=goals_data, exp_cats=[c.name for c in user_categories if c.type=='Витрата'], inc_cats=[c.name for c in user_categories if c.type=='Дохід'], user_categories=user_categories, current_filter=f, filter_name=filter_name, is_shared_view=True, partner=partner)
 
 
-# --- ОСОБИСТИЙ БЮДЖЕТ (ГОЛОВНА) ---
 @app.route('/', methods=['GET', 'POST'])
 @login_required
 def home():
@@ -726,7 +717,6 @@ def home():
             acc_name = ", ".join([a.name for a in target_accs])
         goals_data.append({'id': g.id, 'name': g.name, 'target_amount': g.target_amount, 'current': max(0, curr_val), 'acc_name': acc_name})
 
-    # РОЗРАХУНОК ДОХОДІВ І ВИТРАТ ДЛЯ ГРАФІКІВ
     exp_cat_data, inc_cat_data = {}, {}
     for t in ts:
         clean_cat = t.category.split(' ', 1)[-1] if ' ' in t.category else t.category
@@ -753,7 +743,6 @@ def home():
                            inc_labels=inc_labels, inc_values=inc_values, inc_colors=inc_colors,
                            random_color=new_cat_color, balance=total_balance, accounts=user_accounts, goals=goals_data, exp_cats=[c.name for c in user_categories if c.type=='Витрата'], inc_cats=[c.name for c in user_categories if c.type=='Дохід'], user_categories=user_categories, current_filter=f, filter_name=filter_name, pending_invite=pending_invite, invite_sender=invite_sender)
 
-# --- Інтеграції та Аналітика ---
 @app.route('/unlink_monobank', methods=['POST'])
 @login_required
 def unlink_monobank():
@@ -877,15 +866,12 @@ def delete_multiple():
     if not ids:
         return {"success": False, "error": "Не вибрано жодного запису"}, 400
         
-    # Отримуємо ID партнера, якщо є спільний бюджет
     partner_id = get_partner_id(current_user.id)
     valid_user_ids = [current_user.id, partner_id] if partner_id else [current_user.id]
     
-    # Знаходимо всі вибрані транзакції, які належать поточному юзеру АБО його партнеру
     transactions = Transaction.query.filter(Transaction.id.in_(ids), Transaction.user_id.in_(valid_user_ids)).all()
     
     for t in transactions:
-        # Оновлюємо баланс рахунку (повертаємо гроші)
         acc = db.session.get(Account, t.account_id)
         if acc:
             if t.type == 'Дохід': 
@@ -893,7 +879,6 @@ def delete_multiple():
             else: 
                 acc.balance = round(acc.balance + t.amount, 2)
         
-        # Видаляємо запис
         db.session.delete(t)
         
     db.session.commit()
