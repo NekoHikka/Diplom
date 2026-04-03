@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="uk">
+<html lang="{{ session.get('lang', 'uk') }}">
   <head>
     <meta charset="UTF-8" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>Спільний Бюджет - Запрошення</title>
+    <title>{{ get_string('nav_shared') }} - {{ get_string('shared_invite_title') }}</title>
     <link
       rel="icon"
       type="image/png"
@@ -195,26 +195,29 @@
   </head>
   <body>
     <div class="card no-print top-menu">
-      <div class="user-greeting" title="Привіт, {{ username }}!">
+      <div class="user-greeting" title="{{ get_string('nav_personal') }}, {{ username }}!">
         👤 {{ username }}
       </div>
-      <a href="/" class="nav-btn">🏠 Особистий</a>
-      <a href="/shared" class="nav-btn active-shared">🤝 Спільний</a>
-      <a href="/analytics" class="nav-btn">🧠 Аналітика</a>
-      <a href="/integrations" class="nav-btn">🏦 Інтеграції</a>
+      <a href="{{ url_for('budget.home') }}" class="nav-btn">🏠 {{ get_string('nav_personal') }}</a>
+      <a href="{{ url_for('shared.shared_budget') }}" class="nav-btn active-shared">🤝 {{ get_string('nav_shared') }}</a>
+      <a href="{{ url_for('analytics.analytics') }}" class="nav-btn">🧠 {{ get_string('nav_analytics') }}</a>
+      <a href="{{ url_for('integration.integrations') }}" class="nav-btn">🏦 {{ get_string('nav_integrations') }}</a>
       <div class="right-buttons" style="margin-left: auto">
+        <a href="{{ url_for('auth.set_lang', lang='en' if session.get('lang', 'uk') == 'uk' else 'uk') }}" class="nav-btn" style="background-color: #607d8b; color: white">
+          {{ '🌐 UA' if session.get('lang', 'uk') == 'uk' else '🌐 EN' }}
+        </a>
         <button
           onclick="toggleTheme()"
           class="nav-btn"
           style="background-color: #ff9800; color: white"
         >
-          🌓 Тема
+          🌓 {{ get_string('nav_theme') }}
         </button>
         <a
-          href="/logout"
+          href="{{ url_for('auth.logout') }}"
           class="nav-btn"
           style="background-color: #ff4d4d; color: white"
-          >🚪 Вийти</a
+          >🚪 {{ get_string('nav_logout') }}</a
         >
       </div>
     </div>
@@ -236,7 +239,7 @@
     </div>
     {% endif %} {% endwith %}
 
-    <h2 style="text-align: center; color: #2196f3">🤝 Спільний Бюджет</h2>
+    <h2 style="text-align: center; color: #2196f3">{{ get_string('nav_shared') }}</h2>
     <p
       style="
         text-align: center;
@@ -245,8 +248,11 @@
         margin: 0 auto 30px auto;
       "
     >
-      Тут ви можете вести спільну бухгалтерію з партнером, родичем або другом.
-      Ваші особисті фінанси залишаться приватними.
+      {% if session.get('lang', 'uk') == 'uk' %}
+      Тут ви можете вести спільну бухгалтерію з партнером, родичем або другом. Ваші особисті фінанси залишаться приватними.
+      {% else %}
+      Here you can keep shared accounting with a partner, relative or friend. Your personal finances will remain private.
+      {% endif %}
     </p>
 
     <div style="max-width: 500px; margin: 0 auto">
@@ -255,26 +261,25 @@
         class="card"
         style="border-top: 4px solid #4caf50; text-align: center"
       >
-        <h3 style="margin-top: 0; color: #4caf50">Вхідне запрошення!</h3>
+        <h3 style="margin-top: 0; color: #4caf50">{{ get_string('shared_invite_title') }}</h3>
         <p>
-          Користувач <strong>{{ invite_sender.username }}</strong> пропонує вам
-          вести спільний бюджет.
+          {{ get_string('shared_invite_text', username=invite_sender.username) | safe }}
         </p>
         <div
           class="invite-actions"
           style="display: flex; gap: 10px; justify-content: center"
         >
           <a
-            href="/accept_invite/{{ pending_invite.id }}"
+            href="{{ url_for('shared.accept_invite', id=pending_invite.id) }}"
             class="btn"
             style="background-color: #4caf50; color: white; flex: 1"
-            >✅ Прийняти</a
+            >✅ {{ get_string('shared_accept') }}</a
           >
           <a
-            href="/reject_invite/{{ pending_invite.id }}"
+            href="{{ url_for('shared.reject_invite', id=pending_invite.id) }}"
             class="btn"
             style="background-color: #ff4d4d; color: white; flex: 1"
-            >❌ Відхилити</a
+            >❌ {{ get_string('shared_reject') }}</a
           >
         </div>
       </div>
@@ -283,22 +288,22 @@
         class="card"
         style="border-top: 4px solid #ff9800; text-align: center"
       >
-        <h3 style="margin-top: 0; color: #ff9800">Запрошення надіслано!</h3>
-        <p>Ви запросили <strong>{{ receiver.username }}</strong>.</p>
+        <h3 style="margin-top: 0; color: #ff9800">{% if session.get('lang', 'uk') == 'uk' %}Запрошення надіслано!{% else %}Invite sent!{% endif %}</h3>
+        <p>{% if session.get('lang', 'uk') == 'uk' %}Ви запросили{% else %}You invited{% endif %} <strong>{{ receiver.username }}</strong>.</p>
         <p style="color: #aaa; font-size: 14px">
-          Очікуємо на підтвердження від користувача...
+          {% if session.get('lang', 'uk') == 'uk' %}Очікуємо на підтвердження від користувача...{% else %}Waiting for confirmation from user...{% endif %}
         </p>
         <a
-          href="/reject_invite/{{ sent_invite.id }}"
+          href="{{ url_for('shared.reject_invite', id=sent_invite.id) }}"
           class="btn"
           style="background-color: #ff4d4d; color: white; margin-top: 10px"
-          >Скасувати запрошення</a
+          >{% if session.get('lang', 'uk') == 'uk' %}Скасувати запрошення{% else %}Cancel invitation{% endif %}</a
         >
       </div>
       {% else %}
       <div class="card" style="border-top: 4px solid #2196f3">
-        <h3 style="margin-top: 0">Надіслати запрошення</h3>
-        <form action="/send_invite" method="POST">
+        <h3 style="margin-top: 0">{% if session.get('lang', 'uk') == 'uk' %}Надіслати запрошення{% else %}Send invitation{% endif %}</h3>
+        <form action="{{ url_for('shared.send_invite') }}" method="POST">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
           <label
             style="
@@ -308,12 +313,12 @@
               display: block;
               font-weight: bold;
             "
-            >Логін партнера:</label
+            >{% if session.get('lang', 'uk') == 'uk' %}Логін партнера:{% else %}Partner login:{% endif %}</label
           >
           <input
             type="text"
             name="username"
-            placeholder="Введіть логін..."
+            placeholder="{% if session.get('lang', 'uk') == 'uk' %}Введіть логін...{% else %}Enter login...{% endif %}"
             required
           />
           <button
@@ -321,7 +326,7 @@
             class="btn"
             style="background-color: #2196f3; color: white; width: 100%"
           >
-            Надіслати 🚀
+            {% if session.get('lang', 'uk') == 'uk' %}Надіслати{% else %}Send{% endif %} 🚀
           </button>
         </form>
       </div>

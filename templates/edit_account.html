@@ -1,182 +1,36 @@
-<!doctype html>
-<html lang="uk">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
-    <title>Редагувати Рахунок - Розумні Фінанси</title>
-    <script>
-      if (localStorage.getItem("theme") === "light")
-        document.documentElement.setAttribute("data-theme", "light");
+{% extends "base.html" %}
 
-      function formatMoneyInput(input) {
-        let val = input.value.replace(",", ".");
-        val = val.replace(/[^0-9.]/g, "");
-        let parts = val.split(".");
-        if (parts.length > 2) val = parts[0] + "." + parts.slice(1).join("");
-        if (parts.length === 2 && parts[1].length > 2)
-          val = parts[0] + "." + parts[1].substring(0, 2);
-        input.value = val;
-      }
-    </script>
-    <style>
-      :root {
-        --bg-color: #121212;
-        --card-bg: #1e1e1e;
-        --text-color: #ffffff;
-        --border-color: #333333;
-        --input-bg: #2a2a2a;
-        --input-text: #ffffff;
-        --input-border: #444444;
-        color-scheme: dark;
-      }
-      [data-theme="light"] {
-        --bg-color: #f4f4f9;
-        --card-bg: #ffffff;
-        --text-color: #333333;
-        --border-color: #dddddd;
-        --input-bg: #ffffff;
-        --input-text: #333333;
-        --input-border: #cccccc;
-        color-scheme: light;
-      }
-      body {
-        background-color: var(--bg-color);
-        color: var(--text-color);
-        font-family: Arial, sans-serif;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        margin: 0;
-        padding: 15px;
-        box-sizing: border-box;
-      }
-      .card {
-        background-color: var(--card-bg);
-        padding: 30px;
-        border-radius: 12px;
-        border: 1px solid var(--border-color);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        width: 100%;
-        max-width: 400px;
-      }
-      input,
-      select {
-        background-color: var(--input-bg);
-        color: var(--input-text);
-        border: 1px solid var(--input-border);
-        border-radius: 8px;
-        padding: 14px;
-        font-size: 15px;
-        outline: none;
-        width: 100%;
-        box-sizing: border-box;
-        margin-bottom: 15px;
-        transition: 0.2s;
-        cursor: pointer;
-      }
-      input:focus,
-      select:focus {
-        border-color: #4caf50;
-        box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
-        background-color: var(--card-bg);
-      }
-      select {
-        appearance: none;
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='gray' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-        background-repeat: no-repeat;
-        background-position: right 12px center;
-        background-size: 16px;
-        padding-right: 35px !important;
-      }
-      [data-theme="light"] select {
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-      }
-      .btn {
-        padding: 14px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: bold;
-        width: 100%;
-        color: white;
-        font-size: 15px;
-        display: inline-block;
-        text-align: center;
-        text-decoration: none;
-        box-sizing: border-box;
-        transition: 0.2s;
-      }
-      .btn:hover {
-        opacity: 0.8;
-      }
-      label {
-        display: block;
-        margin-bottom: 5px;
-        color: #aaa;
-        font-size: 13px;
-        font-weight: bold;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="card">
-      <h2 style="margin-top: 0; text-align: center; color: #4caf50">
-        ✏️ Редагувати Рахунок
-      </h2>
-      <form method="POST">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+{% block title %}{{ get_string('edit_account') }}{% endblock %}
 
-        <label>Іконка та Назва</label>
-        <div style="display: flex; gap: 10px; margin-bottom: 5px">
-          <select name="emoji" style="width: 85px; margin-bottom: 0">
-            {% set emojis = ['💳', '💵', '🏦', '🐖', '🗄️', '📱', '🪙', '💼'] %}
-            {% for e in emojis %} {% if current_emoji == e %}
-            <option value="{{ e }}" selected>{{ e }}</option>
-            {% else %}
-            <option value="{{ e }}">{{ e }}</option>
-            {% endif %} {% endfor %}
-          </select>
-          <input
-            type="text"
-            name="name"
-            value="{{ current_name }}"
-            required
-            pattern=".*\S+.*"
-            title="Введіть назву без пустих пробілів"
-            style="margin-bottom: 0; flex: 1; cursor: text"
-          />
-        </div>
-        <label style="margin-top: 15px">Поточний Баланс (₴)</label>
-        <input
-          type="text"
-          inputmode="decimal"
-          name="balance"
-          value="{{ acc.balance if acc.balance % 1 != 0 else acc.balance|int }}"
-          required
-          style="cursor: text"
-          oninput="formatMoneyInput(this)"
-        />
-
-        <div style="display: flex; gap: 10px; margin-top: 10px">
-          <a
-            href="javascript:history.back()"
-            class="btn"
-            style="background-color: #555; flex: 1"
-            >Скасувати</a
-          >
-          <button
-            type="submit"
-            class="btn"
-            style="background-color: #4caf50; flex: 1"
-          >
-            Зберегти
-          </button>
-        </div>
-      </form>
+{% block content %}
+<div class="card" style="max-width: 500px; margin: 40px auto">
+  <h2 style="margin-top: 0; color: #ff9800">{{ get_string('edit_account') }}</h2>
+  <form action="{{ url_for('budget.edit_account', id=acc.id) }}" method="POST" style="display: flex; flex-direction: column; gap: 15px">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    
+    <div>
+      <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #aaa">{{ get_string('type') }}:</label>
+      <select name="emoji">
+        {% for e in ['💳', '💵', '🏦', '🐖', '🗄️', '📱', '🪙', '💼'] %}
+        <option value="{{ e }}" {% if current_emoji == e %}selected{% endif %}>{{ e }}</option>
+        {% endfor %}
+      </select>
     </div>
-  </body>
-</html>
+
+    <div>
+      <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #aaa">{{ get_string('ph_name')|replace('(','')|replace(')','') }}:</label>
+      <input type="text" name="name" value="{{ current_name }}" required />
+    </div>
+
+    <div>
+      <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #aaa">{{ get_string('amount') }}:</label>
+      <input type="text" inputmode="decimal" name="balance" value="{{ acc.balance if acc.balance % 1 != 0 else acc.balance|int }}" required oninput="formatMoneyInput(this)" />
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-top: 10px">
+      <button type="submit" class="btn" style="background-color: #4caf50; color: white; flex: 1">{{ get_string('save') }}</button>
+      <a href="{{ url_for('shared.shared_budget' if acc.is_shared else 'budget.home') }}" class="btn" style="background-color: #666; color: white; flex: 1">{{ get_string('cancel') }}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

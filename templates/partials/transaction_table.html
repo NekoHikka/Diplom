@@ -1,0 +1,56 @@
+<div id="pdf-content">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+    <h3 style="margin: 0">{{ get_string('transactions') }}:</h3>
+    <div id="bulk-delete-container" style="display: none; transition: 0.3s" class="no-print">
+      <button id="bulk-delete-btn" class="btn" style="background-color: #ff4d4d; color: white; padding: 8px 15px; border-radius: 8px;">
+        🗑️ {{ get_string('delete') }} вибрані (<span id="selected-count">0</span>)
+      </button>
+    </div>
+  </div>
+
+  <div style="overflow-x: auto">
+    {% if transactions %}
+    <table style="width: 100%; min-width: 600px; border-collapse: collapse; text-align: left; table-layout: fixed; border-top: 1px solid var(--border-color); margin-bottom: 20px;">
+      <tr style="border-bottom: 1px solid var(--border-color)">
+        <th style="width: 5%; text-align: center; padding: 12px 0" class="no-print">
+          <input type="checkbox" id="select-all" style="cursor: pointer; transform: scale(1.2); accent-color: #ff4d4d;" />
+        </th>
+        <th style="width: 12%">{{ get_string('date') }}</th>
+        <th style="width: 13%">{{ get_string('acc_label') }}</th>
+        {% if is_shared_view %}<th style="width: 12%">{{ get_string('who_added') }}</th>{% endif %}
+        <th style="width: 10%">{{ get_string('type') }}</th>
+        <th style="width: 18%">{{ get_string('category') }}</th>
+        <th style="width: {% if is_shared_view %}12%{% else %}15%{% endif %}">{{ get_string('amount') }}</th>
+        <th style="width: {% if is_shared_view %}15%{% else %}20%{% endif %}">{{ get_string('description') }}</th>
+        <th style="width: 8%; text-align: center" class="no-print">{{ get_string('action_label') }}</th>
+      </tr>
+      {% for t in transactions %}
+      <tr style="border-bottom: 1px solid var(--border-color); height: 40px; font-size: 14px;">
+        <td style="text-align: center" class="no-print">
+          <input type="checkbox" class="transaction-checkbox" value="{{ t.id }}" style="cursor: pointer; transform: scale(1.2); accent-color: #ff4d4d;" />
+        </td>
+        <td style="color: #aaa">{{ t.date.strftime('%d.%m.%Y') }}</td>
+        <td style="color: #ff9800; font-weight: bold">{{ translate_name(t.account.name) if t.account else '---' }}</td>
+        {% if is_shared_view %}<td style="color: #4db8ff; font-weight: bold; font-size: 13px">👤 {{ t.user.username }}</td>{% endif %}
+        <td style="color: {% if t.type == 'Витрата' %}#ff4d4d{% else %}#4CAF50{% endif %}; font-weight: bold;">
+          {{ get_string('income' if t.type == 'Дохід' else 'expense') }}
+        </td>
+        <td>{{ translate_name(t.category) }}</td>
+        <td>{{ t.amount if t.amount % 1 != 0 else t.amount|int }} {{ get_string('currency') }}</td>
+        <td style="word-wrap: break-word">{{ t.description }}</td>
+        <td style="text-align: center" class="no-print">
+          <a href="{{ url_for('budget.edit_transaction_route', id=t.id) }}" style="text-decoration: none; margin-right: 10px; font-size: 16px;">✏️</a>
+          <a href="{{ url_for('budget.delete_transaction_route', id=t.id) }}" style="text-decoration: none; font-size: 16px" class="optimistic-delete" onclick="return confirm('{{ get_string('delete') }} {{ get_string('transactions')|lower }}?');">🗑️</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <div style="text-align: center; padding: 40px 20px; color: #aaa; border-top: 1px solid var(--border-color);">
+      <div style="font-size: 40px; margin-bottom: 10px">📭</div>
+      <p style="margin: 0; font-size: 18px; font-weight: bold">{{ get_string('history_empty') }}</p>
+      <p style="font-size: 14px; margin-top: 5px">{{ get_string('history_empty_desc') }}</p>
+    </div>
+    {% endif %}
+  </div>
+</div>

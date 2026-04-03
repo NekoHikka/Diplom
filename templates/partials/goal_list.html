@@ -1,0 +1,38 @@
+<div class="card" style="flex: 1; min-width: 300px">
+  <h3>🎯 {{ get_string('goals') }}</h3>
+  <form action="{{ url_for('budget.add_goal_route') }}" method="POST" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <input type="hidden" name="is_shared" value="{{ 'true' if is_shared_view else 'false' }}" />
+    <div style="display: flex; gap: 10px">
+      <input type="text" name="name" placeholder="{{ get_string('ph_name') }}" required pattern=".*\S+.*" title="Введіть назву без пустих пробілів" style="flex: 1.5" />
+      <input type="text" inputmode="decimal" name="target_amount" placeholder="{{ get_string('amount') }}" required style="flex: 1" oninput="formatMoneyInput(this)" />
+      <button type="submit" class="btn optimistic-submit" style="background-color: #2196f3; color: white; flex: 0.5">+</button>
+    </div>
+    <div style="font-size: 13px; color: #aaa">{{ get_string('calc_from_accs') }}</div>
+    <div id="goal-pills" style="display: flex; gap: 8px; flex-wrap: wrap">
+      <label class="acc-pill active"><input type="checkbox" name="account_ids" value="all" checked style="display: none" />{{ get_string('all_accs_pill') }}</label>
+      {% for acc in accounts %}
+      <label class="acc-pill"><input type="checkbox" name="account_ids" value="{{ acc.id }}" style="display: none" />{{ translate_name(acc.name) }}</label>
+      {% endfor %}
+    </div>
+  </form>
+
+  {% for goal in goals %}
+  <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
+    <div style="display: flex; justify-content: space-between; font-size: 13px;">
+      <div style="display: flex; flex-direction: column">
+        <strong>{{ translate_name(goal.name) }}</strong>
+        <span style="font-size: 11px; opacity: 0.6">{{ get_string('acc_label') }}s: {{ translate_name(goal.acc_name) }}</span>
+      </div>
+      <span>{{ goal.current if goal.current % 1 != 0 else goal.current|int }} / {{ goal.target_amount if goal.target_amount % 1 != 0 else goal.target_amount|int }} {{ get_string('currency') }}</span>
+    </div>
+    <div style="width: 100%; background-color: var(--input-border); border-radius: 5px; height: 8px; overflow: hidden; margin-top: 4px; margin-bottom: 8px;">
+      <div style="height: 100%; background-color: #4CAF50; width: {{ (goal.current / goal.target_amount * 100) if goal.target_amount > 0 else 0 }}%; max-width: 100%;"></div>
+    </div>
+    <div style="display: flex; justify-content: flex-end; gap: 15px">
+      <a href="{{ url_for('budget.edit_goal_route', id=goal.id) }}" style="text-decoration: none; font-size: 13px; color: #2196f3">✏️ {{ get_string('edit') }}</a>
+      <a href="{{ url_for('budget.delete_goal_route', id=goal.id) }}" style="text-decoration: none; font-size: 13px; color: #ff4d4d" class="optimistic-delete" onclick="return confirm('{{ get_string('delete') }} {{ get_string('goals')|lower }}?');">🗑️ {{ get_string('delete') }}</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>

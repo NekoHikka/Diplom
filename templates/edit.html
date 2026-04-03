@@ -1,243 +1,77 @@
-<!doctype html>
-<html lang="uk">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
-    <title>Редагування запису</title>
-    <link
-      rel="icon"
-      type="image/png"
-      href="{{ url_for('static', filename='logo.png') }}"
-    />
-    <script>
-      if (localStorage.getItem("theme") === "light")
-        document.documentElement.setAttribute("data-theme", "light");
+{% extends "base.html" %}
 
-      function formatMoneyInput(input) {
-        let val = input.value.replace(",", ".");
-        val = val.replace(/[^0-9.]/g, "");
-        let parts = val.split(".");
-        if (parts.length > 2) val = parts[0] + "." + parts.slice(1).join("");
-        if (parts.length === 2 && parts[1].length > 2)
-          val = parts[0] + "." + parts[1].substring(0, 2);
-        input.value = val;
-      }
-    </script>
-    <style>
-      :root {
-        --bg-color: #121212;
-        --card-bg: #1e1e1e;
-        --text-color: #ffffff;
-        --border-color: #333333;
-        --input-bg: #2a2a2a;
-        --input-text: #ffffff;
-        --input-border: #444444;
-        color-scheme: dark;
-      }
-      [data-theme="light"] {
-        --bg-color: #f4f4f9;
-        --card-bg: #ffffff;
-        --text-color: #333333;
-        --border-color: #dddddd;
-        --input-bg: #ffffff;
-        --input-text: #333333;
-        --input-border: #cccccc;
-        color-scheme: light;
-      }
-      body {
-        background-color: var(--bg-color);
-        color: var(--text-color);
-        font-family: Arial, sans-serif;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        margin: 0;
-        padding: 15px;
-        box-sizing: border-box;
-      }
-      .card {
-        background-color: var(--card-bg);
-        padding: 30px;
-        border-radius: 12px;
-        border: 1px solid var(--border-color);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        width: 100%;
-        max-width: 400px;
-      }
-      .btn {
-        padding: 14px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: bold;
-        width: 100%;
-        color: white;
-        font-size: 15px;
-        display: inline-block;
-        text-align: center;
-        text-decoration: none;
-        box-sizing: border-box;
-        transition: 0.2s;
-      }
-      .btn:hover {
-        opacity: 0.8;
-      }
-      input,
-      select {
-        background-color: var(--input-bg);
-        color: var(--input-text);
-        border: 1px solid var(--input-border);
-        border-radius: 8px;
-        padding: 14px;
-        font-size: 15px;
-        outline: none;
-        width: 100%;
-        box-sizing: border-box;
-        margin-bottom: 15px;
-        transition: 0.2s;
-        cursor: text;
-      }
-      input:focus,
-      select:focus {
-        border-color: #4caf50;
-        box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
-        background-color: var(--card-bg);
-      }
-      label {
-        display: block;
-        margin-bottom: 5px;
-        color: #aaa;
-        font-size: 13px;
-        font-weight: bold;
-      }
-      select {
-        appearance: none;
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='gray' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-        background-repeat: no-repeat;
-        background-position: right 12px center;
-        background-size: 16px;
-        padding-right: 35px !important;
-        cursor: pointer;
-      }
-      [data-theme="light"] select {
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-      }
-      ::-webkit-calendar-picker-indicator {
-        filter: invert(1);
-        cursor: pointer;
-      }
-      [data-theme="light"] ::-webkit-calendar-picker-indicator {
-        filter: none;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="card">
-      <h2
-        style="
-          text-align: center;
-          margin-top: 0;
-          margin-bottom: 25px;
-          color: #4caf50;
-        "
-      >
-        ✏️ Редагувати запис
-      </h2>
-      <form action="/edit/{{ t.id }}" method="POST">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+{% block title %}{{ get_string('edit_record') }}{% endblock %}
 
-        <div style="display: flex; gap: 10px">
-          <div style="flex: 1">
-            <label>Тип:</label>
-            <select name="type" id="edit_type" required>
-              <option value="Витрата">Витрата</option>
-              <option value="Дохід">Дохід</option>
-            </select>
-          </div>
-          <div style="flex: 1">
-            <label>Сума (грн):</label>
-            <input
-              type="text"
-              inputmode="decimal"
-              name="amount"
-              value="{{ t.amount if t.amount % 1 != 0 else t.amount|int }}"
-              required
-              oninput="formatMoneyInput(this)"
-            />
-          </div>
-        </div>
-
-        <label>Рахунок:</label>
-        <select name="account_id" id="edit_account" required>
+{% block content %}
+<div class="card" style="max-width: 500px; margin: 40px auto">
+  <h2 style="margin-top: 0; color: #4caf50">{{ get_string('edit_record') }}</h2>
+  <form action="{{ url_for('budget.edit_transaction_route', id=t.id) }}" method="POST" style="display: flex; flex-direction: column; gap: 15px">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    
+    <div style="display: flex; gap: 10px">
+      <div style="flex: 1">
+        <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #aaa">{{ get_string('type') }}:</label>
+        <select name="type" id="type_select" onchange="updateCategories()">
+          <option value="Витрата" {% if t.type == 'Витрата' %}selected{% endif %}>{{ get_string('expense') }}</option>
+          <option value="Дохід" {% if t.type == 'Дохід' %}selected{% endif %}>{{ get_string('income') }}</option>
+        </select>
+      </div>
+      <div style="flex: 1">
+        <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #aaa">{{ get_string('acc_label') }}:</label>
+        <select name="account_id">
           {% for acc in accounts %}
-          <option value="{{ acc.id }}">{{ acc.name }}</option>
+          <option value="{{ acc.id }}" {% if t.account_id == acc.id %}selected{% endif %}>{{ translate_name(acc.name) }}</option>
           {% endfor %}
         </select>
-
-        <label>Категорія:</label>
-        <select name="category" id="edit_category" required></select>
-
-        <label>Дата:</label>
-        <input
-          type="date"
-          name="date"
-          value="{{ t.date.strftime('%Y-%m-%d') }}"
-          required
-        />
-
-        <label>Опис:</label>
-        <input type="text" name="description" value="{{ t.description }}" />
-
-        <div style="display: flex; gap: 10px; margin-top: 10px">
-          <a
-            href="javascript:history.back()"
-            class="btn"
-            style="background-color: #555"
-            >Скасувати</a
-          >
-          <button type="submit" class="btn" style="background-color: #4caf50">
-            Зберегти
-          </button>
-        </div>
-      </form>
+      </div>
     </div>
 
-    <script>
-      document.addEventListener("DOMContentLoaded", function() {
-          const dateInputs = document.querySelectorAll('input[type="date"]');
-          const currentYear = new Date().getFullYear();
-          const minDate = `${currentYear - 10}-01-01`;
-          const maxDate = `${currentYear + 20}-12-31`;
-          dateInputs.forEach(input => {
-              input.setAttribute('min', minDate);
-              input.setAttribute('max', maxDate);
-          });
-      });
+    <div>
+      <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #aaa">{{ get_string('category') }}:</label>
+      <select name="category" id="category_select"></select>
+    </div>
 
-      const expCats = {{ exp_cats|tojson }};
-      const incCats = {{ inc_cats|tojson }};
-      const typeSelect = document.getElementById('edit_type');
-      const catSelect = document.getElementById('edit_category');
-      const accSelect = document.getElementById('edit_account');
+    <div style="display: flex; gap: 10px">
+      <div style="flex: 1">
+        <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #aaa">{{ get_string('amount') }}:</label>
+        <input type="text" inputmode="decimal" name="amount" value="{{ t.amount if t.amount % 1 != 0 else t.amount|int }}" required oninput="formatMoneyInput(this)" />
+      </div>
+      <div style="flex: 1">
+        <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #aaa">{{ get_string('date') }}:</label>
+        <input type="date" name="date" value="{{ t.date.strftime('%Y-%m-%d') }}" required />
+      </div>
+    </div>
 
-      function updateCategories() {
-          catSelect.innerHTML = '';
-          const opts = typeSelect.value === 'Витрата' ? expCats : incCats;
-          opts.forEach(c => {
-              let o = document.createElement('option'); o.value = c; o.innerText = c; catSelect.appendChild(o);
-          });
-      }
+    <div>
+      <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #aaa">{{ get_string('description') }}:</label>
+      <input type="text" name="description" value="{{ t.description }}" />
+    </div>
 
-      typeSelect.addEventListener('change', updateCategories);
+    <div style="display: flex; gap: 10px; margin-top: 10px">
+      <button type="submit" class="btn" style="background-color: #4caf50; color: white; flex: 1">{{ get_string('save') }}</button>
+      <a href="{{ url_for('shared.shared_budget' if t.is_shared else 'budget.home') }}" class="btn" style="background-color: #666; color: white; flex: 1">{{ get_string('cancel') }}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
 
-      typeSelect.value = "{{ t.type }}";
-      updateCategories();
-      catSelect.value = "{{ t.category }}";
-      accSelect.value = "{{ t.account_id }}";
-    </script>
-  </body>
-</html>
+{% block scripts %}
+<script>
+  const expenseCategories = {{ exp_cats | tojson | safe }};
+  const incomeCategories = {{ inc_cats | tojson | safe }};
+  const currentCat = "{{ t.category }}";
+
+  function updateCategories() {
+    const selectedType = document.getElementById("type_select").value;
+    const catObj = document.getElementById("category_select");
+    catObj.innerHTML = "";
+    (selectedType === "Витрата" ? expenseCategories : incomeCategories).forEach(cat => {
+      let opt = document.createElement("option");
+      opt.value = cat; opt.innerHTML = cat;
+      if(cat === currentCat) opt.selected = true;
+      catObj.appendChild(opt);
+    });
+  }
+  updateCategories();
+</script>
+{% endblock %}

@@ -1,0 +1,32 @@
+<div class="card no-print" style="flex: 1.2; min-width: 350px">
+  <h3>{{ get_string('add_transaction') }}:</h3>
+  <form action="{{ url_for('budget.add_transaction_route') }}" method="POST" style="display: flex; flex-direction: column; gap: 10px">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <input type="hidden" name="is_shared" value="{{ 'true' if is_shared_view else 'false' }}" />
+
+    <div style="display: flex; gap: 10px">
+      <select name="type" id="type_select" onchange="updateCategories()" required style="flex: 1">
+        <option value="Витрата">{{ get_string('expense') }}</option>
+        <option value="Дохід">{{ get_string('income') }}</option>
+      </select>
+      <select name="account_id" required style="flex: 1; border-color: #ff9800">
+        {% for acc in accounts %}
+        <option value="{{ acc.id }}">{{ translate_name(acc.name) }} ({{ acc.balance if acc.balance % 1 != 0 else acc.balance|int }} {{ get_string('currency') }})</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <select name="category" id="category_select" required></select>
+
+    <div style="display: flex; gap: 10px">
+      <input type="text" inputmode="decimal" name="amount" placeholder="{{ get_string('amount') }} {{ get_string('ph_amount') }}" required style="flex: 1" oninput="formatMoneyInput(this)" />
+      <input type="date" name="date" id="transaction_date" required style="flex: 1" title="{{ get_string('date') }}" />
+    </div>
+    <input type="text" name="description" placeholder="{{ get_string('description') }} {{ get_string('ph_desc') }}" />
+
+    <div style="display: flex; gap: 10px; margin-top: 5px">
+      <button type="submit" class="btn optimistic-submit" style="background-color: #4caf50; color: white; flex: 2">{{ get_string('btn_record') }}</button>
+      <button type="button" class="btn" style="background-color: #9c27b0; color: white; flex: 1; display: flex; justify-content: center; align-items: center; gap: 5px;" onclick="document.getElementById('ai-modal').style.display = 'flex'">{{ get_string('btn_ai_auto') }}</button>
+    </div>
+  </form>
+</div>

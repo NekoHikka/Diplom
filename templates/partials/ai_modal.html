@@ -1,0 +1,32 @@
+<div id="ai-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 2000; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box;">
+  <div class="card" style="width: 100%; max-width: 400px; margin: 0; position: relative">
+    <button type="button" onclick="document.getElementById('ai-modal').style.display = 'none'" style="position: absolute; top: 15px; right: 15px; background: transparent; border: none; color: #aaa; font-size: 18px; cursor: pointer;">✖</button>
+    <h3 style="margin-top: 0; color: #9c27b0; text-align: center">{{ get_string('receipt_ai_title') }}</h3>
+    <p style="font-size: 14px; color: #aaa; text-align: center; margin-bottom: 20px;">{{ get_string('receipt_ai_desc') }}</p>
+
+    <form action="{{ url_for('ai.add_receipt_ai') }}" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 15px">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <input type="hidden" name="is_shared" value="{{ 'true' if is_shared_view else 'false' }}" />
+
+      <div>
+        <label style="font-size: 13px; color: #aaa; font-weight: bold; margin-bottom: 5px; display: block;">{{ get_string('ai_comment_label') }}</label>
+        <textarea name="user_prompt" placeholder="{{ get_string('ai_comment_ph') }}" style="width: 100%; background-color: var(--input-bg); color: var(--input-text); border: 1px solid var(--input-border); border-radius: 8px; padding: 10px; font-family: inherit; font-size: 14px; resize: vertical; min-height: 60px; outline: none; box-sizing: border-box;"></textarea>
+      </div>
+
+      <div>
+        <label style="font-size: 13px; color: #aaa; font-weight: bold; margin-bottom: 5px; display: block;">{{ get_string('ai_acc_label') }}</label>
+        <select name="account_id" required>
+          {% for acc in accounts %}
+          <option value="{{ acc.id }}">{{ translate_name(acc.name) }} ({{ acc.balance if acc.balance % 1 != 0 else acc.balance|int }} {{ get_string('currency') }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="border: 2px dashed var(--border-color); padding: 15px; border-radius: 8px; text-align: left; background: var(--input-bg);">
+        <input type="file" name="receipt_image" accept="image/*" required style="width: 100%; background: transparent; border: none; padding: 0; color: var(--text-color);" />
+      </div>
+      <div style="display: flex; gap: 10px; margin-top: 10px">
+        <button type="submit" class="btn optimistic-submit" style="background-color: #9c27b0; width: 100%" onclick="this.innerHTML = '{{ get_string('ai_processing') }}'">{{ get_string('ai_btn_recognize') }}</button>
+      </div>
+    </form>
+  </div>
+</div>

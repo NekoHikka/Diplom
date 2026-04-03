@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="{{ session.get('lang', 'uk') }}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>
+      {% block title %}{% endblock %} - {{ get_string('title_personal') }}
+    </title>
+    <link
+      rel="icon"
+      type="image/png"
+      href="{{ url_for('static', filename='logo.png') }}"
+    />
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <script>
+      if (localStorage.getItem("theme") === "light")
+        document.documentElement.setAttribute("data-theme", "light");
+
+      function toggleTheme() {
+        const currentTheme =
+          document.documentElement.getAttribute("data-theme");
+        const newTheme = currentTheme === "light" ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", newTheme);
+        localStorage.setItem("theme", newTheme);
+      }
+
+      function formatMoneyInput(input) {
+        let val = input.value.replace(",", ".");
+        val = val.replace(/[^0-9.]/g, "");
+        let parts = val.split(".");
+        if (parts.length > 2) val = parts[0] + "." + parts.slice(1).join("");
+        if (parts.length === 2 && parts[1].length > 2)
+          val = parts[0] + "." + parts[1].substring(0, 2);
+        input.value = val;
+      }
+    </script>
+
+    <style>
+      :root {
+        --bg-color: #121212; --card-bg: #1e1e1e; --text-color: #ffffff;
+        --border-color: #333333; --input-bg: #2a2a2a; --input-text: #ffffff; --input-border: #444444; color-scheme: dark;
+      }
+      [data-theme="light"] {
+        --bg-color: #f4f4f9; --card-bg: #ffffff; --text-color: #333333;
+        --border-color: #dddddd; --input-bg: #ffffff; --input-text: #333333; --input-border: #cccccc; color-scheme: light;
+      }
+      body { background-color: var(--bg-color); color: var(--text-color); font-family: Arial, sans-serif; max-width: 1100px; margin: auto; padding: 20px; transition: 0.3s; }
+      .card { background-color: var(--card-bg); padding: 20px; border-radius: 10px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); margin-bottom: 20px; }
+      .btn { padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; text-align: center; text-decoration: none; transition: 0.2s; box-sizing: border-box; display: inline-block; }
+      .btn:hover { opacity: 0.8; transform: translateY(-1px); }
+      .btn-filter { background-color: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-color); margin-right: 5px; }
+      .btn-filter.active { background-color: #2196f3; color: white; border-color: #2196f3; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+
+      select, input:not([type="file"]):not([type="color"]) { background-color: var(--input-bg); color: var(--input-text); border: 1px solid var(--input-border); border-radius: 8px; padding: 10px 12px; font-size: 15px; outline: none; transition: all 0.3s ease; box-sizing: border-box; cursor: pointer; width: 100%; }
+      select { appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='gray' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 40px !important; }
+      [data-theme="light"] select { background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23333333' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); }
+      select:focus, input:focus { border-color: #9c27b0; box-shadow: 0 0 8px rgba(156, 39, 176, 0.4); background-color: var(--card-bg); }
+
+      .acc-pill {
+        background-color: var(--input-bg);
+        border: 1px solid var(--border-color);
+        padding: 5px 12px;
+        border-radius: 15px;
+        font-size: 12px;
+        cursor: pointer;
+        user-select: none;
+        transition: 0.2s;
+        color: var(--text-color);
+      }
+      .acc-pill.active {
+        background-color: #2196f3;
+        color: white;
+        border-color: #2196f3;
+      }
+      .top-menu { position: sticky; top: 0; z-index: 1000; display: flex; flex-direction: row; align-items: center; padding: 15px; background-color: var(--card-bg); box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); margin-top: -20px; border-radius: 0 0 10px 10px; border-top: none; margin-bottom: 20px; gap: 15px; }
+      .user-greeting { font-weight: bold; font-size: 16px; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+      .page-buttons { display: flex; gap: 10px; }
+      .right-buttons { display: flex; gap: 10px; margin-left: auto; }
+      .nav-btn { display: inline-flex; align-items: center; justify-content: center; height: 40px; padding: 0 15px; border-radius: 8px; font-weight: bold; text-decoration: none; transition: 0.2s; box-sizing: border-box; white-space: nowrap; border: none; cursor: pointer; background-color: var(--input-bg); color: var(--text-color); font-size: 14px; }
+      .nav-btn:hover { filter: brightness(1.2); }
+      .nav-btn.active-home { background-color: #4caf50; color: white; }
+      .nav-btn.active-shared { background-color: #2196f3; color: white; }
+      .nav-btn.active-analytics { background-color: #9c27b0; color: white; }
+      .nav-btn.active-integrations { background-color: #ff9800; color: white; }
+      .nav-text { margin-left: 6px; }
+
+      @media (max-width: 768px) {
+        body { padding: 10px; margin: 0; }
+        .card { padding: 15px; margin-bottom: 12px; }
+        .top-menu { flex-direction: column; padding: 10px; gap: 10px; }
+        .user-greeting { max-width: 100%; text-align: center; }
+        .page-buttons { width: 100%; justify-content: space-between; gap: 8px; }
+        .page-buttons .nav-btn { flex: 1; padding: 0; font-size: 20px; }
+        .nav-text { display: none; }
+        .right-buttons { width: 100%; justify-content: space-between; margin-left: 0; }
+        .right-buttons .nav-btn { flex: 1; }
+      }
+      {% block extra_css %}{% endblock %}
+    </style>
+  </head>
+  <body>
+    <!-- Top Navigation Menu -->
+    <div class="card no-print top-menu">
+      <div
+        class="user-greeting"
+        title="{{ get_string('nav_personal') }}, {{ current_user.username }}!"
+      >
+        👤 {{ current_user.username }}
+      </div>
+
+      <div class="page-buttons">
+        <a
+          href="{{ url_for('budget.home') }}"
+          class="nav-btn {% if request.endpoint == 'budget.home' %}active-home{% endif %}"
+        >
+          🏠<span class="nav-text">{{ get_string('nav_personal') }}</span>
+        </a>
+        <a
+          href="{{ url_for('shared.shared_budget') }}"
+          class="nav-btn {% if request.endpoint == 'shared.shared_budget' %}active-shared{% endif %}"
+        >
+          🤝<span class="nav-text">{{ get_string('nav_shared') }}</span>
+        </a>
+        <a
+          href="{{ url_for('analytics.analytics', shared=1 if is_shared_view else None) }}"
+          class="nav-btn {% if request.endpoint == 'analytics.analytics' %}active-analytics{% endif %}"
+        >
+          🧠<span class="nav-text">{{ get_string('nav_analytics') }}</span>
+        </a>
+        <a
+          href="{{ url_for('integration.integrations') }}"
+          class="nav-btn {% if request.endpoint == 'integration.integrations' %}active-integrations{% endif %}"
+        >
+          🏦<span class="nav-text">{{ get_string('nav_integrations') }}</span>
+        </a>
+      </div>
+
+      <div class="right-buttons">
+        <a
+          href="{{ url_for('auth.set_lang', lang='en' if session.get('lang', 'uk') == 'uk' else 'uk') }}"
+          class="nav-btn"
+          style="background-color: #607d8b; color: white"
+        >
+          {{ get_string('nav_lang_btn') }}
+        </a>
+        <button
+          onclick="toggleTheme()"
+          class="nav-btn"
+          style="background-color: #ff9800; color: white"
+        >
+          🌓
+          <span class="nav-text-mobile-keep"
+            >{{ get_string('nav_theme') }}</span
+          >
+        </button>
+        <a
+          href="{{ url_for('auth.logout') }}"
+          class="nav-btn"
+          style="background-color: #ff4d4d; color: white"
+        >
+          🚪
+          <span class="nav-text-mobile-keep"
+            >{{ get_string('nav_logout') }}</span
+          >
+        </a>
+      </div>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %}
+    <div style="max-width: 1100px; margin: 0 auto 20px auto">
+      {% for category, message in messages %}
+      <div
+        class="card no-print"
+        style="margin-bottom: 10px; border: 1px solid {% if category == 'error' %}#ff4d4d{% else %}#4CAF50{% endif %}; border-radius: 8px; background: {% if category == 'error' %}rgba(255, 77, 77, 0.1){% else %}rgba(76, 175, 80, 0.1){% endif %}; padding: 15px; text-align: center; display: flex; justify-content: center; align-items: center;"
+      >
+        <strong
+          style="color: {% if category == 'error' %}#ff4d4d{% else %}#4CAF50{% endif %};"
+          >{{ message }}</strong
+        >
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %} {% endwith %}
+
+    <!-- Main Content -->
+    {% block content %}{% endblock %}
+
+    <!-- Common Scripts -->
+    <script>
+      // Scroll position magic
+      document.addEventListener("DOMContentLoaded", function () {
+        const path = window.location.pathname;
+        const scrollpos = sessionStorage.getItem("scrollpos_" + path);
+        if (scrollpos) {
+          window.scrollTo(0, parseInt(scrollpos));
+          sessionStorage.removeItem("scrollpos_" + path);
+        }
+      });
+      window.addEventListener("beforeunload", function () {
+        const path = window.location.pathname;
+        sessionStorage.setItem("scrollpos_" + path, window.scrollY);
+      });
+    </script>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

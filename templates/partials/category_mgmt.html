@@ -1,0 +1,54 @@
+<div class="card" style="flex: 1.2; min-width: 300px">
+  <h3>{{ get_string('cat_mgmt') }}</h3>
+  <form action="{{ url_for('budget.add_category_route') }}" method="POST" style="display: flex; gap: 8px; margin-bottom: 15px; align-items: center;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <input type="hidden" name="is_shared" value="{{ 'true' if is_shared_view else 'false' }}" />
+
+    <select name="type" required style="width: 25%">
+      <option value="Витрата">{{ get_string('expense') }}</option>
+      <option value="Дохід">{{ get_string('income') }}</option>
+    </select>
+    <select name="emoji" style="width: 15%">
+      <option value="🛒">🛒</option><option value="🚗">🚗</option><option value="🎮">🎮</option><option value="☕">☕</option>
+      <option value="🏠">🏠</option><option value="👗">👗</option><option value="🎓">🎓</option><option value="💸">💸</option>
+      <option value="🐶">🐶</option><option value="✈️">✈️</option><option value="🍔">🍔</option><option value="💊">💊</option>
+      <option value="🛠️">🛠️</option><option value="🎁">🎁</option><option value="👶">👶</option><option value="🐾">🐾</option>
+    </select>
+    <input type="text" name="name" placeholder="{{ get_string('ph_name') }}" required pattern=".*\S+.*" title="Введіть назву без пустих пробілів" style="flex: 1" />
+    <input type="color" name="color" value="{{ random_color | default('#4caf50') }}" title="Колір графіка" style="width: 42px; height: 42px; padding: 0; border: none; border-radius: 8px; cursor: pointer; background: transparent;" />
+    <button type="submit" class="btn optimistic-submit" style="background-color: #9c27b0; color: white">{{ get_string('btn_create') }}</button>
+  </form>
+
+  <div style="display: flex; gap: 20px">
+    <div style="flex: 1; max-height: 120px; overflow-y: auto; border-right: 1px solid var(--border-color); padding-right: 10px;">
+      <h4 style="color: #ff4d4d; margin: 0 0 5px 0; font-size: 14px">{{ get_string('expense_plural') }}</h4>
+      {% for cat in user_categories if cat.type == 'Витрата' %}
+      <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 8px">
+          <form action="{{ url_for('budget.update_category_color_route', id=cat.id) }}" method="POST" style="margin: 0; display: flex; align-items: center">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <input type="color" name="color" value="{{ cat.color or '#9c27b0' }}" onchange="this.form.submit()" style="width: 18px; height: 18px; border: none; padding: 0; cursor: pointer; outline: none; background: transparent;" title="{{ get_string('edit') }}" />
+          </form>
+          <span>{{ translate_name(cat.name) }}</span>
+        </div>
+        <a href="{{ url_for('budget.delete_category_route', id=cat.id) }}" style="text-decoration: none" class="optimistic-delete" onclick="return confirm('{{ get_string('delete') }} {{ get_string('category')|lower }}?');">❌</a>
+      </div>
+      {% endfor %}
+    </div>
+    <div style="flex: 1; max-height: 120px; overflow-y: auto">
+      <h4 style="color: #4caf50; margin: 0 0 5px 0; font-size: 14px">{{ get_string('income_plural') }}</h4>
+      {% for cat in user_categories if cat.type == 'Дохід' %}
+      <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 8px">
+          <form action="{{ url_for('budget.update_category_color_route', id=cat.id) }}" method="POST" style="margin: 0; display: flex; align-items: center">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <input type="color" name="color" value="{{ cat.color or '#9c27b0' }}" onchange="this.form.submit()" style="width: 18px; height: 18px; border: none; padding: 0; cursor: pointer; outline: none; background: transparent;" title="{{ get_string('edit') }}" />
+          </form>
+          <span>{{ translate_name(cat.name) }}</span>
+        </div>
+        <a href="{{ url_for('budget.delete_category_route', id=cat.id) }}" style="text-decoration: none" class="optimistic-delete" onclick="return confirm('{{ get_string('delete') }} {{ get_string('category')|lower }}?');">❌</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>

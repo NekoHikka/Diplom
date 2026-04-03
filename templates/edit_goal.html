@@ -1,253 +1,72 @@
-<!doctype html>
-<html lang="uk">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-    />
-    <title>Редагування цілі</title>
-    <link
-      rel="icon"
-      type="image/png"
-      href="{{ url_for('static', filename='logo.png') }}"
-    />
-    <script>
-      if (localStorage.getItem("theme") === "light")
-        document.documentElement.setAttribute("data-theme", "light");
+{% extends "base.html" %}
 
-      function formatMoneyInput(input) {
-        let val = input.value.replace(",", ".");
-        val = val.replace(/[^0-9.]/g, "");
-        let parts = val.split(".");
-        if (parts.length > 2) val = parts[0] + "." + parts.slice(1).join("");
-        if (parts.length === 2 && parts[1].length > 2)
-          val = parts[0] + "." + parts[1].substring(0, 2);
-        input.value = val;
-      }
-    </script>
-    <style>
-      :root {
-        --bg-color: #121212;
-        --card-bg: #1e1e1e;
-        --text-color: #ffffff;
-        --border-color: #333333;
-        --input-bg: #2a2a2a;
-        --input-text: #ffffff;
-        --input-border: #444444;
-        color-scheme: dark;
-      }
-      [data-theme="light"] {
-        --bg-color: #f4f4f9;
-        --card-bg: #ffffff;
-        --text-color: #333333;
-        --border-color: #dddddd;
-        --input-bg: #ffffff;
-        --input-text: #333333;
-        --input-border: #cccccc;
-        color-scheme: light;
-      }
-      body {
-        background-color: var(--bg-color);
-        color: var(--text-color);
-        font-family: Arial, sans-serif;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        margin: 0;
-        padding: 15px;
-        box-sizing: border-box;
-      }
-      .card {
-        background-color: var(--card-bg);
-        padding: 30px;
-        border-radius: 12px;
-        border: 1px solid var(--border-color);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        width: 100%;
-        max-width: 400px;
-      }
-      .btn {
-        padding: 14px;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: bold;
-        width: 100%;
-        color: white;
-        font-size: 15px;
-        display: inline-block;
-        text-align: center;
-        text-decoration: none;
-        box-sizing: border-box;
-        transition: 0.2s;
-      }
-      .btn:hover {
-        opacity: 0.8;
-      }
-      input,
-      select {
-        background-color: var(--input-bg);
-        color: var(--input-text);
-        border: 1px solid var(--input-border);
-        border-radius: 8px;
-        padding: 14px;
-        font-size: 15px;
-        outline: none;
-        width: 100%;
-        box-sizing: border-box;
-        margin-bottom: 15px;
-        transition: 0.2s;
-        cursor: text;
-      }
-      input:focus,
-      select:focus {
-        border-color: #2196f3;
-        box-shadow: 0 0 8px rgba(33, 150, 243, 0.4);
-        background-color: var(--card-bg);
-      }
-      label {
-        display: block;
-        margin-bottom: 5px;
-        color: #aaa;
-        font-size: 13px;
-        font-weight: bold;
-      }
-      .acc-pill {
-        background-color: var(--input-bg);
-        border: 1px solid var(--border-color);
-        padding: 5px 12px;
-        border-radius: 15px;
-        font-size: 12px;
-        cursor: pointer;
-        user-select: none;
-        transition: 0.2s;
-        color: var(--text-color);
-        margin-bottom: 5px;
-      }
-      .acc-pill.active {
-        background-color: #2196f3;
-        color: white;
-        border-color: #2196f3;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="card">
-      <h2 style="text-align: center; margin-top: 0; color: #2196f3">
-        🎯 Редагувати ціль
-      </h2>
-      <form action="/edit_goal/{{ g.id }}" method="POST">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        <label>Назва цілі:</label>
-        <input
-          type="text"
-          name="name"
-          value="{{ g.name }}"
-          required
-          pattern=".*\S+.*"
-          title="Введіть назву без пустих пробілів"
-        />
-        <label>Необхідна сума (грн):</label>
-        <input
-          type="text"
-          inputmode="decimal"
-          name="target_amount"
-          value="{{ g.target_amount if g.target_amount % 1 != 0 else g.target_amount|int }}"
-          required
-          oninput="formatMoneyInput(this)"
-        />
+{% block title %}{{ get_string('edit_goal') }}{% endblock %}
 
-        <label>Звідки рахувати гроші:</label>
-        <div
-          id="goal-pills-edit"
-          style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px"
-        >
-          <label class="acc-pill {% if not selected_ids %}active{% endif %}">
-            <input
-              type="checkbox"
-              name="account_ids"
-              value="all"
-              {%
-              if
-              not
-              selected_ids
-              %}checked{%
-              endif
-              %}
-              style="display: none"
-            />Всі
-          </label>
-          {% for acc in accounts %}
-          <label
-            class="acc-pill {% if acc.id in selected_ids %}active{% endif %}"
-          >
-            <input
-              type="checkbox"
-              name="account_ids"
-              value="{{ acc.id }}"
-              {%
-              if
-              acc.id
-              in
-              selected_ids
-              %}checked{%
-              endif
-              %}
-              style="display: none"
-            />{{ acc.name }}
-          </label>
-          {% endfor %}
-        </div>
-
-        <div style="display: flex; gap: 10px">
-          <a
-            href="javascript:history.back()"
-            class="btn"
-            style="background-color: #555"
-            >Скасувати</a
-          >
-          <button type="submit" class="btn" style="background-color: #2196f3">
-            Зберегти
-          </button>
-        </div>
-      </form>
+{% block content %}
+<div class="card" style="max-width: 500px; margin: 40px auto">
+  <h2 style="margin-top: 0; color: #2196f3">{{ get_string('edit_goal') }}</h2>
+  <form action="{{ url_for('budget.edit_goal_route', id=g.id) }}" method="POST" style="display: flex; flex-direction: column; gap: 15px">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    
+    <div>
+      <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #aaa">{{ get_string('ph_name')|replace('(','')|replace(')','') }}:</label>
+      <input type="text" name="name" value="{{ g.name }}" required />
     </div>
 
-    <script>
-      const container = document.getElementById("goal-pills-edit");
-      const pills = container.querySelectorAll(".acc-pill");
-      const allPill =
-        container.querySelector('input[value="all"]').parentElement;
+    <div>
+      <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #aaa">{{ get_string('amount') }}:</label>
+      <input type="text" inputmode="decimal" name="target_amount" value="{{ g.target_amount if g.target_amount % 1 != 0 else g.target_amount|int }}" required oninput="formatMoneyInput(this)" />
+    </div>
 
-      pills.forEach((pill) => {
-        const checkbox = pill.querySelector("input");
-        pill.addEventListener("click", (e) => {
-          e.preventDefault();
-          if (checkbox.value === "all") {
-            pills.forEach((p) => {
-              p.classList.remove("active");
-              p.querySelector("input").checked = false;
+    <div>
+      <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #aaa">{{ get_string('calc_from_accs') }}:</label>
+      <div id="goal-pills" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 5px">
+        <label class="acc-pill {% if not selected_ids %}active{% endif %}">
+          <input type="checkbox" name="account_ids" value="all" {% if not selected_ids %}checked{% endif %} style="display: none" />
+          {{ get_string('all_accs_pill') }}
+        </label>
+        {% for acc in accounts %}
+        <label class="acc-pill {% if acc.id in selected_ids %}active{% endif %}">
+          <input type="checkbox" name="account_ids" value="{{ acc.id }}" {% if acc.id in selected_ids %}checked{% endif %} style="display: none" />
+          {{ translate_name(acc.name) }}
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-top: 10px">
+      <button type="submit" class="btn" style="background-color: #4caf50; color: white; flex: 1">{{ get_string('save') }}</button>
+      <a href="{{ url_for('shared.shared_budget' if g.is_shared else 'budget.home') }}" class="btn" style="background-color: #666; color: white; flex: 1">{{ get_string('cancel') }}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const pillsContainer = document.getElementById('goal-pills');
+    if (pillsContainer) {
+        const pills = pillsContainer.querySelectorAll('.acc-pill');
+        const allPillLabel = pillsContainer.querySelector('input[value="all"]').parentElement;
+        const allPillInput = pillsContainer.querySelector('input[value="all"]');
+
+        pills.forEach(pill => {
+            const checkbox = pill.querySelector('input');
+            pill.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (checkbox.value === 'all') {
+                    pills.forEach(p => { p.classList.remove('active'); p.querySelector('input').checked = false; });
+                    pill.classList.add('active'); checkbox.checked = true;
+                } else {
+                    allPillLabel.classList.remove('active'); allPillInput.checked = false;
+                    checkbox.checked = !checkbox.checked;
+                    if (checkbox.checked) pill.classList.add('active'); else pill.classList.remove('active');
+                    if (!Array.from(pills).some(p => p.querySelector('input').checked)) {
+                        allPillLabel.classList.add('active'); allPillInput.checked = true;
+                    }
+                }
             });
-            pill.classList.add("active");
-            checkbox.checked = true;
-          } else {
-            allPill.classList.remove("active");
-            allPill.querySelector("input").checked = false;
-            checkbox.checked = !checkbox.checked;
-            if (checkbox.checked) pill.classList.add("active");
-            else pill.classList.remove("active");
-            const anyChecked = Array.from(pills).some(
-              (p) => p.querySelector("input").checked,
-            );
-            if (!anyChecked) {
-              allPill.classList.add("active");
-              allPill.querySelector("input").checked = true;
-            }
-          }
         });
-      });
-    </script>
-  </body>
-</html>
+    }
+</script>
+{% endblock %}
