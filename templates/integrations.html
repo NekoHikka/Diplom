@@ -1,107 +1,58 @@
-{% extends "base.html" %} {% block title %}{{ get_string('nav_integrations')
-}}{% endblock %} {% block extra_css %} .integration-grid { display: flex; gap:
-20px; flex-wrap: wrap; } .bank-card { background-color: var(--card-bg);
-border-radius: 10px; border: 1px solid var(--border-color); padding: 25px; flex:
-1; min-width: 300px; max-width: 500px; display: flex; flex-direction: column; }
-.bank-header { display: flex; justify-content: space-between; align-items:
-center; margin-bottom: 15px; gap: 10px; flex-wrap: nowrap; } .bank-logo {
-font-size: 20px; font-weight: bold; display: flex; align-items: center; gap:
-8px; white-space: nowrap; flex-shrink: 0; } .status-badge { padding: 4px 8px;
-border-radius: 20px; font-size: 11px; font-weight: bold; white-space: nowrap;
-text-align: center; flex-shrink: 1; overflow: hidden; text-overflow: ellipsis; }
-.status-active { background: rgba(76, 175, 80, 0.2); color: #4caf50; border: 1px
-solid #4caf50; } .status-inactive { background: rgba(136, 136, 136, 0.2); color:
-#aaa; border: 1px solid #888; } {% endblock %} {% block content %}
-<h2 style="text-align: center; color: #ff9800; margin-bottom: 20px">
-  {{ get_string('integration_title') }}
-</h2>
+{% extends "base.html" %}
+{% block title %}{{ get_string('nav_integrations') }}{% endblock %}
+
+{% block extra_css %}
+  .integration-grid { display: flex; gap: 20px; flex-wrap: wrap; }
+  .bank-card { background-color: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color);
+    padding: 25px; flex: 1; min-width: 300px; max-width: 500px; display: flex; flex-direction: column; }
+  .bank-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 10px; flex-wrap: nowrap; }
+  .bank-logo { font-size: 20px; font-weight: bold; display: flex; align-items: center; gap: 8px; white-space: nowrap; flex-shrink: 0; }
+  .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; white-space: nowrap; }
+  .status-active { background: rgba(76, 175, 80, 0.2); color: #4caf50; border: 1px solid #4caf50; }
+  .status-inactive { background: rgba(136, 136, 136, 0.2); color: #aaa; border: 1px solid #888; }
+{% endblock %}
+
+{% block content %}
 
 <div class="integration-grid">
-  <div class="bank-card" style="border-top: 4px solid #ff3366">
+
+  <!-- Monobank Card -->
+  <div class="bank-card" style="border-top: 4px solid #ff3366;">
     <div class="bank-header">
       <div class="bank-logo">🐈 Monobank</div>
-      <span
-        class="status-badge {{ 'status-active' if is_mono_connected else 'status-inactive' }}"
-      >
-        {{ get_string('mono_connected') if is_mono_connected else
-        get_string('mono_not_connected') }}
+      <span class="status-badge {{ 'status-active' if is_mono_connected else 'status-inactive' }}">
+        {{ get_string('mono_connected') if is_mono_connected else get_string('mono_not_connected') }}
       </span>
     </div>
-    <p
-      style="
-        font-size: 14px;
-        color: #aaa;
-        margin-bottom: 20px;
-        line-height: 1.5;
-      "
-    >
-      {% if session.get('lang', 'uk') == 'uk' %}Автоматична синхронізація витрат
-      та доходів з вашої чорної картки. Баланс та транзакції оновлюються
-      автоматично (Read-only). {% else %}Automatic sync of expenses and income
-      from your black card. Balance and transactions update automatically
-      (Read-only).{% endif %}
+    <p style="font-size: 14px; color: #aaa; margin-bottom: 20px; line-height: 1.5;">
+      {% if session.get('lang', 'uk') == 'uk' %}Автоматична синхронізація витрат та доходів з вашої чорної картки. Баланс та транзакції оновлюються автоматично (Read-only).
+      {% else %}Automatic sync of expenses and income from your black card. Balance and transactions update automatically (Read-only).{% endif %}
     </p>
-
-    <div style="display: flex; flex-direction: column; height: 100%">
+    <div style="display: flex; flex-direction: column; margin-top: auto; gap: 10px;">
       {% if is_mono_connected %}
-      <form
-        action="{{ url_for('integration.sync_monobank') }}"
-        method="POST"
-        style="margin-top: auto; margin-bottom: 10px"
-      >
+      <form action="{{ url_for('integration.sync_monobank') }}" method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        <button
-          type="submit"
-          class="btn sync-btn"
-          style="background-color: #ff3366; color: white; width: 100%"
-        >
+        <button type="submit" class="btn sync-btn" style="background-color: #ff3366; color: white; width: 100%;">
           🔄 {{ get_string('btn_sync') }}
         </button>
       </form>
       <form action="{{ url_for('integration.unlink_monobank') }}" method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        <button
-          type="submit"
-          class="btn"
-          style="
-            background-color: transparent;
-            color: #ff4d4d;
-            border: 1px solid #ff4d4d;
-            width: 100%;
-          "
-          onclick="return confirm('{{ get_string('delete') }} Monobank?');"
-        >
+        <button type="submit" class="btn" style="background-color: transparent; color: #ff4d4d; border: 1px solid #ff4d4d; width: 100%;"
+          onclick="return confirm('{{ get_string('delete') }} Monobank?');">
           ❌ {{ get_string('btn_unlink') }}
         </button>
       </form>
       {% else %}
-      <form
-        action="{{ url_for('integration.sync_monobank') }}"
-        method="POST"
-        style="display: flex; flex-direction: column; height: 100%"
-      >
+      <form action="{{ url_for('integration.sync_monobank') }}" method="POST" style="display: flex; flex-direction: column; gap: 10px;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        <input
-          type="password"
-          name="monobank_token"
-          placeholder="{{ get_string('token_label') }}"
-          required
-          style="margin-bottom: 10px"
-        />
-        <div style="font-size: 12px; text-align: center; margin-bottom: 15px">
-          <a
-            href="https://api.monobank.ua/"
-            target="_blank"
-            style="color: #2196f3; text-decoration: none"
-            >🔑 {{ 'Отримати токен' if session.get('lang')=='uk' else 'Get
-            token' }}</a
-          >
+        <input type="password" name="monobank_token" placeholder="{{ get_string('token_label') }}" required />
+        <div style="font-size: 12px; text-align: center;">
+          <a href="https://api.monobank.ua/" target="_blank" style="color: #2196f3; text-decoration: none;">
+            🔑 {{ 'Отримати токен' if session.get('lang')=='uk' else 'Get token' }}
+          </a>
         </div>
-        <button
-          type="submit"
-          class="btn sync-btn"
-          style="background-color: #ff3366; color: white; margin-top: auto"
-        >
+        <button type="submit" class="btn sync-btn" style="background-color: #ff3366; color: white;">
           🔗 {{ get_string('btn_sync') }}
         </button>
       </form>
@@ -109,54 +60,46 @@ solid #4caf50; } .status-inactive { background: rgba(136, 136, 136, 0.2); color:
     </div>
   </div>
 
-  {% for bank_key, color, logo in [('bank_privat', '#7cb342', '🟩'),
-  ('bank_euro', '#3b82f6', '🌐')] %}
-  <div class="bank-card" style="border-top: 4px solid {{ color }}">
+  <!-- CSV / XLSX Upload Card (AI Integration) -->
+  <div class="bank-card" style="border-top: 4px solid #9c27b0;">
     <div class="bank-header">
-      <div class="bank-logo">{{ logo }} {{ get_string(bank_key) }}</div>
-      <span class="status-badge status-inactive"
-        >{{ get_string('dev_status') }}</span
-      >
+      <div class="bank-logo">📄 {{ 'Будь-який банк' if session.get('lang','uk')=='uk' else 'Any Bank' }} (CSV / XLSX)</div>
+      <span class="status-badge" style="background: rgba(156,39,176,0.2); color: #9c27b0; border: 1px solid #9c27b0;">AI ✨</span>
     </div>
-    <p
-      style="
-        font-size: 14px;
-        color: #aaa;
-        margin-bottom: 20px;
-        line-height: 1.5;
-      "
-    >
-      {% if session.get('lang') == 'uk' %}Інтеграція в процесі розробки.
-      Очікуйте оновлень.{% else %}Integration under development. Stay tuned.{%
-      endif %}
+    <p style="font-size: 14px; color: #aaa; margin-bottom: 20px; line-height: 1.5;">
+      {% if session.get('lang', 'uk') == 'uk' %}
+      Завантажте виписку у форматі <strong style="color: var(--text-color);">CSV або XLSX</strong> (ПриватБанк, ПУМБ тощо). Наш ШІ автоматично розпізнає транзакції та додасть їх до вашого бюджету.
+      {% else %}
+      Upload a bank statement in <strong style="color: var(--text-color);">CSV or XLSX</strong> format. Our AI will automatically extract and categorise transactions.
+      {% endif %}
     </p>
-    <div style="margin-top: auto">
-      <button
-        class="btn"
-        style="
-          background-color: #333;
-          color: #888;
-          cursor: not-allowed;
-          width: 100%;
-        "
-        disabled
-      >
-        🚧 {{ get_string('soon_btn') }}
-      </button>
+    <div style="margin-top: auto;">
+      <form action="{{ url_for('integration.upload_csv') }}" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 10px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <select name="account_id" required style="padding: 10px; border-radius: 6px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--border-color);">
+          <option value="">{{ get_string('ai_acc_label') }}...</option>
+          {% for acc in accounts %}
+          <option value="{{ acc.id }}">{{ acc.name }}</option>
+          {% endfor %}
+        </select>
+        <input type="file" name="csv_file" accept=".csv,.xlsx" required style="color: var(--text-color); font-size: 13px;" />
+        <button type="submit" class="btn sync-btn" style="background-color: #9c27b0; color: white;">
+          🧠 {{ 'Аналізувати через ШІ' if session.get('lang','uk')=='uk' else 'Analyse with AI' }}
+        </button>
+      </form>
     </div>
   </div>
-  {% endfor %}
+
 </div>
-{% endblock %} {% block scripts %}
+{% endblock %}
+
+{% block scripts %}
 <script>
   document.querySelectorAll("form").forEach((form) => {
     form.addEventListener("submit", function () {
-      let btn =
-        this.querySelector(".sync-btn") ||
-        this.querySelector('button[type="submit"]');
+      let btn = this.querySelector(".sync-btn") || this.querySelector('button[type="submit"]');
       if (btn && !btn.innerHTML.includes("❌")) {
-        btn.innerHTML =
-          "⏳ {{ 'Обробка...' if session.get('lang')=='uk' else 'Processing...' }}";
+        btn.innerHTML = "⏳ {{ 'Обробка...' if session.get('lang')=='uk' else 'Processing...' }}";
         btn.style.opacity = "0.7";
         btn.style.pointerEvents = "none";
       }

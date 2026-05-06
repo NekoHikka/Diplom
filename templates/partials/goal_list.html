@@ -22,14 +22,14 @@
     <div style="display: flex; justify-content: space-between; font-size: 13px;">
       <div style="display: flex; flex-direction: column">
         <strong>{{ translate_name(goal.name) }}</strong>
-        <span style="font-size: 11px; opacity: 0.6">{{ get_string('acc_label') }}s: {{ translate_name(goal.acc_name) }}</span>
+        <span style="font-size: 11px; opacity: 0.6">{{ get_string('acc_label') }}: {{ translate_name(goal.acc_name) }}</span>
       </div>
       <span>{{ goal.current if goal.current % 1 != 0 else goal.current|int }} / {{ goal.target_amount if goal.target_amount % 1 != 0 else goal.target_amount|int }} {{ get_string('currency') }}</span>
     </div>
     <div style="width: 100%; background-color: var(--input-border); border-radius: 5px; height: 8px; overflow: hidden; margin-top: 4px; margin-bottom: 8px;">
       <div style="height: 100%; background-color: #4CAF50; width: {{ (goal.current / goal.target_amount * 100) if goal.target_amount > 0 else 0 }}%; max-width: 100%;"></div>
     </div>
-    <div style="display: flex; justify-content: flex-end; gap: 15px">
+    <div class="no-print" style="display: flex; justify-content: flex-end; gap: 15px">
       <a href="{{ url_for('budget.edit_goal_route', id=goal.id) }}" style="text-decoration: none; font-size: 13px; color: #2196f3">✏️ {{ get_string('edit') }}</a>
       <a href="{{ url_for('budget.delete_goal_route', id=goal.id) }}" style="text-decoration: none; font-size: 13px; color: #ff4d4d" class="optimistic-delete" onclick="return confirm('{{ get_string('delete') }} {{ get_string('goals')|lower }}?');">🗑️ {{ get_string('delete') }}</a>
     </div>

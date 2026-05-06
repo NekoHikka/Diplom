@@ -1,0 +1,8 @@
+<div class="card no-print" style="flex: 1; min-width: 300px; padding: 20px;">
+  <h3 style="margin-top: 0; color: #aaa; font-size: 14px; text-transform: uppercase;">
+    {{ 'Доходи vs Витрати (6 місяців)' if session.get('lang', 'uk') == 'uk' else 'Income vs Expenses (6 months)' }}
+  </h3>
+  <div style="height: 250px; position: relative;">
+    <canvas id="historyBarChart"></canvas>
+  </div>
+</div>

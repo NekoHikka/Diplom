@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Перегляд імпорту' if session.get('lang')=='uk' else 'Import Preview' }}{% endblock %}
+
+{% block content %}
+<div class="card" style="animation: slideInUp 0.5s ease-out;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0;">📋 {{ 'Перевірка транзакцій' if session.get('lang')=='uk' else 'Review Transactions' }}</h2>
+        <div style="text-align: right;">
+            <span style="font-size: 14px; color: #aaa;">{{ 'Рахунок' if session.get('lang')=='uk' else 'Account' }}:</span>
+            <strong style="color: #2196f3;">{{ account.name }}</strong>
+        </div>
+    </div>
+
+    <div style="background: rgba(255, 152, 0, 0.1); border-left: 4px solid #ff9800; padding: 15px; border-radius: 8px; margin-bottom: 25px; font-size: 14px;">
+        ⚠️ <strong>{{ 'Увага!' if session.get('lang')=='uk' else 'Warning!' }}</strong> 
+        {{ 'Якщо ви вже додавали ці транзакції вручну, вони можуть дублюватися. Будь ласка, оберіть лише нові записи.' if session.get('lang')=='uk' else 'If you already added these transactions manually, they might be duplicated. Please select only new records.' }}
+    </div>
+
+    <form action="{{ url_for('integration.csv_preview') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                <thead>
+                    <tr style="text-align: left; border-bottom: 2px solid var(--border-color);">
+                        <th style="padding: 12px;"><input type="checkbox" id="select-all" checked onclick="toggleAll(this)"></th>
+                        <th style="padding: 12px;">{{ 'Дата' if session.get('lang')=='uk' else 'Date' }}</th>
+                        <th style="padding: 12px;">{{ 'Категорія' if session.get('lang')=='uk' else 'Category' }}</th>
+                        <th style="padding: 12px;">{{ 'Опис' if session.get('lang')=='uk' else 'Description' }}</th>
+                        <th style="padding: 12px; text-align: right;">{{ 'Сума' if session.get('lang')=='uk' else 'Amount' }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in transactions %}
+                    <tr style="border-bottom: 1px solid var(--border-color); animation: fadeInRow 0.3s ease-out forwards; animation-delay: {{ loop.index0 * 0.05 }}s; opacity: 0;">
+                        <td style="padding: 12px;"><input type="checkbox" name="selected" value="{{ loop.index0 }}" checked class="tx-check"></td>
+                        <td style="padding: 12px; white-space: nowrap;">{{ t.date }}</td>
+                        <td style="padding: 12px;"><span class="badge" style="background: rgba(156, 39, 176, 0.1); color: #9c27b0; border: 1px solid #9c27b0;">{{ t.category }}</span></td>
+                        <td style="padding: 12px; font-size: 13px; color: #aaa;">{{ t.description }}</td>
+                        <td style="padding: 12px; text-align: right; font-weight: bold; color: {{ '#4caf50' if t.type == 'Дохід' else '#ff4d4d' }}">
+                            {{ '+' if t.type == 'Дохід' else '-' }}{{ t.amount }} {{ get_string('currency') }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div style="display: flex; gap: 15px; margin-top: 20px;">
+            <button type="submit" class="btn" style="flex: 2; background: #4caf50; color: white; padding: 15px; font-weight: bold;">
+                ✅ {{ 'Підтвердити та імпортувати' if session.get('lang')=='uk' else 'Confirm and Import' }}
+            </button>
+            <a href="{{ url_for('integration.integrations') }}" class="btn" style="flex: 1; background: transparent; border: 1px solid #888; color: #888; text-align: center; line-height: 45px; text-decoration: none;">
+                {{ 'Скасувати' if session.get('lang')=='uk' else 'Cancel' }}
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+function toggleAll(source) {
+    document.querySelectorAll('.tx-check').forEach(cb => cb.checked = source.checked);
+}
+</script>
+{% endblock %}

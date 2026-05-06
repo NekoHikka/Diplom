@@ -45,9 +45,11 @@ def add_receipt_ai():
                 t_type = td.get('type', 'Витрата')
                 cat_name = td.get('category', 'Інше')
 
-                if cat_name not in known_cat_names:
-                    create_category(cat_name, t_type, current_user.id, is_shared, random.choice(Config.COLORS_PALETTE))
-                    known_cat_names.append(cat_name)
+                from app.repositories.category_repository import get_or_create_category
+                from app.config import Config
+                import random
+                # Принудительно создаем категорию в БД, если её еще нет
+                get_or_create_category(cat_name, t_type, current_user.id, is_shared, color=random.choice(Config.COLORS_PALETTE))
 
                 update_account_balance(acc, amount, t_type)
 
@@ -88,6 +90,8 @@ def analyze_ai():
     period_days = int(request.form.get('period', 30))
     analysis_type = request.form.get('analysis_type', 'evaluation')
     budget_type = request.form.get('budget_type', 'personal') 
+    user_query = request.form.get('user_query', '').strip()
+    
     now = get_current_time(); start_date = now - timedelta(days=period_days)
     
     partner = get_active_partnership(current_user.id)
@@ -111,16 +115,35 @@ def analyze_ai():
     for t in transactions:
         if t.type == 'Витрата': cat_totals[t.category] = round(cat_totals.get(t.category, 0) + t.amount, 2)
 
-    tx_list = "\n".join([f"- {t.date.strftime('%d.%m')}: {t.category} ({int(t.amount)} {currency}) - {t.description}" for t in transactions[:20]])
+    tx_list = "\n".join([f"- {t.date.strftime('%d.%m')}: {t.category} ({int(t.amount)} {currency}) - {t.description}" for t in transactions[:50]])
     
+    # Расчет дополнительных научных метрик
+    expenses_sum = round(sum(t.amount for t in transactions if t.type == 'Витрата'), 2)
+    daily_avg = round(expenses_sum / period_days, 2) if period_days > 0 else 0
+    runway = int(total_balance / daily_avg) if daily_avg > 0 else 999
+    
+    # Расчет тренда (сравнение с прошлым периодом)
+    prev_start = start_date - timedelta(days=period_days)
+    if budget_type == 'shared' and partner:
+        prev_transactions = get_shared_transactions(user_ids, prev_start)
+    else:
+        prev_transactions = get_user_transactions(current_user.id, prev_start)
+    
+    prev_expenses = sum(t.amount for t in prev_transactions if t.type == 'Витрата' and t.date < start_date)
+    trend_percent = round(((expenses_sum / prev_expenses) - 1) * 100, 2) if prev_expenses > 0 else 0
+
     user_data = {
         'username': current_user.username, 'context_prefix': context_prefix, 
         'period_days': period_days, 'total_balance': total_balance, 
         'income': round(sum(t.amount for t in transactions if t.type == 'Дохід'), 2),
-        'expenses': round(sum(t.amount for t in transactions if t.type == 'Витрата'), 2),
+        'expenses': expenses_sum,
+        'daily_avg': daily_avg,
+        'runway': runway,
+        'trend_percent': trend_percent,
         'goals_list': goals_list, 'cat_totals': cat_totals, 'tx_list': tx_list,
         'lang': session.get('lang', 'uk'),
-        'currency': currency
+        'currency': currency,
+        'user_query': user_query
     }
 
     try:
@@ -134,3 +157,53 @@ def analyze_ai():
             session['ai_response'] = get_string('error_ai_server')
     
     return redirect(url_for('analytics.analytics', shared='1' if budget_type == 'shared' else '0', period=period_days))
+
+from flask import jsonify
+
+@ai_bp.route('/api/chat', methods=['POST'])
+@login_required
+def api_chat():
+    try:
+        data = request.get_json()
+        user_query = data.get('message', '').strip()
+        if not user_query:
+            return jsonify({'error': 'Empty message'}), 400
+
+        today_str = get_current_time().strftime("%Y-%m-%d")
+        limit_record = get_ai_limit(current_user.id, today_str) or create_ai_limit(current_user.id, today_str)
+
+        if limit_record.count >= 50:
+            return jsonify({'response': get_string('error_ai_limit', count=limit_record.count, max=50)})
+
+        now = get_current_time(); start_date = now - timedelta(days=30)
+        transactions = get_user_transactions(current_user.id, start_date)
+        user_accounts = get_accounts_by_user(current_user.id, is_shared=False)
+        goals = get_goals_by_user(current_user.id, is_shared=False)
+        currency = get_string('currency')
+        total_balance = round(sum(a.balance for a in user_accounts), 2)
+        
+        cat_totals = {}
+        for t in transactions:
+            if t.type == 'Витрата': cat_totals[t.category] = round(cat_totals.get(t.category, 0) + t.amount, 2)
+
+        tx_list = "\n".join([f"- {t.date.strftime('%d.%m')}: {t.category} ({int(t.amount)} {currency})" for t in transactions[:30]])
+
+        user_data = {
+            'username': current_user.username, 'context_prefix': "ОСОБИСТИЙ БЮДЖЕТ", 
+            'period_days': 30, 'total_balance': total_balance, 
+            'income': round(sum(t.amount for t in transactions if t.type == 'Дохід'), 2),
+            'expenses': round(sum(t.amount for t in transactions if t.type == 'Витрата'), 2),
+            'goals_list': "\n".join([f"- {g.name}: {int(g.target_amount)} {currency}" for g in goals]) or "Немає", 
+            'cat_totals': cat_totals, 'tx_list': tx_list,
+            'lang': session.get('lang', 'uk'),
+            'currency': currency,
+            'user_query': user_query
+        }
+
+        ai_response = AIService.analyze_finance(user_data, 'custom')
+        increment_ai_limit(limit_record)
+        return jsonify({'response': ai_response})
+
+    except Exception as e:
+        print(f"Chat API Error: {e}")
+        return jsonify({'response': get_string('error_ai_server')}), 500

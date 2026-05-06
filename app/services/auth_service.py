@@ -20,6 +20,7 @@ class AuthService:
             errors.append(get_string('error_password_digit'))
         return errors
 
+
     @staticmethod
     def hash_password(password):
         return generate_password_hash(password)

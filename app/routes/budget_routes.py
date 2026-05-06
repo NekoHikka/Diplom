@@ -10,7 +10,7 @@ from app.repositories.account_repository import (
     get_accounts_by_user, create_account, get_account_by_id, delete_account, update_account_balance
 )
 from app.repositories.category_repository import (
-    get_categories_by_user, create_category, get_category_by_id, delete_category, update_category_color
+    get_categories_by_user, create_category, get_category_by_id, delete_category, update_category_color, sync_missing_categories
 )
 from app.repositories.goal_repository import get_goals_by_user, create_goal, get_goal_by_id, delete_goal, update_goal
 from app.repositories.partnership_repository import get_active_partnership, get_pending_invite_received, get_partnership_by_id
@@ -45,6 +45,9 @@ def home():
     now = get_current_time()
     all_ts = get_transactions_by_user(current_user.id, is_shared=False)
     
+    # СИНХРОНИЗАЦИЯ: Гарантируем, что категории из транзакций есть в БД сразу на главной
+    user_categories = sync_missing_categories(all_ts, user_categories, current_user.id, False)
+
     filters_map = get_string('filters')
     if f == 'day': ts = [t for t in all_ts if t.date.date() == now.date()]; filter_name = filters_map.get('today', 'Today')
     elif f == 'month': ts = [t for t in all_ts if t.date.month == now.month and t.date.year == now.year]; filter_name = filters_map.get('month', 'Month')
@@ -63,23 +66,39 @@ def home():
             acc_name = ", ".join([a.name for a in target_accs])
         goals_data.append({'id': g.id, 'name': g.name, 'target_amount': g.target_amount, 'current': max(0, curr_val), 'acc_name': acc_name})
 
+    import re, hashlib
+    def get_extreme_clean(n):
+        return re.sub(r'[^a-zA-Zа-яА-ЯіІїЇєЄґҐ0-9]', '', n).lower().strip()
+
     exp_cat_data, inc_cat_data = {}, {}
     for t in ts:
-        clean_cat = t.category.split(' ', 1)[-1] if ' ' in t.category else t.category
-        if t.type == 'Витрата': exp_cat_data[clean_cat] = round(exp_cat_data.get(clean_cat, 0) + t.amount, 2)
-        else: inc_cat_data[clean_cat] = round(inc_cat_data.get(clean_cat, 0) + t.amount, 2)
+        cat_key = t.category.strip()
+        if t.type == 'Витрата': exp_cat_data[cat_key] = round(exp_cat_data.get(cat_key, 0) + t.amount, 2)
+        else: inc_cat_data[cat_key] = round(inc_cat_data.get(cat_key, 0) + t.amount, 2)
 
-    cat_color_map = { (c.name.split(' ', 1)[-1] if ' ' in c.name else c.name): c.color for c in user_categories }
-    exp_labels, exp_values = list(exp_cat_data.keys()), list(exp_cat_data.values())
-    exp_colors = [cat_color_map.get(l, random.choice(Config.COLORS_PALETTE)) for l in exp_labels]
-    inc_labels, inc_values = list(inc_cat_data.keys()), list(inc_cat_data.values())
-    inc_colors = [cat_color_map.get(l, random.choice(Config.COLORS_PALETTE)) for l in inc_labels]
-    
+    cat_color_map = {}
+    for c in user_categories:
+        cat_color_map[get_extreme_clean(c.name)] = c.color
+
+    def get_stable_color(name):
+        if not name: return "#9c27b0"
+        hash_hex = hashlib.md5(get_extreme_clean(name).encode('utf-8')).hexdigest()
+        idx = int(hash_hex, 16) % len(Config.COLORS_PALETTE)
+        return Config.COLORS_PALETTE[idx]
+
+    exp_labels = sorted(list(exp_cat_data.keys()))
+    exp_values = [exp_cat_data[l] for l in exp_labels]
+    exp_colors = [cat_color_map.get(get_extreme_clean(l), get_stable_color(l)) for l in exp_labels]
+
+    inc_labels = sorted(list(inc_cat_data.keys()))
+    inc_values = [inc_cat_data[l] for l in inc_labels]
+    inc_colors = [cat_color_map.get(get_extreme_clean(l), get_stable_color(l)) for l in inc_labels]
+
     from app.utils.strings import translate_name
     return render_template('index.html', transactions=ts, username=current_user.username, 
                            exp_labels=exp_labels, exp_values=exp_values, exp_colors=exp_colors,
                            inc_labels=inc_labels, inc_values=inc_values, inc_colors=inc_colors,
-                           random_color=random.choice(Config.COLORS_PALETTE), balance=total_balance, 
+                           random_color=get_stable_color("newcategory"), balance=total_balance, 
                            accounts=user_accounts, goals=goals_data, 
                            exp_cats=[translate_name(c.name) for c in user_categories if c.type=='Витрата'], 
                            inc_cats=[translate_name(c.name) for c in user_categories if c.type=='Дохід'], 
@@ -295,4 +314,3 @@ def edit_transaction_route(id):
     cats = get_multi_user_categories(user_ids, t.is_shared)
     accs = get_multi_user_accounts(user_ids, t.is_shared)
     return render_template('edit.html', t=t, accounts=accs, exp_cats=[c.name for c in cats if c.type == 'Витрата'], inc_cats=[c.name for c in cats if c.type == 'Дохід'])
-

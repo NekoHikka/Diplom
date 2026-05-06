@@ -88,6 +88,9 @@ MESSAGES = {
         'ai_btn_savings': "💰 Поради з економії",
         'ai_btn_runway': "⏳ Аналіз стійкості",
         'ai_btn_goals': "🎯 Розрахунок цілей",
+        'ai_custom_query_label': "💬 Запитати ІІ про фінанси:",
+        'ai_custom_query_ph': "Наприклад: Скільки я витратив на каву минулого тижня? Або: Як мені швидше назбирати на машину?",
+        'ai_btn_custom': "🚀 Запитати",
         'ai_conclusion': "Висновок ШІ:",
         'ai_analyzing': "⏳ Аналізую...",
         
@@ -186,11 +189,11 @@ MESSAGES = {
         },
         
         'ai_prompts': {
-            'base_receipt': "Ти — фінансовий аналітик...",
-            'analytics_evaluation': "Проаналізуй мої витрати за категоріями. Дай коротку оцінку моїм фінансам.",
-            'analytics_savings': "Знайди можливості для економії у моїх витратах. Дай 3 конкретні поради.",
-            'analytics_runway': "Проаналізуй мою фінансову стійкість. Скільки я можу прожити при таких витратах?",
-            'analytics_goals': "Проаналізуй мої фінансові цілі. Чи реалістичні они при моїх поточних доходах та витратах?"
+            'base_receipt': "ПРОТОКОЛ: Фіскальна ідентифікація. РОЛЬ: Модуль комп'ютерного зору. МЕТОД: Few-Shot Prompting. КРОК 1: Знайди всі товари та ціни на чеку. КРОК 2: Зістав кожен товар з найближчою категорією користувача. КРОК 3: Відформатуй у суворий JSON.",
+            'analytics_evaluation': "ПРОТОКОЛ: Комплексний аудит. МЕТОД: Chain-of-Thought. КРОК 1: Проаналізуй співвідношення доходу та витрат. КРОК 2: Вияви ознаки 'ментальної бухгалтерії' або ілюзії контролю в топ-категоріях. КРОК 3: Оціни ліквідність. КРОК 4: Напиши фінальний висновок з 2-3 речень.",
+            'analytics_savings': "ПРОТОКОЛ: Оптимізація витрат. МЕТОД: Chain-of-Thought. КРОК 1: Визнач категорії з високою еластичністю (розваги, кава). КРОК 2: Знайди імпульсивні покупки. КРОК 3: Дай 2 конкретні поради для зменшення ірраціональних витрат без втрати якості життя.",
+            'analytics_runway': "ПРОТОКОЛ: Аналіз стійкості. МЕТОД: Chain-of-Thought. КРОК 1: Оціни хаотичність щоденних витрат. КРОК 2: Спрогнозуй дату дефіциту ліквідності на основі 'Runway'. КРОК 3: Запропонуй стратегію для збільшення фінансового горизонту.",
+            'analytics_goals': "ПРОТОКОЛ: Прогноз цілей. МЕТОД: Chain-of-Thought. КРОК 1: Розрахуй час досягнення цілей при поточному тренді витрат. КРОК 2: Визнач, від яких дрібних витрат можна відмовитись. КРОК 3: Напиши, наскільки це прискорить досягнення цілі."
         }
     },
     'en': {
@@ -279,6 +282,9 @@ MESSAGES = {
         'ai_btn_savings': "💰 Tips",
         'ai_btn_runway': "⏳ Stability",
         'ai_btn_goals': "🎯 Forecast",
+        'ai_custom_query_label': "💬 Ask AI about your finances:",
+        'ai_custom_query_ph': "Example: How much did I spend on coffee last week? Or: How can I save for a car faster?",
+        'ai_btn_custom': "🚀 Ask AI",
         'ai_conclusion': "AI Conclusion:",
         'ai_analyzing': "⏳ Analyzing...",
         
@@ -377,11 +383,11 @@ MESSAGES = {
         },
         
         'ai_prompts': {
-            'base_receipt': "You are a financial analyst. Analyze this receipt and extract items.",
-            'analytics_evaluation': "Analyze my spending by category. Give a short evaluation of my finances.",
-            'analytics_savings': "Find opportunities for saving in my spending. Give 3 specific tips.",
-            'analytics_runway': "Analyze my financial stability. How long can I live with such spending?",
-            'analytics_goals': "Analyze my financial goals. Are they realistic given my current income and expenses?"
+            'base_receipt': "PROTOCOL: Fiscal Identification. ROLE: Computer Vision Module. METHOD: Few-Shot Prompting. STEP 1: Extract all items and prices. STEP 2: Map each item to the closest user category. STEP 3: Format as strict JSON.",
+            'analytics_evaluation': "PROTOCOL: Comprehensive Audit. METHOD: Chain-of-Thought. STEP 1: Analyze income/expense ratio. STEP 2: Detect 'mental accounting' or control illusion in top categories. STEP 3: Assess liquidity. STEP 4: Write a final conclusion in 2-3 sentences.",
+            'analytics_savings': "PROTOCOL: Spending Optimization. METHOD: Chain-of-Thought. STEP 1: Identify high-elasticity categories (entertainment, coffee). STEP 2: Find impulse purchases. STEP 3: Give 2 specific tips to reduce irrational spending.",
+            'analytics_runway': "PROTOCOL: Resilience Analysis. METHOD: Chain-of-Thought. STEP 1: Evaluate daily spending volatility. STEP 2: Forecast liquidity gap date based on 'Runway'. STEP 3: Propose a strategy to extend the financial horizon.",
+            'analytics_goals': "PROTOCOL: Goal Forecasting. METHOD: Chain-of-Thought. STEP 1: Calculate time to reach goals with current trend. STEP 2: Identify small expenses to cut. STEP 3: State how much faster the goal will be reached."
         }
     }
 }

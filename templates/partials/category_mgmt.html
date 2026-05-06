@@ -1,4 +1,6 @@
 <div class="card" style="flex: 1.2; min-width: 300px">
+
+
   <h3>{{ get_string('cat_mgmt') }}</h3>
   <form action="{{ url_for('budget.add_category_route') }}" method="POST" style="display: flex; gap: 8px; margin-bottom: 15px; align-items: center;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
