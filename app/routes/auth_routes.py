@@ -9,13 +9,16 @@ auth_bp = Blueprint('auth', __name__)
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
     error = None
+    username_value = ''
     if request.method == 'POST':
-        username = request.form['username'].strip()
+        username_value = request.form['username']
+        username = username_value.strip()
         password = request.form['password']
         
-        errors = AuthService.validate_registration(username, password)
+        errors = AuthService.validate_registration(username_value, password)
         if errors:
-            error = "<br>• ".join(["Виправте наступні помилки:"] + errors)
+            translated_errors = [get_string(err_key) for err_key in errors]
+            error = "<br>• ".join([get_string('error_fix_issues')] + translated_errors)
         else:
             if get_user_by_username(username):
                 error = get_string('error_login_exists')
@@ -25,7 +28,7 @@ def register():
                 session.permanent = True
                 login_user(new_user, remember=True)
                 return redirect(url_for('budget.home'))
-    return render_template('register.html', error=error)
+    return render_template('register.html', error=error, username_value=username_value)
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():

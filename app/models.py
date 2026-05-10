@@ -1,11 +1,12 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from datetime import datetime, timezone
+import zoneinfo
 
 db = SQLAlchemy()
 
 def get_current_time():
-    return datetime.now(timezone.utc).replace(tzinfo=None)
+    return datetime.now(zoneinfo.ZoneInfo("Europe/Kyiv")).replace(tzinfo=None)
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)

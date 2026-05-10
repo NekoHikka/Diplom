@@ -1,11 +1,25 @@
 <div id="pdf-content">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
     <h3 style="margin: 0">{{ get_string('transactions') }}:</h3>
-    <div id="bulk-delete-container" style="display: none; transition: 0.3s" class="no-print">
+    {% if transactions %}
+    <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end;" class="no-print">
+    <button
+      id="delete-all-transactions-btn"
+      type="button"
+      class="btn"
+      data-is-shared="{{ 'true' if is_shared_view else 'false' }}"
+      data-total-pages="{{ total_pages or 1 }}"
+      style="background-color: #b71c1c; color: white; padding: 8px 15px; border-radius: 8px;"
+    >
+      {{ get_string('delete_all') }}
+    </button>
+    <div id="bulk-delete-container" style="display: none; transition: 0.3s">
       <button id="bulk-delete-btn" class="btn" style="background-color: #ff4d4d; color: white; padding: 8px 15px; border-radius: 8px;">
         🗑️ {{ get_string('delete') }} вибрані (<span id="selected-count">0</span>)
       </button>
     </div>
+    </div>
+    {% endif %}
   </div>
 
   <div style="overflow-x: auto">
@@ -34,8 +48,8 @@
         <td style="color: #aaa">{{ t.date.strftime('%d.%m.%Y') }}</td>
         <td style="color: #ff9800; font-weight: bold">{{ translate_name(t.account.name) if t.account else '---' }}</td>
         {% if is_shared_view %}<td style="color: #4db8ff; font-weight: bold; font-size: 13px">👤 {{ t.user.username }}</td>{% endif %}
-        <td style="color: {% if t.type == 'Витрата' %}#ff4d4d{% else %}#4CAF50{% endif %}; font-weight: bold;">
-          {{ get_string('income' if t.type == 'Дохід' else 'expense') }}
+        <td style="color: {% if t.type == 'Витрата' or t.type == 'Expense' %}#ff4d4d{% else %}#4CAF50{% endif %}; font-weight: bold;">
+          {{ get_string('income') if (t.type == 'Дохід' or t.type == 'Income') else get_string('expense') }}
         </td>
         <td>{{ translate_name(t.category) }}</td>
         <td>{{ t.amount if t.amount % 1 != 0 else t.amount|int }} {{ get_string('currency') }}</td>
@@ -52,6 +66,33 @@
       <div style="font-size: 40px; margin-bottom: 10px">📭</div>
       <p style="margin: 0; font-size: 18px; font-weight: bold">{{ get_string('history_empty') }}</p>
       <p style="font-size: 14px; margin-top: 5px">{{ get_string('history_empty_desc') }}</p>
+    </div>
+    {% endif %}
+    {% if total_pages and total_pages > 1 %}
+    <div class="pagination no-print" style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 10px; flex-wrap: wrap;">
+      {% if page > 1 %}
+      <a href="?page={{ page - 1 }}{% if request.args.get('filter') %}&filter={{ request.args.get('filter') }}{% endif %}" class="btn" style="background-color: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); padding: 5px 15px;">⬅️ Попередня</a>
+      {% endif %}
+
+      <label style="font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+        Сторінка
+        <input
+          id="page-jump-input"
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          value="{{ page }}"
+          data-total-pages="{{ total_pages }}"
+          data-filter="{{ request.args.get('filter', '') }}"
+          style="width: 58px; text-align: center; padding: 6px 8px; border-radius: 8px;"
+          aria-label="Page number"
+        />
+        з {{ total_pages }}
+      </label>
+
+      {% if page < total_pages %}
+      <a href="?page={{ page + 1 }}{% if request.args.get('filter') %}&filter={{ request.args.get('filter') }}{% endif %}" class="btn" style="background-color: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); padding: 5px 15px;">Наступна ➡️</a>
+      {% endif %}
     </div>
     {% endif %}
   </div>

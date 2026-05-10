@@ -21,6 +21,7 @@ class Config:
     REMEMBER_COOKIE_SAMESITE = 'Lax'
     
     GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+    OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
     PORT = int(os.environ.get("PORT", 5000))
     
     COLORS_PALETTE = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#8BC34A', '#E91E63', '#009688', '#E65100', '#795548', '#3F51B5']

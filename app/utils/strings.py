@@ -20,7 +20,7 @@ MESSAGES = {
         'transactions': "Останні транзакції",
         'add_transaction': "Додати запис",
         'type': "Тип",
-        'category': "Категория",
+        'category': "Категорія",
         'amount': "Сума",
         'description': "Опис",
         'date': "Дата",
@@ -118,6 +118,19 @@ MESSAGES = {
         'trend_down': "📉 Витрати зменшились на {percent}%",
         'trend_stable': "📊 Витрати стабільні",
         
+        'health_title': "Фінансове Здоров'я 🏆",
+        'health_great': "🌟 Чудовий стан! Ви круто керуєте фінансами.",
+        'health_good': "👍 Добре, але є простір для вдосконалення.",
+        'health_bad': "⚠️ Потрібно оптимізувати витрати! Зверніться до ШІ.",
+        
+        'chat_title': "🧠 ШІ Асистент",
+        'chat_greeting': "Привіт! Я ваш ШІ-асистент. Запитайте мене про ваші фінанси, наприклад: \"Скільки я витратив на каву?\" або \"Як мені зекономити?\"",
+        'chat_cleared': "Час сесії вийшов. Чат очищено. Привіт! Я ваш ШІ-асистент. Запитайте мене про ваші фінанси.",
+        'chat_placeholder': "Запитати ШІ...",
+        'chat_loading': "⏳ Аналізую...",
+        'chat_error_reload': "Запит перервано через перезавантаження сторінки.",
+        'chat_error_conn': "Помилка підключення до сервера ШІ.",
+        
         'forecast_empty': "Баланс порожній",
         'forecast_short': "Лише на {days} дн.!",
         'forecast_normal': "На {days} дн.",
@@ -136,6 +149,25 @@ MESSAGES = {
         'error_ai_fail': "❌ Не вдалося розпізнати чек.",
         'success_ai_receipt': "🤖 Успішно додано {count} записів!",
         
+        'error_invalid_login': "❌ Неправильний логін або пароль.",
+        'error_login_exists': "❌ Користувач з таким логіном вже існує.",
+        'error_username_short': "Логін занадто короткий: мінімум 3 символи.",
+        'error_username_long': "Логін занадто довгий: максимум 30 символів.",
+        'error_username_spaces': "Логін не має містити пробіли.",
+        'error_username_chars': "Логін може містити лише літери, цифри та нижнє підкреслення.",
+        'error_password_short': "Пароль занадто короткий: мінімум 6 символів.",
+        'error_fix_issues': "Виправте наступні помилки:",
+        'error_user_not_found': "❌ Користувача з таким логіном не знайдено.",
+        'error_already_has_partnership': "❌ У вас вже є активний партнер.",
+        'error_invite_self': "❌ Ви не можете запросити самого себе.",
+        'error_already_shared': "❌ Цей користувач вже має партнера.",
+        'error_partnership_limit': "❌ Помилка: партнер вже має іншу активну співпрацю.",
+        'error_no_name': "❌ Введіть назву.",
+        'default_account': "💵 Готівка",
+        'success_invite_sent': "✅ Запрошення надіслано!",
+        'success_shared_created': "✅ Спільний бюджет створено!",
+        'success_csv_import': "✅ Успішно імпортовано {count} транзакцій!",
+        
         'shared_invite_title': "🤝 Запрошення!",
         'shared_invite_text': "Користувач <strong>{username}</strong> пропонує вести Спільний Бюджет.",
         'shared_accept': "Прийняти",
@@ -148,6 +180,7 @@ MESSAGES = {
         
         'history_empty': "Історія порожня",
         'history_empty_desc': "Додайте запис або фото чека!",
+        'delete_all': "Видалити всі",
         'action_label': "Дія",
         'who_added': "Хто",
         'acc_label': "Рахунок",
@@ -156,7 +189,7 @@ MESSAGES = {
         'btn_create': "Створити",
         'chart_distribution': "Розподіл 📊",
         'chart_expenses': "Витрати",
-        'chart_income': "Доходы",
+        'chart_income': "Доходи",
         'calc_from_accs': "Рахувати з:",
         'all_accs_pill': "Всі рахунки",
         'receipt_ai_title': "🤖 Розпізнати по фото",
@@ -166,6 +199,24 @@ MESSAGES = {
         'ai_acc_label': "Рахунок:",
         'ai_btn_recognize': "Розпізнати",
         'ai_processing': "⏳ Аналізую...",
+        'csv_upload_title': "📄 Будь-який банк (CSV / XLSX)",
+        'csv_upload_desc': "Завантажте виписку, і ШІ автоматично розпізнає транзакції.",
+        'csv_file_label': "Файл виписки:",
+        'csv_analyze_btn': "Аналізувати",
+        'csv_processing_btn': "⏳ Обробка...",
+        'csv_cancel_btn': "✕ Скасувати",
+        'csv_view_btn': "✓ Переглянути",
+        'csv_preview_title': "Попередній перегляд імпорту",
+        'csv_processing_title': "Обробка файлу",
+        'csv_processing_desc': "Будь ласка, зачекайте. Ви можете перейти на інші сторінки, обробка триває у фоні.",
+        'csv_processing_error': "❌ Помилка обробки файлу.",
+        'csv_processing_cancelled': "Обробку скасовано.",
+        'csv_error_no_data': "❌ Дані для попереднього перегляду відсутні. Завантажте файл знову.",
+        'csv_status_ai_failed': "❌ Помилка ШІ. Спробуйте пізніше.",
+        'csv_status_no_tx': "У вибраному фрагменті файлу транзакцій не знайдено.",
+        'csv_status_success': "Успішно оброблено {count} транзакцій",
+        'csv_preview_ready': "✅ Попередній перегляд готовий",
+        'csv_found_count': "Знайдено транзакцій:",
         
         'categories': {
             'food': '🍔 Їжа',
@@ -312,6 +363,19 @@ MESSAGES = {
         'trend_down': "📉 Down by {percent}%",
         'trend_stable': "📊 Stable spending",
         
+        'health_title': "Financial Health 🏆",
+        'health_great': "🌟 Great shape! You manage finances perfectly.",
+        'health_good': "👍 Good, but there is room for improvement.",
+        'health_bad': "⚠️ Need to optimize expenses! Ask AI.",
+        
+        'chat_title': "🧠 AI Assistant",
+        'chat_greeting': "Hello! I am your AI assistant. Ask me about your finances, for example: \"How much did I spend on coffee?\" or \"How can I save?\"",
+        'chat_cleared': "Session expired. Chat cleared. Hello! I am your AI assistant. Ask me about your finances.",
+        'chat_placeholder': "Ask AI...",
+        'chat_loading': "⏳ Analyzing...",
+        'chat_error_reload': "Request interrupted due to page reload.",
+        'chat_error_conn': "AI server connection error.",
+        
         'forecast_empty': "Balance empty",
         'forecast_short': "Only {days} days!",
         'forecast_normal': "For {days} days",
@@ -330,6 +394,25 @@ MESSAGES = {
         'error_ai_fail': "❌ Failed to recognize.",
         'success_ai_receipt': "🤖 Added {count} records!",
         
+        'error_invalid_login': "❌ Invalid username or password.",
+        'error_login_exists': "❌ User with this username already exists.",
+        'error_username_short': "Username too short: minimum 3 characters.",
+        'error_username_long': "Username too long: maximum 30 characters.",
+        'error_username_spaces': "Username must not contain spaces.",
+        'error_username_chars': "Username can only contain letters, digits and underscore.",
+        'error_password_short': "Password too short: minimum 6 characters.",
+        'error_fix_issues': "Please fix the following issues:",
+        'error_user_not_found': "❌ User with this username not found.",
+        'error_already_has_partnership': "❌ You already have an active partner.",
+        'error_invite_self': "❌ You cannot invite yourself.",
+        'error_already_shared': "❌ This user already has a partner.",
+        'error_partnership_limit': "❌ Error: partner already has another active partnership.",
+        'error_no_name': "❌ Please enter a name.",
+        'default_account': "💵 Cash",
+        'success_invite_sent': "✅ Invitation sent!",
+        'success_shared_created': "✅ Shared budget created!",
+        'success_csv_import': "✅ Successfully imported {count} transactions!",
+        
         'shared_invite_title': "🤝 Invite!",
         'shared_invite_text': "User <strong>{username}</strong> invites you.",
         'shared_accept': "Accept",
@@ -342,6 +425,7 @@ MESSAGES = {
         
         'history_empty': "History is empty",
         'history_empty_desc': "Add record or photo!",
+        'delete_all': "Delete All",
         'action_label': "Action",
         'who_added': "Who",
         'acc_label': "Account",
@@ -360,7 +444,25 @@ MESSAGES = {
         'ai_acc_label': "Account:",
         'ai_btn_recognize': "Recognize",
         'ai_processing': "⏳ Analyzing...",
-        
+        'csv_upload_title': "📄 Any Bank (CSV / XLSX)",
+        'csv_upload_desc': "Upload a statement and AI will automatically recognize transactions.",
+        'csv_file_label': "Statement file:",
+        'csv_analyze_btn': "Analyze",
+        'csv_processing_btn': "⏳ Processing...",
+        'csv_cancel_btn': "✕ Cancel",
+        'csv_view_btn': "✓ View",
+        'csv_preview_title': "Import Preview",
+        'csv_processing_title': "Processing file",
+        'csv_processing_desc': "Please wait. You can navigate to other pages, processing continues in background.",
+        'csv_processing_error': "❌ File processing error.",
+        'csv_processing_cancelled': "Processing cancelled.",
+        'csv_error_no_data': "❌ No preview data. Please upload the file again.",
+        'csv_status_ai_failed': "❌ AI error. Please try again later.",
+        'csv_status_no_tx': "No transactions found in the selected file fragment.",
+        'csv_status_success': "Successfully processed {count} transactions",
+        'csv_preview_ready': "✅ Preview ready",
+        'csv_found_count': "Transactions found:",
+
         'categories': {
             'food': '🍔 Food',
             'transport': '🚌 Transport',
@@ -395,8 +497,9 @@ MESSAGES = {
 def get_current_lang():
     return session.get('lang', 'uk')
 
-def get_string(key, **kwargs):
-    lang = get_current_lang()
+def get_string(key, lang=None, **kwargs):
+    if lang is None:
+        lang = get_current_lang()
     text = MESSAGES.get(lang, {}).get(key)
     if text is None:
         text = MESSAGES.get('uk', {}).get(key, key)
@@ -434,7 +537,7 @@ def translate_name(name):
         'продукти': 'groceries', 'groceries': 'groceries',
         'зарплата': 'salary', 'salary': 'salary',
         'подарунок': 'gift', 'gift': 'gift',
-        'инвестиции': 'investments', 'investments': 'investments',
+        'інвестиції': 'investments', 'инвестиции': 'investments', 'investments': 'investments',
         'кешбек': 'cashback', 'cashback': 'cashback',
         'супермаркет': 'supermarket', 'supermarket': 'supermarket',
         'ресторани': 'restaurants', 'restaurants': 'restaurants',

@@ -1,65 +1,221 @@
-{% extends "base.html" %}
-{% block title %}{{ 'Перегляд імпорту' if session.get('lang')=='uk' else 'Import Preview' }}{% endblock %}
+{% extends "base.html" %} {% block title %}{{ get_string('csv_preview_title') or 'Попередній перегляд' }} - {{ get_string('title_personal') }}{% endblock %} {% block extra_css %}
+<style>
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border-color);
+  }
+  h1, h2, h3 { margin: 0 0 15px 0; }
+  h1 { font-size: 1.8rem; }
+  h2 { font-size: 1.4rem; }
+  h3 { font-size: 1.1rem; }
+  .balance-info {
+    background: #1a1a2e;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    border: 1px solid var(--border-color);
+  }
+  .balance-amount {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #4caf50;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+  }
+  th, td {
+    padding: 10px 8px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+  }
+  th {
+    background: var(--input-bg);
+    font-weight: 600;
+    font-size: 13px;
+  }
+  tr:hover { background: rgba(255, 152, 0, 0.05); }
+  .checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--accent);
+  }
+  .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: 0.2s;
+  }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #e68900; }
+  .btn-secondary { background: var(--input-bg); color: var(--text-color); border: 1px solid var(--border-color); }
+  .btn-secondary:hover { background: #3a3a5a; }
+  .btn-danger { background: #f44336; color: white; }
+  .btn-danger:hover { background: #d32f2f; }
+  .actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+  .select-all { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+  .type-income { color: #4caf50; font-weight: 600; }
+  .type-expense { color: #f44336; font-weight: 600; }
+  .empty { text-align: center; padding: 40px; color: #888; }
+  .update-balance { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .update-balance input { padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color); }
+  /* Inline category selector */
+  .cat-select {
+    background: var(--input-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 4px 6px;
+    font-size: 13px;
+    max-width: 180px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .cat-select:hover, .cat-select:focus { border-color: var(--accent); outline: none; }
+  td { vertical-align: middle; }
+</style>
+{% endblock %} {% block content %}
+<div class="container">
+  <div class="header">
+    <h1>📊 {{ get_string('csv_preview_title') or 'Попередній перегляд імпорту' }}</h1>
+    <a href="{{ url_for('integration.integrations') }}" class="btn btn-secondary">← {{ 'Назад' if session.get('lang','uk')=='uk' else 'Back' }}</a>
+  </div>
 
-{% block content %}
-<div class="card" style="animation: slideInUp 0.5s ease-out;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="margin: 0;">📋 {{ 'Перевірка транзакцій' if session.get('lang')=='uk' else 'Review Transactions' }}</h2>
-        <div style="text-align: right;">
-            <span style="font-size: 14px; color: #aaa;">{{ 'Рахунок' if session.get('lang')=='uk' else 'Account' }}:</span>
-            <strong style="color: #2196f3;">{{ account.name }}</strong>
+  <div class="card">
+    <h2>🏦 {{ get_string('acc_label') }}: {{ account.name }}</h2>
+
+    {% if transactions %}
+    <form method="POST" action="{{ url_for('integration.csv_preview') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+      {% if end_balance is not none %}
+      <div class="balance-info">
+        <div style="font-size: 14px; color: #888; margin-bottom: 5px">
+          {{ 'Знайдений баланс у файлі:' if session.get('lang')=='uk' else 'Found balance in file:' }}
         </div>
-    </div>
-
-    <div style="background: rgba(255, 152, 0, 0.1); border-left: 4px solid #ff9800; padding: 15px; border-radius: 8px; margin-bottom: 25px; font-size: 14px;">
-        ⚠️ <strong>{{ 'Увага!' if session.get('lang')=='uk' else 'Warning!' }}</strong> 
-        {{ 'Якщо ви вже додавали ці транзакції вручну, вони можуть дублюватися. Будь ласка, оберіть лише нові записи.' if session.get('lang')=='uk' else 'If you already added these transactions manually, they might be duplicated. Please select only new records.' }}
-    </div>
-
-    <form action="{{ url_for('integration.csv_preview') }}" method="POST">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        
-        <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                <thead>
-                    <tr style="text-align: left; border-bottom: 2px solid var(--border-color);">
-                        <th style="padding: 12px;"><input type="checkbox" id="select-all" checked onclick="toggleAll(this)"></th>
-                        <th style="padding: 12px;">{{ 'Дата' if session.get('lang')=='uk' else 'Date' }}</th>
-                        <th style="padding: 12px;">{{ 'Категорія' if session.get('lang')=='uk' else 'Category' }}</th>
-                        <th style="padding: 12px;">{{ 'Опис' if session.get('lang')=='uk' else 'Description' }}</th>
-                        <th style="padding: 12px; text-align: right;">{{ 'Сума' if session.get('lang')=='uk' else 'Amount' }}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for t in transactions %}
-                    <tr style="border-bottom: 1px solid var(--border-color); animation: fadeInRow 0.3s ease-out forwards; animation-delay: {{ loop.index0 * 0.05 }}s; opacity: 0;">
-                        <td style="padding: 12px;"><input type="checkbox" name="selected" value="{{ loop.index0 }}" checked class="tx-check"></td>
-                        <td style="padding: 12px; white-space: nowrap;">{{ t.date }}</td>
-                        <td style="padding: 12px;"><span class="badge" style="background: rgba(156, 39, 176, 0.1); color: #9c27b0; border: 1px solid #9c27b0;">{{ t.category }}</span></td>
-                        <td style="padding: 12px; font-size: 13px; color: #aaa;">{{ t.description }}</td>
-                        <td style="padding: 12px; text-align: right; font-weight: bold; color: {{ '#4caf50' if t.type == 'Дохід' else '#ff4d4d' }}">
-                            {{ '+' if t.type == 'Дохід' else '-' }}{{ t.amount }} {{ get_string('currency') }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="balance-amount">{{ "%.2f"|format(end_balance) }} {{ get_string('currency') }}</div>
+        <div class="update-balance">
+          <input type="checkbox" id="update_balance" name="update_balance" value="yes" checked style="width:auto;cursor:pointer;transform:scale(1.2);" />
+          <label for="update_balance" style="cursor:pointer;">{{ 'Оновити баланс рахунку під час імпорту' if session.get('lang')=='uk' else 'Update account balance on import' }}</label>
         </div>
+      </div>
+      {% endif %}
 
-        <div style="display: flex; gap: 15px; margin-top: 20px;">
-            <button type="submit" class="btn" style="flex: 2; background: #4caf50; color: white; padding: 15px; font-weight: bold;">
-                ✅ {{ 'Підтвердити та імпортувати' if session.get('lang')=='uk' else 'Confirm and Import' }}
-            </button>
-            <a href="{{ url_for('integration.integrations') }}" class="btn" style="flex: 1; background: transparent; border: 1px solid #888; color: #888; text-align: center; line-height: 45px; text-decoration: none;">
-                {{ 'Скасувати' if session.get('lang')=='uk' else 'Cancel' }}
-            </a>
-        </div>
+      <h3>📋 {{ get_string('csv_found_count') }} {{ transactions|length }}</h3>
+
+      <div class="select-all">
+        <input type="checkbox" id="select-all" class="checkbox" onchange="toggleAll(this)" style="width:auto;cursor:pointer;transform:scale(1.2);" />
+        <label for="select-all" style="cursor:pointer;"><strong>{{ 'Вибрати всі' if session.get('lang')=='uk' else 'Select all' }}</strong></label>
+        <span style="margin-left:auto;color:#888;font-size:14px;">
+          {{ 'Вибрано' if session.get('lang')=='uk' else 'Selected' }}: <span id="selected-count">0</span> з {{ transactions|length }}
+        </span>
+      </div>
+
+      <div style="overflow-x: auto">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:36px;"></th>
+              <th style="width:95px;">{{ get_string('date') }}</th>
+              <th style="width:110px;">{{ get_string('type') }}</th>
+              <th style="width:200px;">{{ get_string('category') }} ✏️</th>
+              <th>{{ get_string('description') }}</th>
+              <th style="width:95px;">{{ get_string('amount') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for tx in transactions %}
+            <tr>
+              <td>
+                <input type="checkbox" class="checkbox transaction-checkbox" name="selected" value="{{ loop.index0 }}" style="width:auto;cursor:pointer;transform:scale(1.2);" />
+              </td>
+              <td style="font-size:13px;">{{ tx.date }}</td>
+              <td class="{% if tx.type == 'Дохід' or tx.type == 'Income' %}type-income{% else %}type-expense{% endif %}">
+                {{ get_string('income') if (tx.type == 'Дохід' or tx.type == 'Income') else get_string('expense') }}
+              </td>
+              <td>
+                {% if categories %}
+                {# Map English tx.type to Ukrainian DB category type #}
+                {% set db_type = 'Дохід' if (tx.type == 'Income' or tx.type == 'Дохід') else 'Витрата' %}
+                {% set typed_cats = categories | selectattr('type', 'equalto', db_type) | list %}
+                <select name="category_{{ loop.index0 }}" class="cat-select">
+                  {% for cat in typed_cats %}
+                  <option value="{{ cat.name }}" {% if cat.name == tx.category %}selected{% endif %}>{{ cat.name }}</option>
+                  {% endfor %}
+                  {# If current category not in the typed list, add it as option #}
+                  {% if tx.category and tx.category not in typed_cats|map(attribute='name')|list %}
+                  <option value="{{ tx.category }}" selected>{{ tx.category }}</option>
+                  {% endif %}
+                </select>
+                {% else %}
+                <span style="background:var(--input-bg);padding:4px 8px;border-radius:4px;font-size:13px;">{{ tx.category }}</span>
+                {% endif %}
+              </td>
+              <td style="font-size:13px;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ tx.description or '' }}">{{ tx.description or '-' }}</td>
+              <td style="font-weight:600;">{{ "%.2f"|format(tx.amount) }} {{ get_string('currency') }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn btn-primary" onclick="return confirmImport();">
+          ✅ {{ 'Імпортувати вибрані' if session.get('lang')=='uk' else 'Import selected' }}
+        </button>
+        <button type="submit" class="btn btn-danger" formaction="{{ url_for('integration.csv_cancel') }}">
+          ❌ {{ get_string('cancel') }}
+        </button>
+      </div>
     </form>
+    {% else %}
+    <div class="empty">
+      <div style="font-size:40px;margin-bottom:10px;">📭</div>
+      <p>{{ get_string('csv_status_no_tx') }}</p>
+    </div>
+    {% endif %}
+  </div>
 </div>
-
+{% endblock %} {% block scripts %}
 <script>
-function toggleAll(source) {
-    document.querySelectorAll('.tx-check').forEach(cb => cb.checked = source.checked);
-}
+  function toggleAll(master) {
+    document.querySelectorAll(".transaction-checkbox").forEach(cb => cb.checked = master.checked);
+    updateCount();
+  }
+  function updateCount() {
+    document.getElementById("selected-count").textContent =
+      document.querySelectorAll(".transaction-checkbox:checked").length;
+  }
+  function confirmImport() {
+    const checked = document.querySelectorAll(".transaction-checkbox:checked").length;
+    if (checked === 0) {
+      alert("{{ 'Виберіть хоча б одну транзакцію для імпорту!' if session.get('lang')=='uk' else 'Select at least one transaction!' }}");
+      return false;
+    }
+    const msg = "{{ 'Імпортувати {count} транзакцій?' if session.get('lang')=='uk' else 'Import {count} transactions?' }}".replace('{count}', checked);
+    return confirm(msg);
+  }
+  document.querySelectorAll(".transaction-checkbox").forEach(cb => cb.addEventListener("change", updateCount));
 </script>
 {% endblock %}

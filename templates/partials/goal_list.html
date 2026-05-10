@@ -1,4 +1,4 @@
-<div class="card" style="flex: 1; min-width: 300px">
+<div class="card" style="flex: 1; min-width: 300px; height: 100%;">
   <h3>🎯 {{ get_string('goals') }}</h3>
   <form action="{{ url_for('budget.add_goal_route') }}" method="POST" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />

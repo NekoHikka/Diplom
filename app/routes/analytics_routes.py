@@ -41,7 +41,7 @@ def export():
         elif filter_type == 'all': filtered_tx.append(t)
             
     output = ExportService.export_to_excel(filtered_tx, user_accounts, goals, filter_type, lang=lang)
-    filename = f"export_{filter_type}_{now.strftime('%Y-%m-%d_%H-%M-%S')}.xlsx"
+    filename = f"export_{filter_type}_{now.strftime('%Y-%m-%d')}.xlsx"
     return send_file(output, download_name=filename, as_attachment=True)
 
 @analytics_bp.route('/analytics/')
@@ -68,7 +68,7 @@ def analytics():
     # Синхронизация категорий
     user_categories = sync_missing_categories(all_tx, user_categories, current_user.id, is_shared)
 
-    expenses = [t for t in all_tx if t.date >= start_date and t.type == 'Витрата']
+    expenses = [t for t in all_tx if t.date >= start_date and (t.type == 'Витрата' or t.type == 'Expense')]
     total_expense = round(sum(e.amount for e in expenses), 2)
     current_balance = round(sum(a.balance for a in user_accounts), 2)
     real_daily_avg = total_expense / period_days if period_days > 0 else 0
@@ -84,7 +84,7 @@ def analytics():
 
     from app.utils.strings import translate_name
     category_totals = {}
-    label_to_orig = {} # Для обратного маппинга при поиске цвета
+    label_to_orig = {}
     
     for exp in expenses:
         orig_cat = exp.category.strip()
@@ -95,9 +95,8 @@ def analytics():
     top_category = max(category_totals, key=category_totals.get) if category_totals else get_string('other')
     top_category_amount = category_totals.get(top_category, 0)
 
-    # Расчет трендов
     previous_start_date = start_date - timedelta(days=period_days)
-    older_expenses = [t for t in all_tx if t.date < start_date and t.date >= previous_start_date and t.type == 'Витрата']
+    older_expenses = [t for t in all_tx if t.date < start_date and t.date >= previous_start_date and (t.type == 'Витрата' or t.type == 'Expense')]
     older_sum = round(sum(e.amount for e in older_expenses), 2)
 
     trend_msg = ""; trend_color = ""
@@ -124,7 +123,6 @@ def analytics():
 
     ai_text = session.pop('ai_response', None)
     
-    # Карта цветов с Extreme Clean
     cat_color_map = {}
     for c in user_categories:
         cat_color_map[get_extreme_clean(c.name)] = c.color
@@ -143,13 +141,12 @@ def analytics():
         color = cat_color_map.get(clean_key) or get_stable_color(orig)
         chart_colors.append(color)
 
-    # Розрахунок балів "Фінансового здоров'я" (Гейміфікація)
     health_score = 50
     if total_expense == 0:
         if current_balance == 0:
-            health_score = 50 # Нейтральний бал для нових акаунтів
+            health_score = 50 
         else:
-            health_score = 100 # Гроші є, а витрат немає - ідеально
+            health_score = 100 
     else:
         if days_left >= 30: health_score += 30
         elif days_left >= 14: health_score += 15
@@ -163,7 +160,6 @@ def analytics():
 
     final_values = [category_totals[label] for label in final_labels]
 
-    # Підготовка даних для JS-графіка "Доходи vs Витрати"
     all_tx_data = [
         {'type': t.type, 'amount': t.amount, 'month': t.date.month, 'year': t.date.year}
         for t in all_tx

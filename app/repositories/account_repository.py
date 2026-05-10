@@ -19,7 +19,8 @@ def create_account(name, balance, user_id, is_shared):
     return new_acc
 
 def update_account_balance(account, amount, t_type):
-    if t_type == 'Дохід':
+    income_terms = {'Дохід', 'Income'}
+    if t_type in income_terms:
         account.balance = round(account.balance + amount, 2)
     else:
         account.balance = round(account.balance - amount, 2)

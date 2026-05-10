@@ -26,10 +26,15 @@
         {% with messages = get_flashed_messages() %}{% if messages %}
             {% for m in messages %}<p style="color: #ff4d4d; font-size: 13px; text-align: center;">{{ m }}</p>{% endfor %}
         {% endif %}{% endwith %}
+        {% if error %}
+            <div style="background: rgba(255,77,77,0.12); border: 1px solid rgba(255,77,77,0.45); color: #ff8a8a; padding: 12px; border-radius: 8px; font-size: 13px; line-height: 1.45; margin-bottom: 12px;">
+                {{ error | safe }}
+            </div>
+        {% endif %}
         <form method="POST">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="text" name="username" placeholder="{{ get_string('username_label') }}" required>
-            <input type="password" name="password" placeholder="{{ get_string('password_label') }}" required>
+            <input type="text" name="username" value="{{ username_value or '' }}" placeholder="{{ get_string('username_label') }}" minlength="3" maxlength="30" required>
+            <input type="password" name="password" placeholder="{{ get_string('password_label') }}" minlength="6" required>
             <button type="submit" class="btn">{{ get_string('register_btn') }}</button>
         </form>
         <div class="link">

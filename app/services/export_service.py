@@ -28,7 +28,7 @@ class ExportService:
             tx_data = []
             for t in transactions:
                 tx_data.append({
-                    labels['date']: t.date.strftime('%Y-%m-%d %H:%M'),
+                    labels['date']: t.date.strftime('%Y-%m-%d'),
                     labels['account']: t.account.name if t.account else '---',
                     labels['type']: t.type,
                     labels['category']: t.category,

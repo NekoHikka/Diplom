@@ -42,6 +42,12 @@ def delete_transactions_by_account(account_id):
 def get_transactions_by_ids_and_users(ids, user_ids):
     return Transaction.query.filter(Transaction.id.in_(ids), Transaction.user_id.in_(user_ids)).all()
 
+def get_transactions_by_users_and_scope(user_ids, is_shared):
+    return Transaction.query.filter(
+        Transaction.user_id.in_(user_ids),
+        Transaction.is_shared == is_shared
+    ).all()
+
 def delete_multiple_transactions(transactions):
     for t in transactions:
         db.session.delete(t)

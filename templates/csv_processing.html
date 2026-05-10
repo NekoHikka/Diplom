@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ get_string('csv_processing_title') }}{% endblock %}
+{% block content %}
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; padding: 20px;">
+    <div style="font-size: 64px; margin-bottom: 20px;">⏳</div>
+    <h1 style="margin-bottom: 15px;">{{ get_string('csv_processing_title') }}</h1>
+    <p style="color: #aaa; margin-bottom: 30px; line-height: 1.6; max-width: 500px;">
+        {{ get_string('csv_processing_desc') }}
+    </p>
+    <div style="width: 100%; max-width: 300px; height: 8px; background: var(--input-bg); border-radius: 4px; overflow: hidden; margin-bottom: 30px;">
+        <div style="width: 50%; height: 100%; background: #9c27b0; animation: loadingAnim 2s infinite ease-in-out;"></div>
+    </div>
+    <a href="{{ url_for('integration.integrations') }}" class="btn" style="background: var(--input-bg); color: var(--text-color); border: 1px solid var(--border-color); text-decoration: none; padding: 10px 20px; border-radius: 8px;">
+        ← {{ get_string('cancel') }}
+    </a>
+</div>
+
+<style>
+@keyframes loadingAnim {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(200%); }
+}
+</style>
+
+<script>
+    // Poll for status or just redirect back after some time
+    setTimeout(function() {
+        window.location.href = "{{ url_for('integration.integrations') }}";
+    }, 5000);
+</script>
+{% endblock %}

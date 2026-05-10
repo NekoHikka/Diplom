@@ -1,4 +1,5 @@
-<div class="card" style="flex: 1.2; min-width: 300px">
+<div class="card category-card" style="flex: 1; min-width: 300px; width: 100%; display: flex; flex-direction: column; height: 100%;">
+
 
 
   <h3>{{ get_string('cat_mgmt') }}</h3>
@@ -21,8 +22,8 @@
     <button type="submit" class="btn optimistic-submit" style="background-color: #9c27b0; color: white">{{ get_string('btn_create') }}</button>
   </form>
 
-  <div style="display: flex; gap: 20px">
-    <div style="flex: 1; max-height: 120px; overflow-y: auto; border-right: 1px solid var(--border-color); padding-right: 10px;">
+  <div class="category-lists" style="display: flex; gap: 15px; flex: 1; min-height: 100px; max-height: 160px; align-items: stretch; overflow: hidden;">
+    <div class="category-list" style="flex: 1; min-width: 0; overflow-y: auto; border-right: 1px solid var(--border-color); padding-right: 10px;">
       <h4 style="color: #ff4d4d; margin: 0 0 5px 0; font-size: 14px">{{ get_string('expense_plural') }}</h4>
       {% for cat in user_categories if cat.type == 'Витрата' %}
       <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; align-items: center;">
@@ -37,7 +38,7 @@
       </div>
       {% endfor %}
     </div>
-    <div style="flex: 1; max-height: 120px; overflow-y: auto">
+    <div class="category-list" style="flex: 1; min-width: 0; overflow-y: auto">
       <h4 style="color: #4caf50; margin: 0 0 5px 0; font-size: 14px">{{ get_string('income_plural') }}</h4>
       {% for cat in user_categories if cat.type == 'Дохід' %}
       <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; align-items: center;">

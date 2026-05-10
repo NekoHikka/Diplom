@@ -5,7 +5,7 @@ from flask_login import login_required, current_user
 from app.services.ai_service import AIService
 from app.repositories.user_repository import get_ai_limit, create_ai_limit, increment_ai_limit
 from app.repositories.account_repository import get_account_by_id, update_account_balance
-from app.repositories.category_repository import get_categories_by_user, create_category, get_multi_user_categories
+from app.repositories.category_repository import get_categories_by_user, create_category, get_multi_user_categories, resolve_category_name
 from app.repositories.transaction_repository import add_transaction, get_shared_transactions, get_user_transactions
 from app.repositories.partnership_repository import get_active_partnership
 from app.repositories.goal_repository import get_goals_by_user, get_multi_user_goals
@@ -36,20 +36,22 @@ def add_receipt_ai():
         transactions_data = AIService.recognize_receipt(file.stream, existing_cats, user_prompt)
         
         acc = get_account_by_id(account_id)
-        known_cat_names = [c.name for c in existing_cats]
-
         if acc and transactions_data:
             now_utc = get_current_time()
-            for td in transactions_data:
+            ai_category_choices = AIService.choose_existing_categories(transactions_data, existing_cats)
+            for tx_idx, td in enumerate(transactions_data):
                 amount = round(abs(float(td.get('amount', 0))), 2) 
                 t_type = td.get('type', 'Витрата')
-                cat_name = td.get('category', 'Інше')
-
-                from app.repositories.category_repository import get_or_create_category
-                from app.config import Config
-                import random
-                # Принудительно создаем категорию в БД, если её еще нет
-                get_or_create_category(cat_name, t_type, current_user.id, is_shared, color=random.choice(Config.COLORS_PALETTE))
+                description = td.get('description', 'Розпізнано ШІ 🤖')
+                cat_name = ai_category_choices.get(tx_idx) or resolve_category_name(
+                    td.get('category', 'Інше'),
+                    t_type,
+                    existing_cats,
+                    current_user.id,
+                    is_shared,
+                    description=description,
+                    color=random.choice(Config.COLORS_PALETTE)
+                )
 
                 update_account_balance(acc, amount, t_type)
 
@@ -62,7 +64,7 @@ def add_receipt_ai():
                         t_date = datetime(parsed_d.year, parsed_d.month, parsed_d.day, now_utc.hour, now_utc.minute, now_utc.second)
                     except: t_date = now_utc
 
-                add_transaction(t_type, cat_name, amount, td.get('description', 'Розпізнано ШІ 🤖'), t_date, current_user.id, acc.id, is_shared)
+                add_transaction(t_type, cat_name, amount, description, t_date, current_user.id, acc.id, is_shared)
             
             flash(get_string('success_ai_receipt', count=len(transactions_data)), "success")
         else:
@@ -113,29 +115,27 @@ def analyze_ai():
     
     cat_totals = {}
     for t in transactions:
-        if t.type == 'Витрата': cat_totals[t.category] = round(cat_totals.get(t.category, 0) + t.amount, 2)
+        if (t.type == 'Витрата' or t.type == 'Expense'): cat_totals[t.category] = round(cat_totals.get(t.category, 0) + t.amount, 2)
 
     tx_list = "\n".join([f"- {t.date.strftime('%d.%m')}: {t.category} ({int(t.amount)} {currency}) - {t.description}" for t in transactions[:50]])
     
-    # Расчет дополнительных научных метрик
-    expenses_sum = round(sum(t.amount for t in transactions if t.type == 'Витрата'), 2)
+    expenses_sum = round(sum(t.amount for t in transactions if (t.type == 'Витрата' or t.type == 'Expense')), 2)
     daily_avg = round(expenses_sum / period_days, 2) if period_days > 0 else 0
     runway = int(total_balance / daily_avg) if daily_avg > 0 else 999
     
-    # Расчет тренда (сравнение с прошлым периодом)
     prev_start = start_date - timedelta(days=period_days)
     if budget_type == 'shared' and partner:
         prev_transactions = get_shared_transactions(user_ids, prev_start)
     else:
         prev_transactions = get_user_transactions(current_user.id, prev_start)
     
-    prev_expenses = sum(t.amount for t in prev_transactions if t.type == 'Витрата' and t.date < start_date)
+    prev_expenses = sum(t.amount for t in prev_transactions if (t.type == 'Витрата' or t.type == 'Expense') and t.date < start_date)
     trend_percent = round(((expenses_sum / prev_expenses) - 1) * 100, 2) if prev_expenses > 0 else 0
 
     user_data = {
         'username': current_user.username, 'context_prefix': context_prefix, 
         'period_days': period_days, 'total_balance': total_balance, 
-        'income': round(sum(t.amount for t in transactions if t.type == 'Дохід'), 2),
+        'income': round(sum(t.amount for t in transactions if (t.type == 'Дохід' or t.type == 'Income')), 2),
         'expenses': expenses_sum,
         'daily_avg': daily_avg,
         'runway': runway,
@@ -159,6 +159,7 @@ def analyze_ai():
     return redirect(url_for('analytics.analytics', shared='1' if budget_type == 'shared' else '0', period=period_days))
 
 from flask import jsonify
+from html import escape
 
 @ai_bp.route('/api/chat', methods=['POST'])
 @login_required
@@ -169,6 +170,27 @@ def api_chat():
         if not user_query:
             return jsonify({'error': 'Empty message'}), 400
 
+        confirm_words = {'так', 'да', 'yes', 'y', 'ок', 'окей', 'підтверджую', 'согласен', 'згоден', 'добавь', 'додай'}
+        cancel_words = {'ні', 'нет', 'no', 'cancel', 'скасувати', 'отмена'}
+        pending = session.get('pending_chat_transactions')
+        normalized_query = user_query.lower().strip()
+        if pending and normalized_query in cancel_words:
+            session.pop('pending_chat_transactions', None)
+            return jsonify({'response': 'Ок, не додаю ці записи.'})
+        if pending and normalized_query in confirm_words:
+            added = 0
+            for pt in pending:
+                acc = get_account_by_id(int(pt['account_id']))
+                if not acc or (not acc.is_shared and acc.user_id != current_user.id):
+                    continue
+                date_obj = datetime.strptime(pt['date'], '%Y-%m-%d')
+                amount = round(float(pt['amount']), 2)
+                add_transaction(pt['type'], pt['category'], amount, pt.get('description', 'Чат'), date_obj, current_user.id, acc.id, bool(acc.is_shared))
+                update_account_balance(acc, amount, pt['type'])
+                added += 1
+            session.pop('pending_chat_transactions', None)
+            return jsonify({'response': f'Готово, додано {added} записів.'})
+
         today_str = get_current_time().strftime("%Y-%m-%d")
         limit_record = get_ai_limit(current_user.id, today_str) or create_ai_limit(current_user.id, today_str)
 
@@ -178,21 +200,80 @@ def api_chat():
         now = get_current_time(); start_date = now - timedelta(days=30)
         transactions = get_user_transactions(current_user.id, start_date)
         user_accounts = get_accounts_by_user(current_user.id, is_shared=False)
+        user_categories = get_categories_by_user(current_user.id, is_shared=False)
+        partner = get_active_partnership(current_user.id)
+        if partner:
+            partner_id = partner.user1_id if partner.user2_id == current_user.id else partner.user2_id
+            shared_user_ids = [current_user.id, partner_id]
+            user_accounts = user_accounts + get_multi_user_accounts(shared_user_ids, is_shared=True)
+            user_categories = user_categories + get_multi_user_categories(shared_user_ids, is_shared=True)
         goals = get_goals_by_user(current_user.id, is_shared=False)
         currency = get_string('currency')
         total_balance = round(sum(a.balance for a in user_accounts), 2)
+
+        add_request = AIService.extract_transaction_request(user_query, user_accounts, user_categories)
+        if add_request.get('can_add') and add_request.get('transactions'):
+            preview_rows = []
+            pending_rows = []
+            category_choices = AIService.choose_existing_categories(add_request['transactions'], user_categories)
+            accounts_by_id = {a.id: a for a in user_accounts}
+            for tx_idx, tx in enumerate(add_request['transactions']):
+                acc = accounts_by_id.get(int(tx.get('account_id') or (user_accounts[0].id if user_accounts else 0)))
+                if not acc:
+                    continue
+                try:
+                    tx_date = datetime.strptime(tx.get('date', ''), '%Y-%m-%d').strftime('%Y-%m-%d')
+                    tx_amount = round(float(tx.get('amount', 0)), 2)
+                except Exception:
+                    continue
+                t_type = tx.get('type', 'Витрата')
+                description = tx.get('description', 'Чат')
+                scoped_categories = [c for c in user_categories if bool(c.is_shared) == bool(acc.is_shared)]
+                scoped_names = {c.name for c in scoped_categories}
+                ai_category = category_choices.get(tx_idx)
+                if ai_category not in scoped_names:
+                    ai_category = None
+                category = ai_category or resolve_category_name(
+                    tx.get('category') or 'Інше',
+                    t_type,
+                    scoped_categories,
+                    current_user.id,
+                    bool(acc.is_shared),
+                    description=description,
+                    color=random.choice(Config.COLORS_PALETTE)
+                )
+                row = {
+                    'date': tx_date,
+                    'type': t_type,
+                    'amount': tx_amount,
+                    'description': description,
+                    'account_id': acc.id,
+                    'account_name': acc.name,
+                    'category': category,
+                }
+                pending_rows.append(row)
+                preview_rows.append(
+                    f"{escape(str(row['date']))} | {escape(str(row['account_name']))} | {escape(str(row['type']))} | "
+                    f"{escape(str(row['category']))} | {row['amount']} {escape(str(currency))} | {escape(str(row['description']))}"
+                )
+
+            if pending_rows:
+                session['pending_chat_transactions'] = pending_rows
+                preview = "<br>".join(preview_rows[:20])
+                more = f"<br>...і ще {len(preview_rows) - 20}" if len(preview_rows) > 20 else ""
+                return jsonify({'response': f"Я можу додати такі записи:<br><br>{preview}{more}<br><br>Підтверджуєте? Напишіть \"так\" або \"ні\".", 'pending': True})
         
         cat_totals = {}
         for t in transactions:
-            if t.type == 'Витрата': cat_totals[t.category] = round(cat_totals.get(t.category, 0) + t.amount, 2)
+            if (t.type == 'Витрата' or t.type == 'Expense'): cat_totals[t.category] = round(cat_totals.get(t.category, 0) + t.amount, 2)
 
         tx_list = "\n".join([f"- {t.date.strftime('%d.%m')}: {t.category} ({int(t.amount)} {currency})" for t in transactions[:30]])
 
         user_data = {
             'username': current_user.username, 'context_prefix': "ОСОБИСТИЙ БЮДЖЕТ", 
             'period_days': 30, 'total_balance': total_balance, 
-            'income': round(sum(t.amount for t in transactions if t.type == 'Дохід'), 2),
-            'expenses': round(sum(t.amount for t in transactions if t.type == 'Витрата'), 2),
+            'income': round(sum(t.amount for t in transactions if (t.type == 'Дохід' or t.type == 'Income')), 2),
+            'expenses': round(sum(t.amount for t in transactions if (t.type == 'Витрата' or t.type == 'Expense')), 2),
             'goals_list': "\n".join([f"- {g.name}: {int(g.target_amount)} {currency}" for g in goals]) or "Немає", 
             'cat_totals': cat_totals, 'tx_list': tx_list,
             'lang': session.get('lang', 'uk'),

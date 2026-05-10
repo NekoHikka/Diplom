@@ -1,5 +1,7 @@
 from app.models import db, Category
-
+import re
+from difflib import SequenceMatcher
+ 
 def get_category_by_id(cat_id):
     return db.session.get(Category, cat_id)
 
@@ -20,6 +22,57 @@ def get_or_create_category(name, type, user_id, is_shared, color=None):
         cat = create_category(name, type, user_id, is_shared, color)
     return cat
 
+def _clean_category_text(value):
+    value = (value or '').lower()
+    value = re.sub(r'[^\w\s]', ' ', value, flags=re.UNICODE)
+    value = re.sub(r'\s+', ' ', value).strip()
+    return value
+
+def resolve_category_name(suggested_name, t_type, existing_categories, user_id, is_shared, description='', color=None):
+    typed_categories = [c for c in existing_categories if c.type == t_type]
+    if not typed_categories:
+        return get_or_create_category(suggested_name or 'Інше', t_type, user_id, is_shared, color=color).name
+
+    source = _clean_category_text(f"{suggested_name} {description}")
+    source_tokens = set(source.split())
+
+    hints = [
+        (('аптек', 'ліки', 'лекар', 'pharmacy', 'drugstore', 'med'), ('здоров', 'health', 'мед', 'аптек', 'ліки')),
+        (('кафе', 'ресторан', 'restaurant', 'food', 'їжа', 'еда'), ('кафе', 'ресторан', 'їжа', 'food')),
+        (('супермаркет', 'маркет', 'атб', 'сільпо', 'novus', 'fora', 'продукт'), ('супермаркет', 'продукт', 'їжа', 'food', 'grocer')),
+        (('таксі', 'taxi', 'uber', 'bolt', 'uklon', 'transport'), ('транспорт', 'таксі', 'taxi', 'transport')),
+        (('азс', 'паливо', 'fuel', 'gas'), ('азс', 'паливо', 'авто', 'fuel')),
+        (('зарплат', 'salary', 'зарахування'), ('зарплат', 'дохід', 'income', 'зарахування')),
+        (('переказ', 'transfer'), ('переказ', 'transfer')),
+    ]
+
+    for source_words, category_words in hints:
+        if any(word in source for word in source_words):
+            for cat in typed_categories:
+                cat_clean = _clean_category_text(cat.name)
+                if any(word in cat_clean for word in category_words):
+                    return cat.name
+
+    best_cat = None
+    best_score = 0
+    for cat in typed_categories:
+        cat_clean = _clean_category_text(cat.name)
+        cat_tokens = set(cat_clean.split())
+        overlap = len(source_tokens & cat_tokens) / max(len(cat_tokens), 1) if source_tokens else 0
+        ratio = SequenceMatcher(None, source, cat_clean).ratio() if source else 0
+        score = max(overlap, ratio)
+        if cat_clean and cat_clean in source:
+            score = max(score, 0.92)
+        if score > best_score:
+            best_score = score
+            best_cat = cat
+
+    if best_cat and best_score >= 0.58:
+        return best_cat.name
+
+    fallback = suggested_name or description or 'Інше'
+    return get_or_create_category(fallback[:50], t_type, user_id, is_shared, color=color).name
+
 def create_category(name, type, user_id, is_shared, color):
     new_cat = Category(name=name, type=type, user_id=user_id, is_shared=is_shared, color=color)
     db.session.add(new_cat)
@@ -37,11 +90,7 @@ def sync_missing_categories(transactions, current_categories, user_id, is_shared
     for t in transactions:
         t_cat_clean = clean_n(t.category)
         if t_cat_clean and t_cat_clean not in known_clean_names:
-            prefix = "📁 "
-            if t_cat_clean == "інше": prefix = "⚙️ "
-            elif "картк" in t_cat_clean: prefix = "💳 "
-            
-            new_name = f"{prefix}{t.category}"
+            new_name = t.category
             get_or_create_category(new_name, t.type, user_id, is_shared)
             known_clean_names.add(t_cat_clean)
             synced = True

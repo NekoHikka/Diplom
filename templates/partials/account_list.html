@@ -1,31 +1,144 @@
 <div class="card" style="flex: 1; min-width: 300px">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 10px; flex-wrap: wrap;">
-    <h3 style="margin: 0; white-space: nowrap; font-size: 1.1rem">💳 {{ get_string('accounts') }}</h3>
-    <span style="font-size: 15px; font-weight: bold; white-space: nowrap; color: {% if balance >= 0 %}#4CAF50{% else %}#ff4d4d{% endif %};">{{ get_string('total_balance') }}: {{ balance if balance % 1 != 0 else balance|int }} {{ get_string('currency') }}</span>
+  <div
+    style="
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      gap: 10px;
+      flex-wrap: wrap;
+    "
+  >
+    <h3 style="margin: 0; white-space: nowrap; font-size: 1.1rem">
+      💳 {{ get_string('accounts') }}
+    </h3>
+    <span
+      style="
+        font-size: 15px;
+        font-weight: bold;
+        white-space: nowrap;
+        color: #4caf50;
+      "
+      >{{ get_string('total_balance') }}: {{ balance }} {{
+      get_string('currency') }}</span
+    >
   </div>
-  <div style="max-height: 150px; overflow-y: auto; padding-right: 5px; margin-bottom: 15px;">
+  <div
+    style="
+      max-height: 150px;
+      overflow-y: auto;
+      padding-right: 5px;
+      margin-bottom: 15px;
+    "
+  >
     {% for acc in accounts %}
-    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background-color: var(--input-bg); margin-bottom: 8px; border-radius: 8px; border: 1px solid var(--border-color); gap: 10px;">
-      <strong style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50%;">{{ translate_name(acc.name) }}</strong>
-      <div style="display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
-        <span style="font-weight: bold; color: #4db8ff; white-space: nowrap">{{ acc.balance if acc.balance % 1 != 0 else acc.balance|int }} {{ get_string('currency') }}</span>
+    <div
+      style="
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px;
+        background-color: var(--input-bg);
+        margin-bottom: 8px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        gap: 10px;
+      "
+    >
+      <strong
+        style="
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 50%;
+        "
+        >{{ translate_name(acc.name) }}</strong
+      >
+      <div
+        style="display: flex; align-items: center; gap: 12px; flex-shrink: 0"
+      >
+        <span style="font-weight: bold; color: #4db8ff; white-space: nowrap"
+          >{{ acc.balance }} {{ get_string('currency') }}</span
+        >
         <span class="no-print" style="white-space: nowrap">
-          <a href="{{ url_for('budget.edit_account', id=acc.id) }}" style="text-decoration: none; margin-right: 5px">✏️</a>
-          <a href="{{ url_for('budget.delete_account_route', id=acc.id) }}" style="text-decoration: none" class="optimistic-delete" onclick="return confirm('{{ get_string('delete') }} {{ get_string('acc_label')|lower }}?');">❌</a>
+          <a
+            href="{{ url_for('budget.edit_account', id=acc.id) }}"
+            style="text-decoration: none; margin-right: 5px"
+            >✏️</a
+          >
+          <a
+            href="{{ url_for('budget.delete_account_route', id=acc.id) }}"
+            style="text-decoration: none"
+            class="optimistic-delete"
+            onclick="return confirm('{{ get_string('delete') }} {{ get_string('acc_label')|lower }}?');"
+            >❌</a
+          >
         </span>
       </div>
     </div>
     {% endfor %}
   </div>
 
-  <form action="{{ url_for('budget.add_account_route') }}" method="POST" class="no-print" style="display: flex; gap: 8px">
+  <form
+    action="{{ url_for('budget.add_account_route') }}"
+    method="POST"
+    class="no-print"
+    style="display: flex; gap: 8px"
+  >
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-    <input type="hidden" name="is_shared" value="{{ 'true' if is_shared_view else 'false' }}" />
-    <select name="emoji" style="width: 70px; padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color);">
-      <option value="💳">💳</option><option value="💵">💵</option><option value="🏦">🏦</option><option value="🐖">🐖</option><option value="🗄️">🗄️</option><option value="📱">📱</option><option value="🪙">🪙</option><option value="💼">💼</option>
+    <input
+      type="hidden"
+      name="is_shared"
+      value="{{ 'true' if is_shared_view else 'false' }}"
+    />
+    <select
+      name="emoji"
+      style="
+        width: 70px;
+        padding: 8px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--input-bg);
+        color: var(--text-color);
+      "
+    >
+      <option value="💳">💳</option>
+      <option value="💵">💵</option>
+      <option value="🏦">🏦</option>
+      <option value="💖">💖</option>
+      <option value="🗄️">🗄️</option>
+      <option value="📱">📱</option>
+      <option value="🪙">🪙</option>
+      <option value="💼">💼</option>
     </select>
-    <input type="text" name="name" placeholder="{{ get_string('acc_name_ph') }}" required pattern=".*\S+.*" title="Введіть назву без пустих пробілів" style="flex: 2; padding: 8px" />
-    <input type="text" inputmode="decimal" name="balance" placeholder="{{ get_string('acc_balance_ph') }}" required style="flex: 1; padding: 8px; min-width: 60px" oninput="formatMoneyInput(this)" />
-    <button type="submit" class="btn optimistic-submit" style="background-color: #ff9800; color: white; padding: 8px; flex-shrink: 0;">+</button>
+    <input
+      type="text"
+      name="name"
+      placeholder="{{ get_string('acc_name_ph') }}"
+      required
+      pattern=".*\S+.*"
+      title="Введіть назву без пустих пробілів"
+      style="flex: 2; padding: 8px"
+    />
+    <input
+      type="text"
+      inputmode="decimal"
+      name="balance"
+      placeholder="{{ get_string('acc_balance_ph') }}"
+      style="flex: 1; padding: 8px; min-width: 60px"
+      oninput="formatMoneyInput(this)"
+    />
+    <button
+      type="submit"
+      class="btn optimistic-submit"
+      style="
+        background-color: #ff9800;
+        color: white;
+        padding: 8px;
+        flex-shrink: 0;
+      "
+    >
+      +
+    </button>
   </form>
 </div>

@@ -2,7 +2,7 @@ import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 from werkzeug.middleware.proxy_fix import ProxyFix
 from dotenv import load_dotenv
 
@@ -30,7 +30,7 @@ def create_app():
 
     @app.context_processor
     def inject_functions():
-        return dict(get_string=get_string, translate_name=translate_name)
+        return dict(get_string=get_string, translate_name=translate_name, csrf_token=generate_csrf)
 
     @login_manager.user_loader
     def load_user(user_id):

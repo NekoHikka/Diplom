@@ -1,58 +1,203 @@
-{% extends "base.html" %}
-{% block title %}{{ get_string('nav_integrations') }}{% endblock %}
+{% extends "base.html" %} {% block title %}{{ get_string('nav_integrations')
+}}{% endblock %} {% block extra_css %}
+  .integration-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .bank-card {
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    animation: cardSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .bank-card:nth-child(1) {
+    animation-delay: 0.05s;
+  }
+  .bank-card:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+  .bank-card:nth-child(3) {
+    animation-delay: 0.25s;
+  }
+  @keyframes cardSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .bank-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    gap: 10px;
+    flex-wrap: nowrap;
+  }
+  .bank-logo {
+    font-size: 20px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .status-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: bold;
+    white-space: nowrap;
+  }
+  .status-active {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4caf50;
+    border: 1px solid #4caf50;
+  }
+  .status-inactive {
+    background: rgba(136, 136, 136, 0.2);
+    color: #aaa;
+    border: 1px solid #888;
+  }
+  .account-group {
+    display: none;
+  }
+  .account-group.active {
+    display: block;
+  }
+  .privat-account-group { display: none; }
+  .privat-account-group--active { display: block; }
+  .abank-account-group { display: none; }
+  .abank-account-group--active { display: block; }
+  .bank-card.disabled-card {
+    opacity: 0.45;
+    pointer-events: none;
+    filter: grayscale(60%);
+  }
 
-{% block extra_css %}
-  .integration-grid { display: flex; gap: 20px; flex-wrap: wrap; }
-  .bank-card { background-color: var(--card-bg); border-radius: 12px; border: 1px solid var(--border-color);
-    padding: 25px; flex: 1; min-width: 300px; max-width: 500px; display: flex; flex-direction: column; }
-  .bank-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 10px; flex-wrap: nowrap; }
-  .bank-logo { font-size: 20px; font-weight: bold; display: flex; align-items: center; gap: 8px; white-space: nowrap; flex-shrink: 0; }
-  .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; white-space: nowrap; }
-  .status-active { background: rgba(76, 175, 80, 0.2); color: #4caf50; border: 1px solid #4caf50; }
-  .status-inactive { background: rgba(136, 136, 136, 0.2); color: #aaa; border: 1px solid #888; }
-{% endblock %}
-
-{% block content %}
-
+  @media (max-width: 768px) {
+    .integration-grid {
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+    .bank-card {
+      min-width: 0;
+      max-width: none;
+      padding: 16px;
+      border-radius: 10px;
+    }
+    .bank-header {
+      align-items: flex-start;
+    }
+    .bank-logo {
+      white-space: normal;
+      line-height: 1.25;
+    }
+    .status-badge {
+      flex-shrink: 0;
+    }
+  }
+{% endblock %} {% block content %}
 <div class="integration-grid">
-
+  <!-- Processing data for JS -->
+  <div
+    id="processing-data"
+    data-is-processing="{{ 'true' if processing and processing.status in ['starting', 'processing'] else 'false' }}"
+    data-is-completed="{{ 'true' if processing and processing.status == 'completed' else 'false' }}"
+    data-bank-source="{{ processing.bank_source if processing else '' }}"
+    style="display: none"
+  ></div>
   <!-- Monobank Card -->
-  <div class="bank-card" style="border-top: 4px solid #ff3366;">
+  <div class="bank-card" style="border-top: 4px solid #ff3366">
     <div class="bank-header">
       <div class="bank-logo">🐈 Monobank</div>
-      <span class="status-badge {{ 'status-active' if is_mono_connected else 'status-inactive' }}">
-        {{ get_string('mono_connected') if is_mono_connected else get_string('mono_not_connected') }}
+      <span
+        class="status-badge {{ 'status-active' if is_mono_connected else 'status-inactive' }}"
+      >
+        {{ get_string('mono_connected') if is_mono_connected else
+        get_string('mono_not_connected') }}
       </span>
     </div>
-    <p style="font-size: 14px; color: #aaa; margin-bottom: 20px; line-height: 1.5;">
-      {% if session.get('lang', 'uk') == 'uk' %}Автоматична синхронізація витрат та доходів з вашої чорної картки. Баланс та транзакції оновлюються автоматично (Read-only).
-      {% else %}Automatic sync of expenses and income from your black card. Balance and transactions update automatically (Read-only).{% endif %}
+    <p
+      style="
+        font-size: 14px;
+        color: #aaa;
+        margin-bottom: 20px;
+        line-height: 1.5;
+      "
+    >
+      {% if session.get('lang', 'uk') == 'uk' %} Автоматична синхронізація
+      витрат та доходів з вашої чорної картки. Баланс та транзакції оновлюються
+      автоматично (Read-only). {% else %} Automatic sync of expenses and income
+      from your black card. Balance and transactions update automatically
+      (Read-only). {% endif %}
     </p>
-    <div style="display: flex; flex-direction: column; margin-top: auto; gap: 10px;">
+    <div
+      style="display: flex; flex-direction: column; margin-top: auto; gap: 10px"
+    >
       {% if is_mono_connected %}
       <form action="{{ url_for('integration.sync_monobank') }}" method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        <button type="submit" class="btn sync-btn" style="background-color: #ff3366; color: white; width: 100%;">
+        <button
+          type="submit"
+          class="btn sync-btn"
+          style="background-color: #ff3366; color: white; width: 100%"
+        >
           🔄 {{ get_string('btn_sync') }}
         </button>
       </form>
       <form action="{{ url_for('integration.unlink_monobank') }}" method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        <button type="submit" class="btn" style="background-color: transparent; color: #ff4d4d; border: 1px solid #ff4d4d; width: 100%;"
-          onclick="return confirm('{{ get_string('delete') }} Monobank?');">
+        <button
+          type="submit"
+          class="btn"
+          style="
+            background-color: transparent;
+            color: #ff4d4d;
+            border: 1px solid #ff4d4d;
+            width: 100%;
+          "
+        >
           ❌ {{ get_string('btn_unlink') }}
         </button>
       </form>
       {% else %}
-      <form action="{{ url_for('integration.sync_monobank') }}" method="POST" style="display: flex; flex-direction: column; gap: 10px;">
+      <form
+        action="{{ url_for('integration.sync_monobank') }}"
+        method="POST"
+        style="display: flex; flex-direction: column; gap: 10px"
+      >
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        <input type="password" name="monobank_token" placeholder="{{ get_string('token_label') }}" required />
-        <div style="font-size: 12px; text-align: center;">
-          <a href="https://api.monobank.ua/" target="_blank" style="color: #2196f3; text-decoration: none;">
-            🔑 {{ 'Отримати токен' if session.get('lang')=='uk' else 'Get token' }}
+        <input
+          type="password"
+          name="monobank_token"
+          placeholder="{{ get_string('token_label') }}"
+          required
+        />
+        <div style="font-size: 12px; text-align: center">
+          <a
+            href="https://api.monobank.ua/"
+            target="_blank"
+            style="color: #2196f3; text-decoration: none"
+          >
+            🔑 {{ 'Отримати токен' if session.get('lang')=='uk' else 'Get token'
+            }}
           </a>
         </div>
-        <button type="submit" class="btn sync-btn" style="background-color: #ff3366; color: white;">
+        <button
+          type="submit"
+          class="btn sync-btn"
+          style="background-color: #ff3366; color: white"
+        >
           🔗 {{ get_string('btn_sync') }}
         </button>
       </form>
@@ -61,45 +206,528 @@
   </div>
 
   <!-- CSV / XLSX Upload Card (AI Integration) -->
-  <div class="bank-card" style="border-top: 4px solid #9c27b0;">
+  <div class="bank-card" data-bank="csv" style="border-top: 4px solid #9c27b0">
     <div class="bank-header">
-      <div class="bank-logo">📄 {{ 'Будь-який банк' if session.get('lang','uk')=='uk' else 'Any Bank' }} (CSV / XLSX)</div>
-      <span class="status-badge" style="background: rgba(156,39,176,0.2); color: #9c27b0; border: 1px solid #9c27b0;">AI ✨</span>
+      <div class="bank-logo">
+        📄 {{ 'Будь-який банк' if session.get('lang','uk')=='uk' else 'Any Bank'
+        }} (CSV / XLSX)
+      </div>
+      <span
+        class="status-badge"
+        style="
+          background: rgba(156, 39, 176, 0.2);
+          color: #9c27b0;
+          border: 1px solid #9c27b0;
+        "
+      >
+        AI ✨
+      </span>
     </div>
-    <p style="font-size: 14px; color: #aaa; margin-bottom: 20px; line-height: 1.5;">
-      {% if session.get('lang', 'uk') == 'uk' %}
-      Завантажте виписку у форматі <strong style="color: var(--text-color);">CSV або XLSX</strong> (ПриватБанк, ПУМБ тощо). Наш ШІ автоматично розпізнає транзакції та додасть їх до вашого бюджету.
-      {% else %}
-      Upload a bank statement in <strong style="color: var(--text-color);">CSV or XLSX</strong> format. Our AI will automatically extract and categorise transactions.
-      {% endif %}
+    <p
+      style="
+        font-size: 14px;
+        color: #aaa;
+        margin-bottom: 20px;
+        line-height: 1.5;
+      "
+    >
+      {% if session.get('lang', 'uk') == 'uk' %} Завантажте виписку у форматі
+      <strong style="color: var(--text-color)">CSV або XLSX</strong>
+      (ПриватБанк, ПУМБ тощо). Наш ШІ автоматично розпізнає транзакції та
+      додасть їх до вашого бюджету. {% else %} Upload a bank statement in
+      <strong style="color: var(--text-color)">CSV or XLSX</strong> format. Our
+      AI will automatically extract and categorise transactions. {% endif %}
     </p>
-    <div style="margin-top: auto;">
-      <form action="{{ url_for('integration.upload_csv') }}" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 10px;">
+    <div style="margin-top: auto">
+      <!-- Processing Status -->
+      {% if processing and processing.bank_source == 'csv' and processing.status in ['starting', 'processing'] %}
+      <div
+        id="processing-block"
+        style="
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          padding: 15px;
+          background: rgba(156, 39, 176, 0.1);
+          border-radius: 8px;
+          border: 1px solid #9c27b0;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <span style="color: #9c27b0; font-weight: bold">
+            ⏳ {{ 'Аналізуємо файл...' if session.get('lang','uk')=='uk' else
+            'Analyzing file...' }}
+          </span>
+          <form
+            action="{{ url_for('integration.csv_cancel') }}"
+            method="POST"
+            style="margin: 0"
+          >
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <button
+              type="submit"
+              class="btn"
+              style="
+                background: transparent;
+                color: #ff4d4d;
+                border: 1px solid #ff4d4d;
+                padding: 5px 10px;
+                font-size: 12px;
+              "
+            >
+              ❌ {{ 'Скасувати' if session.get('lang','uk')=='uk' else 'Cancel'
+              }}
+            </button>
+          </form>
+        </div>
+        <div style="font-size: 13px; color: #aaa">
+          {{ 'Аналізуємо з допомогою ШІ...' if session.get('lang','uk')=='uk' else 'Analyzing with AI...' }}
+        </div>
+      </div>
+      {% elif processing and processing.bank_source == 'csv' and processing.status == 'completed' %}
+      <div
+        style="
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          padding: 15px;
+          background: rgba(76, 175, 80, 0.1);
+          border-radius: 8px;
+          border: 1px solid #4caf50;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <span style="color: #4caf50; font-weight: bold">
+            {{ get_string('csv_preview_ready') if (processing.count or 0) > 0 else get_string('csv_status_no_tx') }}
+          </span>
+          <div style="display: flex; gap: 10px;">
+            {% if (processing.count or 0) > 0 %}
+            <a
+              href="{{ url_for('integration.csv_preview') }}"
+              class="btn"
+              style="
+                background-color: #4caf50;
+                color: white;
+                padding: 8px 16px;
+                text-decoration: none;
+                border-radius: 6px;
+              "
+            >
+              {{ get_string('csv_view_btn') }}
+            </a>
+            {% endif %}
+            <form action="{{ url_for('integration.csv_cancel') }}" method="POST" style="margin: 0;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <button
+                type="submit"
+                class="btn"
+                style="
+                  background: transparent;
+                  color: #ff4d4d;
+                  border: 1px solid #ff4d4d;
+                  padding: 8px 16px;
+                  border-radius: 6px;
+                "
+              >
+                {{ 'Спробувати знову' if (processing.count or 0) == 0 else '✕' }}
+              </button>
+            </form>
+          </div>
+        </div>
+        {% if (processing.count or 0) > 0 %}
+        <div style="font-size: 13px; color: #aaa">
+          {{ get_string('csv_found_count') }} {{ processing.count }}
+        </div>
+        {% endif %}
+      </div>
+      {% else %}
+      <form
+        action="{{ url_for('integration.upload_csv') }}"
+        method="POST"
+        enctype="multipart/form-data"
+        style="display: flex; flex-direction: column; gap: 10px"
+      >
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        <select name="account_id" required style="padding: 10px; border-radius: 6px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--border-color);">
+        <select
+          id="csv-budget-type"
+          style="
+            padding: 10px;
+            border-radius: 6px;
+            background: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+          "
+        >
+          <option value="personal">
+            {{ 'Особистий рахунок' if session.get('lang','uk')=='uk' else
+            'Personal account' }}
+          </option>
+          <option
+            value="shared"
+            {%
+            if
+            not
+            has_shared_budget
+            or
+            not
+            shared_accounts
+            %}disabled{%
+            endif
+            %}
+          >
+            {{ 'Спільний рахунок' if session.get('lang','uk')=='uk' else 'Shared
+            account' }} {% if not has_shared_budget or not shared_accounts %} {{
+            'недоступний' if session.get('lang','uk')=='uk' else 'unavailable'
+            }}{% endif %}
+          </option>
+        </select>
+        <select
+          name="account_id"
+          required
+          class="account-group active"
+          data-budget-group="personal"
+          style="
+            padding: 10px;
+            border-radius: 6px;
+            background: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+          "
+        >
           <option value="">{{ get_string('ai_acc_label') }}...</option>
           {% for acc in accounts %}
           <option value="{{ acc.id }}">{{ acc.name }}</option>
           {% endfor %}
         </select>
-        <input type="file" name="csv_file" accept=".csv,.xlsx" required style="color: var(--text-color); font-size: 13px;" />
-        <button type="submit" class="btn sync-btn" style="background-color: #9c27b0; color: white;">
-          🧠 {{ 'Аналізувати через ШІ' if session.get('lang','uk')=='uk' else 'Analyse with AI' }}
+        <select
+          name="account_id"
+          required
+          disabled
+          class="account-group"
+          data-budget-group="shared"
+          style="
+            padding: 10px;
+            border-radius: 6px;
+            background: var(--input-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+          "
+        >
+          <option value="">{{ get_string('ai_acc_label') }}...</option>
+          {% for acc in shared_accounts %}
+          <option value="{{ acc.id }}">{{ acc.name }}</option>
+          {% endfor %}
+        </select>
+        <input
+          type="file"
+          name="csv_file"
+          accept=".csv,.xlsx"
+          required
+          style="color: var(--text-color); font-size: 13px"
+        />
+        <button
+          type="submit"
+          class="btn sync-btn"
+          style="background-color: #9c27b0; color: white"
+        >
+          🧠 {{ 'Аналізувати через ШІ' if session.get('lang','uk')=='uk' else
+          'Analyse with AI' }}
         </button>
       </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- PrivatBank Card -->
+  <div class="bank-card" data-bank="privat" style="border-top: 4px solid #00a650">
+    <div class="bank-header">
+      <div class="bank-logo">🟢 ПриватБанк</div>
+      <span class="status-badge" style="background:rgba(0,166,80,0.15);color:#00a650;border:1px solid #00a650;">
+        XLSX
+      </span>
+    </div>
+    <p style="font-size:14px;color:#aaa;margin-bottom:20px;line-height:1.5;">
+      {% if session.get('lang','uk')=='uk' %}
+        Завантажте виписку у форматі <strong style="color:var(--text-color)">XLSX</strong> з ПриватБанку.
+        Дата, сума та опис розпізнаються <strong style="color:var(--text-color)">без ШІ</strong> — лише категорії підбираються автоматично.
+      {% else %}
+        Upload a <strong style="color:var(--text-color)">XLSX</strong> statement from PrivatBank.
+        Date, amount and description are parsed <strong style="color:var(--text-color)">without AI</strong> — only categories are matched automatically.
+      {% endif %}
+    </p>
+    <div style="margin-top:auto;">
+      {% if processing and processing.bank_source == 'privat' and processing.status in ['starting','processing'] %}
+      <div id="processing-block-privat" style="display:flex;flex-direction:column;gap:10px;padding:15px;background:rgba(0,166,80,0.1);border-radius:8px;border:1px solid #00a650;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="color:#00a650;font-weight:bold;">⏳ {{ 'Аналізуємо файл...' if session.get('lang','uk')=='uk' else 'Analyzing file...' }}</span>
+          <form action="{{ url_for('integration.csv_cancel') }}" method="POST" style="margin:0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <button type="submit" class="btn" style="background:transparent;color:#ff4d4d;border:1px solid #ff4d4d;padding:5px 10px;font-size:12px;">❌ {{ 'Скасувати' if session.get('lang','uk')=='uk' else 'Cancel' }}</button>
+          </form>
+        </div>
+        <div style="font-size:13px;color:#aaa;">{{ processing.message or '' }}</div>
+      </div>
+      {% elif processing and processing.bank_source == 'privat' and processing.status == 'completed' %}
+      <div style="display:flex;flex-direction:column;gap:10px;padding:15px;background:rgba(76,175,80,0.1);border-radius:8px;border:1px solid #4caf50;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="color:#4caf50;font-weight:bold;">{{ get_string('csv_preview_ready') if (processing.count or 0) > 0 else get_string('csv_status_no_tx') }}</span>
+          <div style="display:flex;gap:8px;">
+            {% if (processing.count or 0) > 0 %}
+            <a href="{{ url_for('integration.csv_preview') }}" class="btn" style="background-color:#00a650;color:white;padding:8px 16px;text-decoration:none;border-radius:6px;">{{ get_string('csv_view_btn') }}</a>
+            {% endif %}
+            <form action="{{ url_for('integration.csv_cancel') }}" method="POST" style="margin:0;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <button type="submit" class="btn" style="background:transparent;color:#ff4d4d;border:1px solid #ff4d4d;padding:8px 16px;border-radius:6px;">{{ 'Спробувати знову' if (processing.count or 0)==0 else '✕' }}</button>
+            </form>
+          </div>
+        </div>
+        {% if (processing.count or 0) > 0 %}
+        <div style="font-size:13px;color:#aaa;">{{ get_string('csv_found_count') }} {{ processing.count }}</div>
+        {% endif %}
+      </div>
+      {% else %}
+      <form action="{{ url_for('integration.upload_privat') }}" method="POST" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:10px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <select id="privat-budget-type" style="padding:10px;border-radius:6px;background:var(--input-bg);color:var(--text-color);border:1px solid var(--border-color);">
+          <option value="personal">{{ 'Особистий рахунок' if session.get('lang','uk')=='uk' else 'Personal account' }}</option>
+          <option value="shared" {% if not has_shared_budget or not shared_accounts %}disabled{% endif %}>
+            {{ 'Спільний рахунок' if session.get('lang','uk')=='uk' else 'Shared account' }}{% if not has_shared_budget or not shared_accounts %} {{ 'недоступний' if session.get('lang','uk')=='uk' else 'unavailable' }}{% endif %}
+          </option>
+        </select>
+        <select name="privat_account_id" required class="privat-account-group privat-account-group--active" data-privat-group="personal"
+          style="padding:10px;border-radius:6px;background:var(--input-bg);color:var(--text-color);border:1px solid var(--border-color);">
+          <option value="">{{ get_string('ai_acc_label') }}...</option>
+          {% for acc in accounts %}<option value="{{ acc.id }}">{{ acc.name }}</option>{% endfor %}
+        </select>
+        <select name="privat_account_id" required disabled class="privat-account-group" data-privat-group="shared"
+          style="padding:10px;border-radius:6px;background:var(--input-bg);color:var(--text-color);border:1px solid var(--border-color);">
+          <option value="">{{ get_string('ai_acc_label') }}...</option>
+          {% for acc in shared_accounts %}<option value="{{ acc.id }}">{{ acc.name }}</option>{% endfor %}
+        </select>
+        <input type="file" name="privat_file" accept=".xlsx" required style="color:var(--text-color);font-size:13px;" />
+        <button type="submit" class="btn sync-btn" style="background-color:#00a650;color:white;">
+          📥 {{ 'Імпортувати ПриватБанк' if session.get('lang','uk')=='uk' else 'Import PrivatBank' }}
+        </button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- A-Bank Card -->
+  <div class="bank-card" data-bank="abank" style="border-top: 4px solid #003087">
+    <div class="bank-header">
+      <div class="bank-logo">🔵 А-Банк</div>
+      <span class="status-badge" style="background:rgba(0,48,135,0.15);color:#4a7fd4;border:1px solid #4a7fd4;">
+        XLSX
+      </span>
+    </div>
+    <p style="font-size:14px;color:#aaa;margin-bottom:20px;line-height:1.5;">
+      {% if session.get('lang','uk')=='uk' %}
+        Завантажте виписку у форматі <strong style="color:var(--text-color)">XLSX</strong> з А-Банку.
+        Дата, сума та опис розпізнаються <strong style="color:var(--text-color)">без ШІ</strong> — лише категорії підбираються автоматично.
+      {% else %}
+        Upload a <strong style="color:var(--text-color)">XLSX</strong> statement from A-Bank.
+        Date, amount and description are parsed <strong style="color:var(--text-color)">without AI</strong> — only categories are matched automatically.
+      {% endif %}
+    </p>
+    <div style="margin-top:auto;">
+      {% if processing and processing.bank_source == 'abank' and processing.status in ['starting','processing'] %}
+      <div id="processing-block-abank" style="display:flex;flex-direction:column;gap:10px;padding:15px;background:rgba(0,48,135,0.1);border-radius:8px;border:1px solid #4a7fd4;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="color:#4a7fd4;font-weight:bold;">⏳ {{ 'Аналізуємо файл...' if session.get('lang','uk')=='uk' else 'Analyzing file...' }}</span>
+          <form action="{{ url_for('integration.csv_cancel') }}" method="POST" style="margin:0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <button type="submit" class="btn" style="background:transparent;color:#ff4d4d;border:1px solid #ff4d4d;padding:5px 10px;font-size:12px;">❌ {{ 'Скасувати' if session.get('lang','uk')=='uk' else 'Cancel' }}</button>
+          </form>
+        </div>
+        <div style="font-size:13px;color:#aaa;">{{ processing.message or '' }}</div>
+      </div>
+      {% elif processing and processing.bank_source == 'abank' and processing.status == 'completed' %}
+      <div style="display:flex;flex-direction:column;gap:10px;padding:15px;background:rgba(76,175,80,0.1);border-radius:8px;border:1px solid #4caf50;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="color:#4caf50;font-weight:bold;">{{ get_string('csv_preview_ready') if (processing.count or 0) > 0 else get_string('csv_status_no_tx') }}</span>
+          <div style="display:flex;gap:8px;">
+            {% if (processing.count or 0) > 0 %}
+            <a href="{{ url_for('integration.csv_preview') }}" class="btn" style="background-color:#003087;color:white;padding:8px 16px;text-decoration:none;border-radius:6px;">{{ get_string('csv_view_btn') }}</a>
+            {% endif %}
+            <form action="{{ url_for('integration.csv_cancel') }}" method="POST" style="margin:0;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+              <button type="submit" class="btn" style="background:transparent;color:#ff4d4d;border:1px solid #ff4d4d;padding:8px 16px;border-radius:6px;">{{ 'Спробувати знову' if (processing.count or 0)==0 else '✕' }}</button>
+            </form>
+          </div>
+        </div>
+        {% if (processing.count or 0) > 0 %}
+        <div style="font-size:13px;color:#aaa;">{{ get_string('csv_found_count') }} {{ processing.count }}</div>
+        {% endif %}
+      </div>
+      {% else %}
+      <form action="{{ url_for('integration.upload_abank') }}" method="POST" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:10px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <select id="abank-budget-type" style="padding:10px;border-radius:6px;background:var(--input-bg);color:var(--text-color);border:1px solid var(--border-color);">
+          <option value="personal">{{ 'Особистий рахунок' if session.get('lang','uk')=='uk' else 'Personal account' }}</option>
+          <option value="shared" {% if not has_shared_budget or not shared_accounts %}disabled{% endif %}>
+            {{ 'Спільний рахунок' if session.get('lang','uk')=='uk' else 'Shared account' }}{% if not has_shared_budget or not shared_accounts %} {{ 'недоступний' if session.get('lang','uk')=='uk' else 'unavailable' }}{% endif %}
+          </option>
+        </select>
+        <select name="abank_account_id" required class="abank-account-group abank-account-group--active" data-abank-group="personal"
+          style="padding:10px;border-radius:6px;background:var(--input-bg);color:var(--text-color);border:1px solid var(--border-color);">
+          <option value="">{{ get_string('ai_acc_label') }}...</option>
+          {% for acc in accounts %}<option value="{{ acc.id }}">{{ acc.name }}</option>{% endfor %}
+        </select>
+        <select name="abank_account_id" required disabled class="abank-account-group" data-abank-group="shared"
+          style="padding:10px;border-radius:6px;background:var(--input-bg);color:var(--text-color);border:1px solid var(--border-color);">
+          <option value="">{{ get_string('ai_acc_label') }}...</option>
+          {% for acc in shared_accounts %}<option value="{{ acc.id }}">{{ acc.name }}</option>{% endfor %}
+        </select>
+        <input type="file" name="abank_file" accept=".xlsx" required style="color:var(--text-color);font-size:13px;" />
+        <button type="submit" class="btn sync-btn" style="background-color:#003087;color:white;">
+          📥 {{ 'Імпортувати А-Банк' if session.get('lang','uk')=='uk' else 'Import A-Bank' }}
+        </button>
+      </form>
+      {% endif %}
     </div>
   </div>
 
 </div>
-{% endblock %}
-
-{% block scripts %}
+{% endblock %} {% block scripts %}
 <script>
+  const csvBudgetType = document.getElementById("csv-budget-type");
+  if (csvBudgetType) {
+    csvBudgetType.addEventListener("change", function () {
+      document.querySelectorAll("[data-budget-group]").forEach((select) => {
+        const active = select.dataset.budgetGroup === csvBudgetType.value;
+        select.classList.toggle("active", active);
+        select.disabled = !active;
+      });
+    });
+  }
+
+  // PrivatBank account type switcher
+  const privatBudgetType = document.getElementById("privat-budget-type");
+  if (privatBudgetType) {
+    privatBudgetType.addEventListener("change", function () {
+      document.querySelectorAll("[data-privat-group]").forEach((select) => {
+        const active = select.dataset.privatGroup === privatBudgetType.value;
+        select.classList.toggle("privat-account-group--active", active);
+        select.disabled = !active;
+      });
+    });
+  }
+
+  // A-Bank account type switcher
+  const abankBudgetType = document.getElementById("abank-budget-type");
+  if (abankBudgetType) {
+    abankBudgetType.addEventListener("change", function () {
+      document.querySelectorAll("[data-abank-group]").forEach((select) => {
+        const active = select.dataset.abankGroup === abankBudgetType.value;
+        select.classList.toggle("abank-account-group--active", active);
+        select.disabled = !active;
+      });
+    });
+  }
+
+
+  let pollIntervalId;
+
+  function cancelAndReload() {
+    fetch("{{ url_for('integration.csv_cancel') }}", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+      }
+    }).then(() => location.reload());
+  }
+
+  function updateProcessingStatus() {
+    fetch("{{ url_for('integration.csv_status') }}")
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.status === "completed") {
+          if (pollIntervalId) clearInterval(pollIntervalId);
+          location.reload();
+        } else if (data.status === "error") {
+          if (pollIntervalId) clearInterval(pollIntervalId);
+          restoreAllBankCards();
+          const procBlock = document.getElementById("processing-block");
+          if (procBlock && !procBlock.innerHTML.includes("❌")) {
+             const errorLabel = "{{ 'Помилка аналізу' if session.get('lang')=='uk' else 'Analysis error' }}";
+             const retryLabel = "{{ 'Спробувати знову' if session.get('lang')=='uk' else 'Try again' }}";
+             procBlock.innerHTML = `<div style="color: #ff4d4d; font-weight: bold; margin-bottom: 10px;">❌ ${errorLabel}: ${data.message || "..."}</div><button class="btn" style="background: transparent; color: #ff4d4d; border: 1px solid #ff4d4d; padding: 8px 16px; border-radius: 6px; width: 100%;" onclick="cancelAndReload()">${retryLabel}</button>`;
+             procBlock.style.background = "rgba(255, 77, 77, 0.1)";
+             procBlock.style.border = "1px solid #ff4d4d";
+          }
+        }
+      })
+      .catch((err) => console.error("Status check failed:", err));
+  }
+
+  // Start polling if processing is active
+  const procData = document.getElementById("processing-data");
+  const isProcessing = procData.dataset.isProcessing === "true";
+  const isCompleted = procData.dataset.isCompleted === "true";
+  const bankSource = procData.dataset.bankSource || "";
+
+  if (isProcessing) {
+    setTimeout(updateProcessingStatus, 3000);
+    pollIntervalId = setInterval(updateProcessingStatus, 5000);
+    disableInactiveBankCards(bankSource, false);
+  } else if (isCompleted) {
+    // Preview ready but not yet imported/cancelled — disable other cards
+    disableInactiveBankCards(bankSource, true);
+  }
+
+  function disableInactiveBankCards(activeSource, isCompleted) {
+    const labelProcessing = "{{ 'Зачекайте завершення поточного імпорту' if session.get('lang','uk')=='uk' else 'Wait for current import to finish' }}";
+    const labelCompleted  = "{{ 'Спочатку перегляньте або скасуйте поточний імпорт' if session.get('lang','uk')=='uk' else 'First view or cancel the current import' }}";
+    const label = isCompleted ? labelCompleted : labelProcessing;
+    document.querySelectorAll('.bank-card').forEach(card => {
+      // Use data-bank attribute to identify active card (works in all states)
+      const isActive = card.dataset.bank === activeSource;
+      if (!isActive) {
+        card.style.opacity = '0.45';
+        card.style.pointerEvents = 'none';
+        card.style.filter = 'grayscale(60%)';
+        card.title = label;
+      } else {
+        // Active card: always fully clickable
+        card.style.opacity = '1';
+        card.style.pointerEvents = '';
+        card.style.filter = '';
+        card.title = '';
+      }
+    });
+  }
+
+  function restoreAllBankCards() {
+    document.querySelectorAll('.bank-card').forEach(card => {
+      card.style.opacity = '';
+      card.style.pointerEvents = '';
+      card.style.filter = '';
+      card.title = '';
+    });
+  }
+
   document.querySelectorAll("form").forEach((form) => {
     form.addEventListener("submit", function () {
-      let btn = this.querySelector(".sync-btn") || this.querySelector('button[type="submit"]');
+      let btn =
+        this.querySelector(".sync-btn") ||
+        this.querySelector('button[type="submit"]');
       if (btn && !btn.innerHTML.includes("❌")) {
-        btn.innerHTML = "⏳ {{ 'Обробка...' if session.get('lang')=='uk' else 'Processing...' }}";
+        btn.innerHTML =
+          "⏳ {{ 'Обробка...' if session.get('lang')=='uk' else 'Processing...' }}";
         btn.style.opacity = "0.7";
         btn.style.pointerEvents = "none";
       }

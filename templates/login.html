@@ -1,40 +1,121 @@
 <!doctype html>
 <html lang="{{ session.get('lang', 'uk') }}">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ get_string('login_title') }}</title>
     <style>
-        :root { --bg: #121212; --card: #1e1e1e; --text: #fff; --primary: #4CAF50; }
-        body { background: var(--bg); color: var(--text); font-family: Arial; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: var(--card); padding: 30px; border-radius: 12px; width: 100%; max-width: 350px; box-shadow: 0 8px 20px rgba(0,0,0,0.5); }
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #333; background: #2a2a2a; color: #fff; box-sizing: border-box; }
-        .btn { width: 100%; padding: 12px; background: var(--primary); border: none; border-radius: 8px; color: #fff; font-weight: bold; cursor: pointer; }
-        .link { text-align: center; margin-top: 15px; font-size: 14px; }
-        a { color: var(--primary); text-decoration: none; }
+      :root {
+        --bg: #121212;
+        --card: #1e1e1e;
+        --text: #fff;
+        --primary: #4caf50;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: Arial;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+      }
+      .card {
+        background: var(--card);
+        padding: 30px;
+        border-radius: 12px;
+        width: 100%;
+        max-width: 350px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+      }
+      input {
+        width: 100%;
+        padding: 12px;
+        margin: 10px 0;
+        border-radius: 8px;
+        border: 1px solid #333;
+        background: #2a2a2a;
+        color: #fff;
+        box-sizing: border-box;
+      }
+      .btn {
+        width: 100%;
+        padding: 12px;
+        background: var(--primary);
+        border: none;
+        border-radius: 8px;
+        color: #fff;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      .link {
+        text-align: center;
+        margin-top: 15px;
+        font-size: 14px;
+      }
+      a {
+        color: var(--primary);
+        text-decoration: none;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="card">
-        <div style="display: flex; justify-content: flex-end; margin-bottom: -10px;">
-            <a href="{{ url_for('auth.set_lang', lang='uk') if session.get('lang', 'uk') == 'en' else url_for('auth.set_lang', lang='en') }}" 
-               style="font-size: 12px; opacity: 0.7; color: var(--text);">
-                {{ get_string('nav_lang_btn') }}
-            </a>
-        </div>
-        <h2 style="text-align: center; margin-top: 0;">{{ get_string('login_title') }}</h2>
-        {% with messages = get_flashed_messages() %}{% if messages %}
-            {% for m in messages %}<p style="color: #ff4d4d; font-size: 13px; text-align: center;">{{ m }}</p>{% endfor %}
-        {% endif %}{% endwith %}
-        <form method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="text" name="username" placeholder="{{ get_string('username_label') }}" required>
-            <input type="password" name="password" placeholder="{{ get_string('password_label') }}" required>
-            <button type="submit" class="btn">{{ get_string('login_btn') }}</button>
-        </form>
-        <div class="link">
-            {{ get_string('no_acc_yet') }} <a href="{{ url_for('auth.register') }}">{{ get_string('registration_link') }}</a>
-        </div>
+      <div
+        style="display: flex; justify-content: flex-end; margin-bottom: -10px"
+      >
+        <a
+          href="{{ url_for('auth.set_lang', lang='uk') if session.get('lang', 'uk') == 'en' else url_for('auth.set_lang', lang='en') }}"
+          style="font-size: 12px; opacity: 0.7; color: var(--text)"
+        >
+          {{ get_string('nav_lang_btn') }}
+        </a>
+      </div>
+      <h2 style="text-align: center; margin-top: 0">
+        {{ get_string('login_title') }}
+      </h2>
+      {% with messages = get_flashed_messages() %}{% if messages %} {% for m in
+      messages %}
+      <p style="color: #ff4d4d; font-size: 13px; text-align: center">{{ m }}</p>
+      {% endfor %} {% endif %}{% endwith %} {% if error %}
+      <div
+        style="
+          background: rgba(255, 77, 77, 0.12);
+          border: 1px solid rgba(255, 77, 77, 0.45);
+          color: #ff8a8a;
+          padding: 12px;
+          border-radius: 8px;
+          font-size: 13px;
+          line-height: 1.45;
+          margin-bottom: 12px;
+        "
+      >
+        {{ error | safe }}
+      </div>
+      {% endif %}
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <input
+          type="text"
+          name="username"
+          placeholder="{{ get_string('username_label') }}"
+          required
+        />
+        <input
+          type="password"
+          name="password"
+          placeholder="{{ get_string('password_label') }}"
+          required
+        />
+        <button type="submit" class="btn">{{ get_string('login_btn') }}</button>
+      </form>
+      <div class="link">
+        {{ get_string('no_acc_yet') }}
+        <a href="{{ url_for('auth.register') }}"
+          >{{ get_string('registration_link') }}</a
+        >
+      </div>
     </div>
-</body>
+  </body>
 </html>
