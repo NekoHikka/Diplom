@@ -380,7 +380,7 @@
       @media (max-width: 768px) {
         body { padding: 10px; margin: 0; }
         .card { padding: 15px; margin-bottom: 12px; }
-        .top-menu { flex-direction: column; padding: 10px; gap: 10px; }
+        .top-menu { flex-direction: column; padding: 10px; gap: 10px; margin-bottom: 28px; }
         .user-greeting { max-width: 100%; text-align: center; }
         .page-buttons { width: 100%; justify-content: space-between; gap: 8px; }
         .page-buttons .nav-btn { flex: 1; padding: 0; gap: 0; }
@@ -389,10 +389,15 @@
         .nav-text { display: none; }
         .right-buttons { width: 100%; justify-content: space-between; margin-left: 0; }
         .right-buttons .nav-btn { flex: 1; }
-        .filter-container { align-items: stretch !important; }
-        .filter-scroll, .export-btns { width: 100%; overflow-x: auto; padding-bottom: 2px; }
-        .filter-scroll .btn, .export-btns .btn, .export-btns button { flex: 1; min-width: max-content; }
+        .filter-container { align-items: stretch !important; margin-top: 4px !important; }
+        .filter-scroll { width: 100%; display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px !important; overflow: visible; padding-bottom: 0; }
+        .filter-scroll .btn { min-width: 0; width: 100%; margin-right: 0; padding: 9px 4px; font-size: 13px; white-space: normal; line-height: 1.15; }
+        .export-btns { width: 100%; overflow-x: auto; padding-bottom: 2px; }
+        .export-btns .btn, .export-btns button { flex: 1; min-width: max-content; }
+        .distribution-card { flex: 1 1 100% !important; width: 100% !important; min-width: 0 !important; }
+        .dashboard-split { flex-direction: column !important; }
         .dashboard-split-item { min-width: 0 !important; }
+        .dashboard-split-item > .card { width: 100%; }
         .goal-card { min-width: 0 !important; height: auto; }
         .category-card { min-width: 0 !important; height: auto; }
         .category-card form { flex-wrap: wrap; align-items: stretch !important; }

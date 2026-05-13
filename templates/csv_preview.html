@@ -138,7 +138,7 @@
       {% if end_balance is not none %}
       <div class="balance-info">
         <div style="font-size: 14px; color: #888; margin-bottom: 5px">
-          {{ 'Знайдений баланс у файлі:' if session.get('lang')=='uk' else 'Found balance in file:' }}
+          {{ 'Знайдений баланс у файлі:' if session.get('lang','uk')=='uk' else 'Found balance in file:' }}
         </div>
         <div class="balance-amount">{{ "%.2f"|format(end_balance) }} {{ get_string('currency') }}</div>
         <div class="update-balance">
@@ -150,7 +150,7 @@
                 <path d="M8.5 12.5l2.5 2.5 4.5-5"></path>
               </svg>
             </span>
-            {{ 'Оновити баланс рахунку під час імпорту' if session.get('lang')=='uk' else 'Update account balance on import' }}
+            {{ 'Оновити баланс рахунку під час імпорту' if session.get('lang','uk')=='uk' else 'Update account balance on import' }}
           </label>
         </div>
       </div>
@@ -170,9 +170,9 @@
 
       <div class="select-all">
         <input type="checkbox" id="select-all" class="pretty-check" onchange="toggleAll(this)" />
-        <label for="select-all" style="cursor:pointer;"><strong>{{ 'Вибрати всі' if session.get('lang')=='uk' else 'Select all' }}</strong></label>
+        <label for="select-all" style="cursor:pointer;"><strong>{{ 'Вибрати всі' if session.get('lang','uk')=='uk' else 'Select all' }}</strong></label>
         <span style="margin-left:auto;color:#888;font-size:14px;">
-          {{ 'Вибрано' if session.get('lang')=='uk' else 'Selected' }}: <span id="selected-count">0</span> з {{ transactions|length }}
+          {{ 'Вибрано' if session.get('lang','uk')=='uk' else 'Selected' }}: <span id="selected-count">0</span> з {{ transactions|length }}
         </span>
       </div>
 
@@ -238,7 +238,7 @@
               <path d="M5 12l4 4L19 6"></path>
             </svg>
           </span>
-          {{ 'Імпортувати вибрані' if session.get('lang')=='uk' else 'Import selected' }}
+          {{ 'Імпортувати вибрані' if session.get('lang','uk')=='uk' else 'Import selected' }}
         </button>
         <button type="submit" class="btn btn-danger" formaction="{{ url_for('integration.csv_cancel') }}" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:40px;">
           <span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:currentColor;display:inline-flex;vertical-align:middle;"><svg viewBox="0 0 24 24"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg></span> {{ get_string('cancel') }}
@@ -274,17 +274,17 @@
     const checked = document.querySelectorAll(".transaction-checkbox:checked").length;
     if (checked === 0) {
       if (window.showAppToast) {
-        showAppToast("{{ 'Виберіть хоча б одну транзакцію для імпорту!' if session.get('lang')=='uk' else 'Select at least one transaction!' }}", "warning");
+        showAppToast("{{ 'Виберіть хоча б одну транзакцію для імпорту!' if session.get('lang','uk')=='uk' else 'Select at least one transaction!' }}", "warning");
       }
       return false;
     }
-    const msg = "{{ 'Імпортувати {count} транзакцій?' if session.get('lang')=='uk' else 'Import {count} transactions?' }}".replace('{count}', checked);
+    const msg = "{{ 'Імпортувати {count} транзакцій?' if session.get('lang','uk')=='uk' else 'Import {count} transactions?' }}".replace('{count}', checked);
     if (window.openAppConfirm) {
       openAppConfirm({
-        title: "{{ 'Підтвердіть імпорт' if session.get('lang')=='uk' else 'Confirm import' }}",
+        title: "{{ 'Підтвердіть імпорт' if session.get('lang','uk')=='uk' else 'Confirm import' }}",
         message: msg,
-        confirmText: "{{ 'Імпортувати' if session.get('lang')=='uk' else 'Import' }}",
-        cancelText: "{{ 'Скасувати' if session.get('lang')=='uk' else 'Cancel' }}",
+        confirmText: "{{ 'Імпортувати' if session.get('lang','uk')=='uk' else 'Import' }}",
+        cancelText: "{{ 'Скасувати' if session.get('lang','uk')=='uk' else 'Cancel' }}",
         kind: 'info',
         onConfirm: () => document.querySelector('form[action="{{ url_for('integration.csv_preview') }}"]').submit()
       });
