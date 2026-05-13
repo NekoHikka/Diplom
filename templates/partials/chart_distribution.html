@@ -1,6 +1,13 @@
 <div class="card" style="flex: 0.8; min-width: 250px; text-align: center">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 5px;">
-    <h3 style="margin: 0; white-space: nowrap; font-size: 1rem">{{ get_string('chart_distribution') }}</h3>
+    <h3 style="margin: 0; white-space: nowrap; font-size: 1rem; display:flex; align-items:center; gap:6px;">
+    <span class="title-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24">
+        <path d="M12 3v9l7.5 4"></path>
+        <circle cx="12" cy="12" r="8"></circle>
+      </svg>
+    </span>{{ get_string('chart_distribution') }}
+  </h3>
     <select id="chartTypeToggle" onchange="toggleChart()" class="no-print" style="width: auto; padding: 5px 25px 5px 8px; font-size: 13px; font-weight: bold; border-color: #ff9800; cursor: pointer;">
       <option value="Витрата">{{ get_string('chart_expenses') }}</option>
       <option value="Дохід">{{ get_string('chart_income') }}</option>

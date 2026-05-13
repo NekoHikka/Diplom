@@ -37,13 +37,13 @@
             href="{{ url_for('shared.accept_invite', id=pending_invite.id) }}"
             class="btn"
             style="background-color: #4caf50; color: white; flex: 1"
-            >✅ {{ get_string('shared_accept') }}</a
+            ><span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:currentColor;display:inline-flex;vertical-align:middle;"><svg viewBox="0 0 24 24"><path d="M5 12l4 4L19 6"></path></svg></span> {{ get_string('shared_accept') }}</a
           >
           <a
             href="{{ url_for('shared.reject_invite', id=pending_invite.id) }}"
             class="btn"
             style="background-color: #ff4d4d; color: white; flex: 1"
-            >❌ {{ get_string('shared_reject') }}</a
+            ><span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:currentColor;display:inline-flex;vertical-align:middle;"><svg viewBox="0 0 24 24"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg></span> {{ get_string('shared_reject') }}</a
           >
         </div>
       </div>
@@ -67,7 +67,11 @@
       {% else %}
       <div class="card" style="border-top: 4px solid #2196f3">
         <h3 style="margin-top: 0">{% if session.get('lang', 'uk') == 'uk' %}Надіслати запрошення{% else %}Send invitation{% endif %}</h3>
-        <form action="{{ url_for('shared.send_invite') }}" method="POST">
+        <form
+          action="{{ url_for('shared.send_invite') }}"
+          method="POST"
+          style="display: flex; flex-direction: column; gap: 10px"
+        >
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
           <label
             style="
@@ -90,7 +94,7 @@
             class="btn"
             style="background-color: #2196f3; color: white; width: 100%"
           >
-            {% if session.get('lang', 'uk') == 'uk' %}Надіслати{% else %}Send{% endif %} 🚀
+            <span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:currentColor;display:inline-flex;vertical-align:middle;"><svg viewBox="0 0 24 24"><path d="M4 12l16-8-4 16-4-7-8-1z"></path></svg></span> {% if session.get('lang', 'uk') == 'uk' %}Надіслати{% else %}Send{% endif %}
           </button>
         </form>
       </div>

@@ -28,7 +28,7 @@
 
     <div>
       <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #aaa">{{ get_string('category') }}:</label>
-      <select name="category" id="category_select"></select>
+      <select name="category" id="category_select" data-icon-select></select>
     </div>
 
     <div style="display: flex; gap: 10px">
@@ -59,7 +59,7 @@
 <script>
   const expenseCategories = {{ exp_cats | tojson | safe }};
   const incomeCategories = {{ inc_cats | tojson | safe }};
-  const currentCat = "{{ t.category }}";
+  const currentCat = {{ t.category | tojson }};
 
   function updateCategories() {
     const selectedType = document.getElementById("type_select").value;
@@ -67,11 +67,13 @@
     catObj.innerHTML = "";
     (selectedType === "Витрата" ? expenseCategories : incomeCategories).forEach(cat => {
       let opt = document.createElement("option");
-      opt.value = cat; opt.innerHTML = cat;
+      opt.value = cat; opt.innerHTML = financeCleanLabel(cat);
       if(cat === currentCat) opt.selected = true;
       catObj.appendChild(opt);
     });
+    catObj.dispatchEvent(new Event("change", { bubbles: true }));
   }
   updateCategories();
+  document.addEventListener("DOMContentLoaded", initIconSelects);
 </script>
 {% endblock %}

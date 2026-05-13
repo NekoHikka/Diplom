@@ -10,11 +10,17 @@
     
     <div>
       <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #aaa">{{ get_string('type') }}:</label>
-      <select name="emoji">
-        {% for e in ['💳', '💵', '🏦', '🐖', '🗄️', '📱', '🪙', '💼'] %}
-        <option value="{{ e }}" {% if current_emoji == e %}selected{% endif %}>{{ e }}</option>
-        {% endfor %}
-      </select>
+      <div class="icon-picker" data-icons='{{ icon_choices("account") | tojson }}' style="max-width: 120px;">
+        <input class="icon-picker-input" type="hidden" name="emoji" value="{{ current_emoji }}" />
+        <button type="button" class="icon-picker-trigger" aria-label="Choose account icon">
+          <span class="icon-picker-current item-icon"></span>
+          <svg class="icon-picker-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
+        </button>
+        <div class="icon-picker-panel">
+          <input class="icon-picker-search" type="text" placeholder="Search" />
+          <div class="icon-picker-grid"></div>
+        </div>
+      </div>
     </div>
 
     <div>

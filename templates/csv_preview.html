@@ -25,11 +25,12 @@
   h2 { font-size: 1.4rem; }
   h3 { font-size: 1.1rem; }
   .balance-info {
-    background: #1a1a2e;
+    background: var(--input-bg);
     padding: 15px;
     border-radius: 8px;
     margin-bottom: 15px;
     border: 1px solid var(--border-color);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
   }
   .balance-amount {
     font-size: 2rem;
@@ -55,24 +56,24 @@
   .checkbox {
     width: 18px;
     height: 18px;
-    cursor: pointer;
+
     accent-color: var(--accent);
   }
   .btn {
     padding: 10px 20px;
     border: none;
     border-radius: 8px;
-    cursor: pointer;
+
     font-size: 14px;
     font-weight: 600;
     transition: 0.2s;
   }
-  .btn-primary { background: var(--accent); color: white; }
-  .btn-primary:hover { background: #e68900; }
+  .btn-primary { background: linear-gradient(135deg, #2e7d32, #43a047); color: white; box-shadow: 0 8px 18px rgba(76, 175, 80, 0.22); }
+  .btn-primary:hover { background: linear-gradient(135deg, #256b2a, #388e3c); }
   .btn-secondary { background: var(--input-bg); color: var(--text-color); border: 1px solid var(--border-color); }
   .btn-secondary:hover { background: #3a3a5a; }
-  .btn-danger { background: #f44336; color: white; }
-  .btn-danger:hover { background: #d32f2f; }
+  .btn-danger { background: transparent; color: #ff4d4d; border: 1px solid #ff4d4d; }
+  .btn-danger:hover { background: #ff4d4d; color: white; }
   .actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
   .select-all { margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
   .type-income { color: #4caf50; font-weight: 600; }
@@ -80,30 +81,55 @@
   .empty { text-align: center; padding: 40px; color: #888; }
   .update-balance { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
   .update-balance input { padding: 8px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color); }
-  /* Inline category selector */
-  .cat-select {
-    background: var(--input-bg);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 4px 6px;
+  .csv-category-cell { min-width: 240px; }
+  .csv-category-cell .icon-select { min-width: 220px; max-width: 260px; }
+  .csv-category-cell .icon-select-button {
+    min-height: 38px;
+    border-radius: 8px;
+    padding-top: 6px;
+    padding-bottom: 6px;
     font-size: 13px;
-    max-width: 180px;
-    cursor: pointer;
-    transition: border-color 0.15s;
   }
-  .cat-select:hover, .cat-select:focus { border-color: var(--accent); outline: none; }
+  .csv-category-cell .icon-select .item-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+  }
+  .csv-category-cell .icon-select .item-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+  .csv-category-cell .icon-select-panel {
+    min-width: 260px;
+    max-height: 280px;
+  }
   td { vertical-align: middle; }
 </style>
 {% endblock %} {% block content %}
 <div class="container">
   <div class="header">
-    <h1>📊 {{ get_string('csv_preview_title') or 'Попередній перегляд імпорту' }}</h1>
-    <a href="{{ url_for('integration.integrations') }}" class="btn btn-secondary">← {{ 'Назад' if session.get('lang','uk')=='uk' else 'Back' }}</a>
+    <h1 style="display:flex;align-items:center;gap:8px;margin:0;"><span class="title-icon" aria-hidden="true" style="color:#9c27b0;"><svg viewBox="0 0 24 24"><path d="M6 3h9l5 5v13H6z"></path><path d="M15 3v5h5"></path><path d="M9 12h6"></path><path d="M9 16h6"></path></svg></span>{{ get_string('csv_preview_title') or 'Попередній перегляд імпорту' }}</h1>
+    <a href="{{ url_for('integration.integrations') }}" class="btn btn-secondary">{{ 'Назад' if session.get('lang','uk')=='uk' else 'Back' }}</a>
   </div>
 
   <div class="card">
-    <h2>🏦 {{ get_string('acc_label') }}: {{ account.name }}</h2>
+    <h2 style="display:flex;align-items:center;gap:8px;">
+      <span class="title-icon" aria-hidden="true" style="color:#9c27b0;">
+        <svg viewBox="0 0 24 24">
+          <path d="M4 10h16"></path>
+          <path d="M6 10v9"></path>
+          <path d="M18 10v9"></path>
+          <path d="M9 19v-6"></path>
+          <path d="M15 19v-6"></path>
+          <path d="M12 4l8 6H4z"></path>
+        </svg>
+      </span>
+      {{ get_string("acc_label") }}:
+      <span class="item-with-icon" style="display:inline-flex;align-items:center;gap:8px;">
+        {{ render_item_icon(account.name, 'card') }}
+        <span>{{ display_item_name(account.name) }}</span>
+      </span>
+    </h2>
 
     {% if transactions %}
     <form method="POST" action="{{ url_for('integration.csv_preview') }}">
@@ -116,16 +142,34 @@
         </div>
         <div class="balance-amount">{{ "%.2f"|format(end_balance) }} {{ get_string('currency') }}</div>
         <div class="update-balance">
-          <input type="checkbox" id="update_balance" name="update_balance" value="yes" checked style="width:auto;cursor:pointer;transform:scale(1.2);" />
-          <label for="update_balance" style="cursor:pointer;">{{ 'Оновити баланс рахунку під час імпорту' if session.get('lang')=='uk' else 'Update account balance on import' }}</label>
+          <input type="checkbox" id="update_balance" name="update_balance" value="yes" checked class="pretty-check" />
+          <label for="update_balance" style="cursor:pointer;display:flex;align-items:center;gap:8px;">
+            <span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:#4caf50;display:inline-flex;vertical-align:middle;">
+              <svg viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="9"></circle>
+                <path d="M8.5 12.5l2.5 2.5 4.5-5"></path>
+              </svg>
+            </span>
+            {{ 'Оновити баланс рахунку під час імпорту' if session.get('lang')=='uk' else 'Update account balance on import' }}
+          </label>
         </div>
       </div>
       {% endif %}
 
-      <h3>📋 {{ get_string('csv_found_count') }} {{ transactions|length }}</h3>
+      <h3 style="display:flex;align-items:center;gap:8px;">
+        <span class="title-icon" aria-hidden="true" style="color:#9c27b0;">
+          <svg viewBox="0 0 24 24">
+            <rect x="5" y="4" width="14" height="16" rx="2"></rect>
+            <path d="M8 8h8"></path>
+            <path d="M8 12h8"></path>
+            <path d="M8 16h5"></path>
+          </svg>
+        </span>
+        {{ get_string('csv_found_count') }} {{ transactions|length }}
+      </h3>
 
       <div class="select-all">
-        <input type="checkbox" id="select-all" class="checkbox" onchange="toggleAll(this)" style="width:auto;cursor:pointer;transform:scale(1.2);" />
+        <input type="checkbox" id="select-all" class="pretty-check" onchange="toggleAll(this)" />
         <label for="select-all" style="cursor:pointer;"><strong>{{ 'Вибрати всі' if session.get('lang')=='uk' else 'Select all' }}</strong></label>
         <span style="margin-left:auto;color:#888;font-size:14px;">
           {{ 'Вибрано' if session.get('lang')=='uk' else 'Selected' }}: <span id="selected-count">0</span> з {{ transactions|length }}
@@ -139,7 +183,7 @@
               <th style="width:36px;"></th>
               <th style="width:95px;">{{ get_string('date') }}</th>
               <th style="width:110px;">{{ get_string('type') }}</th>
-              <th style="width:200px;">{{ get_string('category') }} ✏️</th>
+              <th style="width:240px;">{{ get_string('category') }}</th>
               <th>{{ get_string('description') }}</th>
               <th style="width:95px;">{{ get_string('amount') }}</th>
             </tr>
@@ -148,28 +192,35 @@
             {% for tx in transactions %}
             <tr>
               <td>
-                <input type="checkbox" class="checkbox transaction-checkbox" name="selected" value="{{ loop.index0 }}" style="width:auto;cursor:pointer;transform:scale(1.2);" />
+                <input type="checkbox" class="pretty-check checkbox transaction-checkbox" name="selected" value="{{ loop.index0 }}" />
               </td>
               <td style="font-size:13px;">{{ tx.date }}</td>
               <td class="{% if tx.type == 'Дохід' or tx.type == 'Income' %}type-income{% else %}type-expense{% endif %}">
                 {{ get_string('income') if (tx.type == 'Дохід' or tx.type == 'Income') else get_string('expense') }}
               </td>
-              <td>
+              <td class="csv-category-cell">
                 {% if categories %}
                 {# Map English tx.type to Ukrainian DB category type #}
                 {% set db_type = 'Дохід' if (tx.type == 'Income' or tx.type == 'Дохід') else 'Витрата' %}
                 {% set typed_cats = categories | selectattr('type', 'equalto', db_type) | list %}
-                <select name="category_{{ loop.index0 }}" class="cat-select">
+                {% set tx_display = display_item_name(tx.category) %}
+                {% set match = namespace(found=false) %}
+                <select name="category_{{ loop.index0 }}" class="csv-category-select" data-icon-select>
                   {% for cat in typed_cats %}
-                  <option value="{{ cat.name }}" {% if cat.name == tx.category %}selected{% endif %}>{{ cat.name }}</option>
+                  {% set is_match = cat.name == tx.category or display_item_name(cat.name) == tx_display %}
+                  {% if is_match %}{% set match.found = true %}{% endif %}
+                  <option value="{{ cat.name }}" {% if is_match %}selected{% endif %}>{{ display_item_name(cat.name) }}</option>
                   {% endfor %}
                   {# If current category not in the typed list, add it as option #}
-                  {% if tx.category and tx.category not in typed_cats|map(attribute='name')|list %}
-                  <option value="{{ tx.category }}" selected>{{ tx.category }}</option>
+                  {% if tx.category and not match.found %}
+                  <option value="{{ tx.category }}" selected>{{ tx_display }}</option>
                   {% endif %}
                 </select>
                 {% else %}
-                <span style="background:var(--input-bg);padding:4px 8px;border-radius:4px;font-size:13px;">{{ tx.category }}</span>
+                <span class="item-with-icon" style="display:inline-flex;align-items:center;gap:8px;background:var(--input-bg);padding:5px 8px;border-radius:8px;font-size:13px;">
+                  {{ render_item_icon(tx.category) }}
+                  <span>{{ display_item_name(tx.category) }}</span>
+                </span>
                 {% endif %}
               </td>
               <td style="font-size:13px;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ tx.description or '' }}">{{ tx.description or '-' }}</td>
@@ -181,17 +232,29 @@
       </div>
 
       <div class="actions">
-        <button type="submit" class="btn btn-primary" onclick="return confirmImport();">
-          ✅ {{ 'Імпортувати вибрані' if session.get('lang')=='uk' else 'Import selected' }}
+        <button type="submit" class="btn btn-primary" onclick="return confirmImport();" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:40px;">
+          <span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:currentColor;display:inline-flex;vertical-align:middle;">
+            <svg viewBox="0 0 24 24">
+              <path d="M5 12l4 4L19 6"></path>
+            </svg>
+          </span>
+          {{ 'Імпортувати вибрані' if session.get('lang')=='uk' else 'Import selected' }}
         </button>
-        <button type="submit" class="btn btn-danger" formaction="{{ url_for('integration.csv_cancel') }}">
-          ❌ {{ get_string('cancel') }}
+        <button type="submit" class="btn btn-danger" formaction="{{ url_for('integration.csv_cancel') }}" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:40px;">
+          <span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:currentColor;display:inline-flex;vertical-align:middle;"><svg viewBox="0 0 24 24"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg></span> {{ get_string('cancel') }}
         </button>
       </div>
     </form>
     {% else %}
     <div class="empty">
-      <div style="font-size:40px;margin-bottom:10px;">📭</div>
+      <div class="title-icon" aria-hidden="true" style="width:56px;height:56px;margin:0 auto 10px;color:#9c27b0;">
+        <svg viewBox="0 0 24 24">
+          <path d="M4 7h16"></path>
+          <path d="M6 7v11h12V7"></path>
+          <path d="M8 11h8"></path>
+          <path d="M8 15h5"></path>
+        </svg>
+      </div>
       <p>{{ get_string('csv_status_no_tx') }}</p>
     </div>
     {% endif %}
@@ -210,11 +273,23 @@
   function confirmImport() {
     const checked = document.querySelectorAll(".transaction-checkbox:checked").length;
     if (checked === 0) {
-      alert("{{ 'Виберіть хоча б одну транзакцію для імпорту!' if session.get('lang')=='uk' else 'Select at least one transaction!' }}");
+      if (window.showAppToast) {
+        showAppToast("{{ 'Виберіть хоча б одну транзакцію для імпорту!' if session.get('lang')=='uk' else 'Select at least one transaction!' }}", "warning");
+      }
       return false;
     }
     const msg = "{{ 'Імпортувати {count} транзакцій?' if session.get('lang')=='uk' else 'Import {count} transactions?' }}".replace('{count}', checked);
-    return confirm(msg);
+    if (window.openAppConfirm) {
+      openAppConfirm({
+        title: "{{ 'Підтвердіть імпорт' if session.get('lang')=='uk' else 'Confirm import' }}",
+        message: msg,
+        confirmText: "{{ 'Імпортувати' if session.get('lang')=='uk' else 'Import' }}",
+        cancelText: "{{ 'Скасувати' if session.get('lang')=='uk' else 'Cancel' }}",
+        kind: 'info',
+        onConfirm: () => document.querySelector('form[action="{{ url_for('integration.csv_preview') }}"]').submit()
+      });
+    }
+    return false;
   }
   document.querySelectorAll(".transaction-checkbox").forEach(cb => cb.addEventListener("change", updateCount));
 </script>

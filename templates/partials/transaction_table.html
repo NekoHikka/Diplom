@@ -14,8 +14,10 @@
       {{ get_string('delete_all') }}
     </button>
     <div id="bulk-delete-container" style="display: none; transition: 0.3s">
-      <button id="bulk-delete-btn" class="btn" style="background-color: #ff4d4d; color: white; padding: 8px 15px; border-radius: 8px;">
-        🗑️ {{ get_string('delete') }} вибрані (<span id="selected-count">0</span>)
+      <button id="bulk-delete-btn" class="btn" style="background-color: #ff4d4d; color: white; padding: 8px 15px; border-radius: 8px; display:flex; align-items:center; gap:8px;">
+        <span class="action-icon" aria-hidden="true" style="width:16px; height:16px; color:inherit;">
+          <svg viewBox="0 0 24 24"><path d="M4 7h16"></path><path d="M6 7l1 13h10l1-13"></path><path d="M9 7V4h6v3"></path></svg>
+        </span>{{ get_string('delete') }} вибрані (<span id="selected-count">0</span>)
       </button>
     </div>
     </div>
@@ -29,7 +31,7 @@
 
 
         <th style="width: 5%; text-align: center; padding: 12px 0" class="no-print">
-          <input type="checkbox" id="select-all" style="cursor: pointer; transform: scale(1.2); accent-color: #ff4d4d;" />
+          <input type="checkbox" id="select-all" class="pretty-check" />
         </th>
         <th style="width: 12%">{{ get_string('date') }}</th>
         <th style="width: 13%">{{ get_string('acc_label') }}</th>
@@ -43,35 +45,87 @@
       {% for t in transactions %}
       <tr style="border-bottom: 1px solid var(--border-color); height: 40px; font-size: 14px;">
         <td style="text-align: center" class="no-print">
-          <input type="checkbox" class="transaction-checkbox" value="{{ t.id }}" style="cursor: pointer; transform: scale(1.2); accent-color: #ff4d4d;" />
+          <input type="checkbox" class="pretty-check transaction-checkbox" value="{{ t.id }}" />
         </td>
         <td style="color: #aaa">{{ t.date.strftime('%d.%m.%Y') }}</td>
-        <td style="color: #ff9800; font-weight: bold">{{ translate_name(t.account.name) if t.account else '---' }}</td>
-        {% if is_shared_view %}<td style="color: #4db8ff; font-weight: bold; font-size: 13px">👤 {{ t.user.username }}</td>{% endif %}
+        <td style="color: #ff9800; font-weight: bold">
+          {% if t.account %}
+          <span class="item-with-icon">
+            {{ render_item_icon(t.account.name, 'card') }}
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#ff9800;">{{ translate_name(t.account.name) }}</span>
+          </span>
+          {% else %}---{% endif %}
+        </td>
+        {% if is_shared_view %}<td style="color: #4db8ff; font-weight: bold; font-size: 13px">
+          <span class="action-icon" aria-hidden="true" style="width:14px;height:14px; margin-right:4px; color:inherit;">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"></circle><path d="M5 20c1.5-3.5 4.2-5 7-5s5.5 1.5 7 5"></path></svg>
+          </span>{{ t.user.username }}
+        </td>{% endif %}
         <td style="color: {% if t.type == 'Витрата' or t.type == 'Expense' %}#ff4d4d{% else %}#4CAF50{% endif %}; font-weight: bold;">
           {{ get_string('income') if (t.type == 'Дохід' or t.type == 'Income') else get_string('expense') }}
         </td>
-        <td>{{ translate_name(t.category) }}</td>
+        <td>
+          <span class="item-with-icon">
+            {{ render_item_icon(t.category) }}
+            <span>{{ translate_name(t.category) }}</span>
+          </span>
+        </td>
         <td>{{ t.amount if t.amount % 1 != 0 else t.amount|int }} {{ get_string('currency') }}</td>
         <td style="word-wrap: break-word">{{ t.description }}</td>
         <td style="text-align: center" class="no-print">
-          <a href="{{ url_for('budget.edit_transaction_route', id=t.id) }}" style="text-decoration: none; margin-right: 10px; font-size: 16px;">✏️</a>
-          <a href="{{ url_for('budget.delete_transaction_route', id=t.id) }}" style="text-decoration: none; font-size: 16px" class="optimistic-delete" onclick="return confirm('{{ get_string('delete') }} {{ get_string('transactions')|lower }}?');">🗑️</a>
+          <a href="{{ url_for('budget.edit_transaction_route', id=t.id) }}" style="text-decoration: none; margin-right: 10px; font-size: 16px; color:#2196f3;" aria-label="Edit transaction">
+            <span class="action-icon" aria-hidden="true" style="width:16px; height:16px; color:inherit;">
+              <svg viewBox="0 0 24 24">
+                <path d="M4 20h4l10-10-4-4L4 16z"></path>
+                <path d="M13 7l4 4"></path>
+              </svg>
+            </span>
+          </a>
+          <a href="{{ url_for('budget.delete_transaction_route', id=t.id) }}" style="text-decoration: none; font-size: 16px; color:#ff4d4d;" class="optimistic-delete" data-confirm-message="{{ get_string('delete') }} {{ get_string('transactions')|lower }}?" data-confirm-title="{{ get_string('delete') }} {{ get_string('transactions')|lower }}" data-confirm-ok="{{ get_string('delete') }}" data-confirm-cancel="{{ get_string('cancel') }}" aria-label="Delete transaction">
+            <span class="action-icon" aria-hidden="true" style="width:16px; height:16px; color:inherit;">
+              <svg viewBox="0 0 24 24">
+                <path d="M4 7h16"></path>
+                <path d="M6 7l1 13h10l1-13"></path>
+                <path d="M9 7V4h6v3"></path>
+              </svg>
+            </span>
+          </a>
         </td>
       </tr>
       {% endfor %}
     </table>
     {% else %}
     <div style="text-align: center; padding: 40px 20px; color: #aaa; border-top: 1px solid var(--border-color);">
-      <div style="font-size: 40px; margin-bottom: 10px">📭</div>
-      <p style="margin: 0; font-size: 18px; font-weight: bold">{{ get_string('history_empty') }}</p>
+      <div style="font-size: 40px; margin-bottom: 10px; color:#9c27b0;">
+      <span class="title-icon" aria-hidden="true" style="width:1.8em;height:1.8em; margin-right:0; color:#9c27b0;">
+        <svg viewBox="0 0 24 24">
+          <path d="M5 7h14"></path>
+          <path d="M7 7v12h10V7"></path>
+          <path d="M9 11h6"></path>
+          <path d="M9 14h4"></path>
+        </svg>
+      </span>
+    </div>
+      <p style="margin: 0; font-size: 18px; font-weight: bold; display:flex; align-items:center; justify-content:center; gap:8px;">
+      <span class="title-icon" aria-hidden="true" style="width:1.2em;height:1.2em; margin-right:0; color:#9c27b0;">
+        <svg viewBox="0 0 24 24">
+          <path d="M5 7h14"></path>
+          <path d="M7 7v12h10V7"></path>
+          <path d="M9 11h6"></path>
+          <path d="M9 14h4"></path>
+        </svg>
+      </span>{{ get_string('history_empty') }}
+    </p>
       <p style="font-size: 14px; margin-top: 5px">{{ get_string('history_empty_desc') }}</p>
     </div>
     {% endif %}
     {% if total_pages and total_pages > 1 %}
     <div class="pagination no-print" style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 10px; flex-wrap: wrap;">
       {% if page > 1 %}
-      <a href="?page={{ page - 1 }}{% if request.args.get('filter') %}&filter={{ request.args.get('filter') }}{% endif %}" class="btn" style="background-color: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); padding: 5px 15px;">⬅️ Попередня</a>
+      <a href="?page={{ page - 1 }}{% if request.args.get('filter') %}&filter={{ request.args.get('filter') }}{% endif %}" class="btn" style="background-color: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); padding: 5px 15px; display:flex; align-items:center; gap:6px;">
+        <span class="action-icon" aria-hidden="true" style="width:14px;height:14px; color:inherit;">
+          <svg viewBox="0 0 24 24"><path d="M14 6l-6 6 6 6"></path></svg>
+        </span>Попередня</a>
       {% endif %}
 
       <label style="font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px;">
@@ -91,7 +145,10 @@
       </label>
 
       {% if page < total_pages %}
-      <a href="?page={{ page + 1 }}{% if request.args.get('filter') %}&filter={{ request.args.get('filter') }}{% endif %}" class="btn" style="background-color: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); padding: 5px 15px;">Наступна ➡️</a>
+      <a href="?page={{ page + 1 }}{% if request.args.get('filter') %}&filter={{ request.args.get('filter') }}{% endif %}" class="btn" style="background-color: var(--card-bg); color: var(--text-color); border: 1px solid var(--border-color); padding: 5px 15px; display:flex; align-items:center; gap:6px;">Наступна
+        <span class="action-icon" aria-hidden="true" style="width:14px;height:14px; color:inherit;">
+          <svg viewBox="0 0 24 24"><path d="M10 6l6 6-6 6"></path></svg>
+        </span></a>
       {% endif %}
     </div>
     {% endif %}

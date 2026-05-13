@@ -34,6 +34,9 @@ def add_receipt_ai():
         existing_cats = get_multi_user_categories(user_ids, is_shared=is_shared)
 
         transactions_data = AIService.recognize_receipt(file.stream, existing_cats, user_prompt)
+        if transactions_data == AIService.QUOTA_EXHAUSTED:
+            flash(get_string('error_ai_quota'), "error")
+            return redirect(url_for('shared.shared_budget' if is_shared else 'budget.home'))
         
         acc = get_account_by_id(account_id)
         if acc and transactions_data:
@@ -42,7 +45,7 @@ def add_receipt_ai():
             for tx_idx, td in enumerate(transactions_data):
                 amount = round(abs(float(td.get('amount', 0))), 2) 
                 t_type = td.get('type', 'Витрата')
-                description = td.get('description', 'Розпізнано ШІ 🤖')
+                description = td.get('description', 'Розпізнано по фото')
                 cat_name = ai_category_choices.get(tx_idx) or resolve_category_name(
                     td.get('category', 'Інше'),
                     t_type,

@@ -10,7 +10,15 @@
     "
   >
     <h3 style="margin: 0; white-space: nowrap; font-size: 1.1rem">
-      💳 {{ get_string('accounts') }}
+      <span class="title-icon" aria-hidden="true" style="color:#4db8ff;">
+        <svg viewBox="0 0 24 24">
+          <path d="M4 7h16v10H4z"></path>
+          <path d="M7 11h3"></path>
+          <path d="M7 14h6"></path>
+          <path d="M7 4.5V7"></path>
+          <path d="M17 4.5V7"></path>
+        </svg>
+      </span>{{ get_string('accounts') }}
     </h3>
     <span
       style="
@@ -52,7 +60,12 @@
           text-overflow: ellipsis;
           max-width: 50%;
         "
-        >{{ translate_name(acc.name) }}</strong
+        >
+          <span class="item-with-icon" style="color:#ff9800;">
+            {{ render_item_icon(acc.name, 'card') }}
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-color);">{{ translate_name(acc.name) }}</span>
+          </span>
+        </strong
       >
       <div
         style="display: flex; align-items: center; gap: 12px; flex-shrink: 0"
@@ -64,14 +77,17 @@
           <a
             href="{{ url_for('budget.edit_account', id=acc.id) }}"
             style="text-decoration: none; margin-right: 5px"
-            >✏️</a
+            ><span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:currentColor;display:inline-flex;vertical-align:middle;"><svg viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16v4z"></path><path d="M13 7l4 4"></path></svg></span></a
           >
           <a
             href="{{ url_for('budget.delete_account_route', id=acc.id) }}"
             style="text-decoration: none"
             class="optimistic-delete"
-            onclick="return confirm('{{ get_string('delete') }} {{ get_string('acc_label')|lower }}?');"
-            >❌</a
+            data-confirm-message="{{ get_string('delete') }} {{ get_string('acc_label')|lower }}?"
+            data-confirm-title="{{ get_string('delete') }} {{ get_string('acc_label')|lower }}"
+            data-confirm-ok="{{ get_string('delete') }}"
+            data-confirm-cancel="{{ get_string('cancel') }}"
+            ><span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:currentColor;display:inline-flex;vertical-align:middle;"><svg viewBox="0 0 24 24"><path d="M4 7h16"></path><path d="M6 7l1 13h10l1-13"></path><path d="M9 7V4h6v3"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></svg></span></a
           >
         </span>
       </div>
@@ -91,26 +107,17 @@
       name="is_shared"
       value="{{ 'true' if is_shared_view else 'false' }}"
     />
-    <select
-      name="emoji"
-      style="
-        width: 70px;
-        padding: 8px;
-        border-radius: 8px;
-        border: 1px solid var(--border-color);
-        background: var(--input-bg);
-        color: var(--text-color);
-      "
-    >
-      <option value="💳">💳</option>
-      <option value="💵">💵</option>
-      <option value="🏦">🏦</option>
-      <option value="💖">💖</option>
-      <option value="🗄️">🗄️</option>
-      <option value="📱">📱</option>
-      <option value="🪙">🪙</option>
-      <option value="💼">💼</option>
-    </select>
+    <div class="icon-picker" data-icons='{{ icon_choices("account") | tojson }}' style="width: 86px; flex-shrink: 0;">
+      <input class="icon-picker-input" type="hidden" name="emoji" value="icon:card" />
+      <button type="button" class="icon-picker-trigger" aria-label="Choose account icon">
+        <span class="icon-picker-current item-icon"></span>
+        <svg class="icon-picker-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
+      </button>
+      <div class="icon-picker-panel">
+        <input class="icon-picker-search" type="text" placeholder="Search" />
+        <div class="icon-picker-grid"></div>
+      </div>
+    </div>
     <input
       type="text"
       name="name"

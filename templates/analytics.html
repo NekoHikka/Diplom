@@ -27,17 +27,39 @@
 
     <div class="grid">
       <div class="card">
-        <h3 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">{{ get_string('stats_title', days=period_days) }}</h3>
+        <h3 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; display:flex; align-items:center; gap:8px;">
+        <span class="title-icon" aria-hidden="true" style="color:#9c27b0;">
+          <svg viewBox="0 0 24 24">
+            <rect x="4" y="5" width="16" height="15" rx="2"></rect>
+            <path d="M8 3v4"></path>
+            <path d="M16 3v4"></path>
+            <path d="M4 9h16"></path>
+          </svg>
+        </span>{{ get_string('stats_title', days=period_days) }}</h3>
         <p><strong>{{ get_string('total_expense_label') }}</strong> <span style="font-size: 18px; color: #ff4d4d">{{ total_expense if total_expense % 1 != 0 else total_expense|int }} {{ get_string('currency') }}</span></p>
-        <p><strong>{{ get_string('top_category') }}:</strong> {{ translate_name(top_category) }} ({{ top_category_amount if top_category_amount % 1 != 0 else top_category_amount|int }} {{ get_string('currency') }})</p>
+        <p style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin: 10px 0 0;">
+          <strong>{{ get_string('top_category') }}:</strong>
+          <span class="item-with-icon" style="color:#9c27b0;">
+            {{ render_item_icon(top_category) }}
+            <span>{{ top_category_display }}</span>
+          </span>
+          <span>({{ top_category_amount if top_category_amount % 1 != 0 else top_category_amount|int }} {{ get_string('currency') }})</span>
+        </p>
         <p><strong>{{ get_string('daily_avg') }}:</strong> {{ smart_daily_avg }} {{ get_string('unit_per_day') }}</p>
         <p><strong>{{ get_string('budget_runway') }}</strong> {{ budget_forecast }}</p>
       </div>
 
       <div class="card">
-        <h3 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">{{ get_string('trends_title') }}</h3>
-        {% if trend_msg %}<p style="color: {{ trend_color }}; font-weight: bold; font-size: 16px;">{{ trend_msg }}</p>
+        <h3 style="margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; display:flex; align-items:center; gap:8px;">
+        <span class="title-icon" aria-hidden="true" style="color:#2196f3;">
+          <svg viewBox="0 0 24 24">
+            <path d="M4 17l5-5 4 4 7-9"></path>
+            <path d="M15 7h5v5"></path>
+          </svg>
+        </span>{{ get_string('trends_title') }}</h3>
+        {% if trend_msg %}<p style="color: {{ trend_color }}; font-weight: bold; font-size: 16px; margin-bottom: 6px;">{{ trend_msg }}</p>
         {% else %}<p style="color: #aaa">{{ get_string('no_trends_data') }}</p>{% endif %}
+        <p style="font-size: 12px; color: #888; margin: 0 0 12px;">{{ get_string('trend_compare_hint', days=period_days) }}</p>
         <h4 style="margin-bottom: 5px">{{ get_string('system_observations') }}</h4>
         <ul style="padding-left: 20px; margin-top: 5px">
           {% for rec in recommendations %}<li style="margin-bottom: 5px">{{ rec }}</li>{% endfor %}
@@ -48,7 +70,17 @@
     <!-- Доходи vs Витрати chart -->
     <div class="card">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-        <h3 style="margin: 0;">📊 {{ 'Доходи vs Витрати' if session.get('lang','uk') == 'uk' else 'Income vs Expenses' }}</h3>
+<h3 style="margin: 0; display:flex; align-items:center; gap:8px;">
+        <span class="title-icon" aria-hidden="true" style="color:#2196f3;">
+          <svg viewBox="0 0 24 24">
+            <path d="M7 7h10"></path>
+            <path d="M7 17h10"></path>
+            <path d="M9 5l-2 2 2 2"></path>
+            <path d="M15 13l2 2-2 2"></path>
+            <path d="M7 9h10"></path>
+            <path d="M7 15h10"></path>
+          </svg>
+        </span>{{ 'Доходи vs Витрати' if session.get('lang','uk') == 'uk' else 'Income vs Expenses' }}</h3>
         <div style="display: flex; gap: 6px;">
           {% for months, label in [(3, '3 міс'), (6, '6 міс'), (12, '1 рік')] %}
           <button onclick="renderHistoryChart({{ months }})" id="hist-btn-{{ months }}" class="btn" style="padding: 6px 12px; font-size: 12px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--border-color);">{{ label }}</button>
@@ -61,8 +93,14 @@
     </div>
 
     <!-- Health Score Widget (Gamification) -->
-    <div class="card" style="text-align: center; background: linear-gradient(135deg, rgba(156, 39, 176, 0.1), rgba(33, 150, 243, 0.1)); border: 1px solid rgba(156, 39, 176, 0.3);">
-      <h3 style="margin-top: 0;">{{ get_string('health_title') }}</h3>
+    <div class="card" style="text-align: center; background: var(--card-bg); border: 1px solid var(--border-color);">
+      <h3 style="margin-top: 0; display:flex; align-items:center; justify-content:center; gap:8px;">
+      <span class="title-icon" aria-hidden="true" style="color:#9c27b0;">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 21s-7-4.4-7-10.2A4.8 4.8 0 0 1 12 7a4.8 4.8 0 0 1 7 3.8C19 16.6 12 21 12 21z"></path>
+          <path d="M7.5 12h2.5l1.5-3 2.5 6 1.5-3h2.5"></path>
+        </svg>
+      </span>{{ get_string('health_title') }}</h3>
       {% set score_color = '#4CAF50' if health_score >= 70 else '#ff9800' if health_score >= 40 else '#ff4d4d' %}
       {% set circumference = 251.2 %}
       {% set filled = (health_score / 100 * circumference) | round(1) %}
@@ -87,12 +125,22 @@
       <p style="font-size: 14px; margin: 0; font-weight: 500;">
         {% if health_score >= 80 %}{{ get_string('health_great') }}{% elif health_score >= 50 %}{{ get_string('health_good') }}{% else %}{{ get_string('health_bad') }}{% endif %}
       </p>
+      <p style="font-size: 12px; color: #888; margin: 10px 0 0; line-height: 1.5;">
+        {{ get_string('health_note') }}
+      </p>
     </div>
 
 
 
     <div class="card no-print" style="border: 1px solid #9c27b0;">
-      <h3 style="color: #9c27b0; margin-top: 0">{{ get_string('ai_analyst_title') }}</h3>
+      <h3 style="color: #9c27b0; margin-top: 0; display:flex; align-items:center; gap:8px;">
+      <span class="title-icon" aria-hidden="true" style="color:#9c27b0;">
+        <svg viewBox="0 0 24 24">
+          <path d="M8 5l1.5 3.5L13 10l-3.5 1.5L8 15l-1.5-3.5L3 10l3.5-1.5L8 5z"></path>
+          <path d="M17 7l.9 2.1L20 10l-2.1.9L17 13l-.9-2.1L14 10l2.1-.9L17 7z"></path>
+          <path d="M12 14l1 2.5L15.5 18l-2.5 1L12 21l-1-2.5L8.5 18l2.5-1L12 14z"></path>
+        </svg>
+      </span>{{ get_string('ai_analyst_title') }}</h3>
       <p style="font-size: 14px; color: #aaa">{{ get_string('ai_analyst_desc') }}</p>
 
       <form action="{{ url_for('ai.analyze_ai') }}" method="POST" style="margin-top: 20px">
@@ -102,7 +150,12 @@
 
         <div style="display: flex; gap: 10px; flex-wrap: wrap">
           {% for type, color in [('eval', '#9c27b0'), ('savings', '#2196f3'), ('runway', '#ff9800'), ('goals', '#4caf50')] %}
-          <button type="submit" name="analysis_type" value="{{ type }}" class="btn ai-btn" style="background-color: {{ color }}; color: white; flex: 1; min-width: 200px;">{{ get_string('ai_btn_' ~ type) }}</button>
+          <button type="submit" name="analysis_type" value="{{ type }}" class="btn ai-btn" style="background-color: {{ color }}; color: white; flex: 1; min-width: 200px; display:flex; align-items:center; justify-content:center; gap:8px;">
+          <span class="action-icon" aria-hidden="true" style="width:16px; height:16px; color:currentColor;">
+            <svg viewBox="0 0 24 24">
+              {% if type == 'eval' %}<path d="M5 19V10"></path><path d="M12 19V5"></path><path d="M19 19v-7"></path>{% elif type == 'savings' %}<path d="M5 11c0-3.3 2.7-6 6-6h2c3.3 0 6 2.7 6 6v2c0 2.2-1.8 4-4 4h-1l-2 3-2-3H9c-2.2 0-4-1.8-4-4z"></path><path d="M9 11h6"></path><path d="M10 8h4"></path>{% elif type == 'runway' %}<path d="M12 4a8 8 0 1 1-8 8"></path><path d="M12 12l3-3"></path><path d="M12 12h4"></path>{% else %}<circle cx="12" cy="12" r="8"></circle><path d="M12 8v8"></path><path d="M8 12h8"></path>{% endif %}
+            </svg>
+          </span>{{ get_string('ai_btn_' ~ type) }}</button>
           {% endfor %}
         </div>
       </form>
@@ -115,7 +168,14 @@
     </div>
 
     <div class="card" style="text-align: center">
-      <h3 style="margin-top: 0; margin-bottom: 15px;">{{ get_string('chart_dist') }}</h3>
+      <h3 style="margin-top: 0; margin-bottom: 15px; display:flex; align-items:center; justify-content:center; gap:8px;">
+      <span class="title-icon" aria-hidden="true" style="color:#2196f3;">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 3v9l7.5 4"></path>
+          <circle cx="12" cy="12" r="8"></circle>
+          <path d="M12 3a9 9 0 1 1-9 9"></path>
+        </svg>
+      </span>{{ get_string('chart_dist') }}</h3>
       {% if values|length > 0 %}
       <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
         <div style="position: relative; width: 250px; height: 250px; margin: 0 auto;"><canvas id="analyticsChart"></canvas></div>
@@ -202,7 +262,9 @@
               const lastClick = localStorage.getItem(lastAiClickKey);
               if (lastClick && Date.now() - parseInt(lastClick) < AI_BTN_COOLDOWN) {
                   const remaining = Math.ceil((AI_BTN_COOLDOWN - (Date.now() - parseInt(lastClick))) / 1000);
-                  alert(`Зачекайте ${remaining} сек перед наступним ШІ-аналізом (ліміт).`);
+                  if (window.showAppToast) {
+                    showAppToast("{{ get_string('ai_cooldown', remaining='__R__') }}".replace('__R__', remaining), 'warning');
+                  }
                   return;
               }
               localStorage.setItem(lastAiClickKey, Date.now().toString());
@@ -226,7 +288,7 @@
                           responsive: true, maintainAspectRatio: false,
                           plugins: {
                               legend: { display: false },
-                              tooltip: { callbacks: { label: (c) => c.label + ': ' + c.parsed.toLocaleString('uk-UA') + ' {{ get_string("currency") }} (' + ((c.parsed / totalSum) * 100).toFixed(1) + '%)' } }
+                              tooltip: { enabled: false, external: financeDoughnutTooltip }
                           }
                       }
                   });
@@ -234,9 +296,9 @@
                   if (legend) {
                       const colors = {{ chart_colors | tojson | safe }};
                       legend.innerHTML = labels.map((label, i) => {
-                          const safeLabel = String(label).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+                          const safeLabel = financeCleanLabel(label).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
                           return `<span title="${safeLabel}" style="display: inline-flex; align-items: center; gap: 6px; max-width: 190px; font-size: 12px; color: var(--text-color);">
-                              <i style="width: 10px; height: 10px; border-radius: 50%; background: ${colors[i]}; flex: 0 0 auto;"></i>
+                              <span style="color: ${colors[i]};">${financeIconHtml(label)}</span>
                               <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${safeLabel}</span>
                           </span>`;
                       }).join('');

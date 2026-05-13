@@ -16,7 +16,7 @@
       </select>
     </div>
 
-    <select name="category" id="category_select" required></select>
+    <select name="category" id="category_select" required data-icon-select></select>
 
     <div style="display: flex; gap: 10px">
       <input type="text" inputmode="decimal" name="amount" placeholder="{{ get_string('amount') }} {{ get_string('ph_amount') }}" required style="flex: 1" oninput="formatMoneyInput(this)" />
@@ -26,7 +26,14 @@
 
     <div style="display: flex; gap: 10px; margin-top: 5px">
       <button type="submit" class="btn optimistic-submit" style="background-color: #4caf50; color: white; flex: 2">{{ get_string('btn_record') }}</button>
-      <button type="button" class="btn" style="background-color: #9c27b0; color: white; flex: 1; display: flex; justify-content: center; align-items: center; gap: 5px;" onclick="document.getElementById('ai-modal').style.display = 'flex'">{{ get_string('btn_ai_auto') }}</button>
+      <button type="button" class="btn" style="background-color: #9c27b0; color: white; flex: 1; display: flex; justify-content: center; align-items: center; gap: 6px;" onclick="document.getElementById('ai-modal').style.display = 'flex'">
+        <span class="action-icon" aria-hidden="true" style="width:16px;height:16px;color:currentColor;">
+          <svg viewBox="0 0 24 24">
+            <path d="M4 8h4l2-3h4l2 3h4v11H4z"></path>
+            <circle cx="12" cy="13" r="4"></circle>
+          </svg>
+        </span>{{ get_string('btn_ai_auto') }}
+      </button>
     </div>
   </form>
 </div>

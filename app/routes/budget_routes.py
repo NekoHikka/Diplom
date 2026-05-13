@@ -19,6 +19,7 @@ from app.repositories.user_repository import get_user_by_id
 from app.models import get_current_time
 from app.config import Config
 from app.utils.strings import get_string
+from app.utils.icons import display_item_name, icon_value, parse_icon_value, split_icon_name
 
 budget_bp = Blueprint('budget', __name__)
 
@@ -26,15 +27,16 @@ budget_bp = Blueprint('budget', __name__)
 @login_required
 def home():
     if not get_categories_by_user(current_user.id, is_shared=False):
-        cats = [('food', 'Витрата'), ('transport', 'Витрата'), ('home', 'Витрата'), ('coffee', 'Витрата'),
-                ('health', 'Витрата'), ('entertainment', 'Витрата'), ('tech', 'Витрата'), ('clothes', 'Витрата'),
-                ('utilities', 'Витрата'), ('groceries', 'Витрата'), ('salary', 'Дохід'), ('gift', 'Дохід'),
-                ('investments', 'Дохід'), ('cashback', 'Дохід')]
-        for i, (key, t) in enumerate(cats):
-            create_category(get_string('categories')[key], t, current_user.id, False, Config.COLORS_PALETTE[i % len(Config.COLORS_PALETTE)])
+        cats = [('food', 'Витрата', 'cart'), ('transport', 'Витрата', 'car'), ('home', 'Витрата', 'home'), ('coffee', 'Витрата', 'coffee'),
+                ('health', 'Витрата', 'health'), ('entertainment', 'Витрата', 'gamepad'), ('tech', 'Витрата', 'folder'), ('clothes', 'Витрата', 'shirt'),
+                ('utilities', 'Витрата', 'home'), ('groceries', 'Витрата', 'cart'), ('salary', 'Дохід', 'salary'), ('gift', 'Дохід', 'gift'),
+                ('investments', 'Дохід', 'trending'), ('cashback', 'Дохід', 'salary')]
+        for i, (key, t, icon_id) in enumerate(cats):
+            create_category(f"{icon_value(icon_id)} {display_item_name(get_string('categories')[key])}", t, current_user.id, False, Config.COLORS_PALETTE[i % len(Config.COLORS_PALETTE)])
+        create_category(f"{icon_value('salary')} {display_item_name(get_string('categories')['income_transfer'])}", 'Дохід', current_user.id, False, Config.COLORS_PALETTE[len(cats) % len(Config.COLORS_PALETTE)])
 
     if not get_accounts_by_user(current_user.id, is_shared=False):
-        create_account(get_string('default_account'), 0.0, current_user.id, False)
+        create_account(f"{icon_value('wallet')} {display_item_name(get_string('default_account'))}", 0.0, current_user.id, False)
 
     pending_invite = get_pending_invite_received(current_user.id)
     invite_sender = get_user_by_id(pending_invite.user1_id) if pending_invite else None
@@ -114,8 +116,8 @@ def home():
                            inc_labels=inc_labels, inc_values=inc_values, inc_colors=inc_colors,
                            random_color=get_stable_color("newcategory"), balance=total_balance,
                            accounts=user_accounts, goals=goals_data,
-                           exp_cats=[translate_name(c.name) for c in user_categories if c.type=='Витрата'],
-                           inc_cats=[translate_name(c.name) for c in user_categories if c.type=='Дохід'],
+                           exp_cats=[c.name for c in user_categories if c.type=='Витрата'],
+                           inc_cats=[c.name for c in user_categories if c.type=='Дохід'],
                            user_categories=user_categories, current_filter=f, filter_name=filter_name,
                            pending_invite=pending_invite, invite_sender=invite_sender,
                            page=page, total_pages=total_pages)
@@ -210,7 +212,7 @@ def add_account_route():
     if not name:
         flash(get_string('error_no_name'), "error")
         return redirect(url_for('shared.shared_budget' if is_shared else 'budget.home'))
-    emoji = request.form.get('emoji', '💳')
+    emoji = request.form.get('emoji', icon_value('card'))
     balance_str = request.form.get('balance', '').replace(',', '.').strip()
     balance = round(float(balance_str), 2) if balance_str else 0.0
     create_account(f"{emoji} {name}", balance, current_user.id, is_shared)
@@ -238,7 +240,7 @@ def add_category_route():
     partner = get_active_partnership(current_user.id)
     uid = (partner.user1_id if partner.user2_id == current_user.id else partner.user2_id) if is_shared and partner else current_user.id
 
-    emoji = request.form.get('emoji', '📂')
+    emoji = request.form.get('emoji', icon_value('folder'))
     color = request.form.get('color', random.choice(Config.COLORS_PALETTE))
     create_category(f"{emoji} {name}", request.form['type'], uid, is_shared, color)
     return redirect(url_for('shared.shared_budget' if is_shared else 'budget.home'))
@@ -258,7 +260,24 @@ def update_category_color_route(id):
 @login_required
 def delete_category_route(id):
     cat = get_category_by_id(id)
-    if cat: delete_category(cat)
+    if cat:
+        update_balance = request.args.get('update_balance', '1') == '1'
+        partner = get_active_partnership(current_user.id)
+        user_ids = [current_user.id, partner.user1_id if partner.user2_id == current_user.id else partner.user2_id] if partner else [current_user.id]
+        from app.repositories.transaction_repository import get_transactions_by_users_and_scope, delete_multiple_transactions
+        from app.repositories.account_repository import get_account_by_id, update_account_balance
+        transactions = get_transactions_by_users_and_scope(user_ids, cat.is_shared)
+        associated_txs = [t for t in transactions if t.category == cat.name]
+        if associated_txs:
+            if update_balance:
+                for t in associated_txs:
+                    acc = get_account_by_id(t.account_id)
+                    if acc:
+                        rev_type = 'Дохід' if (t.type == 'Витрата' or t.type == 'Expense') else 'Витрата'
+                        update_account_balance(acc, t.amount, rev_type)
+            delete_multiple_transactions(associated_txs)
+
+        delete_category(cat)
     return redirect(request.referrer or url_for('budget.home'))
 
 @budget_bp.route('/add_goal', methods=['POST'])
@@ -299,15 +318,15 @@ def edit_account(id):
         if not name:
             flash(get_string('error_no_name'), "error")
             return redirect(url_for('budget.edit_account', id=id))
-        emoji = request.form.get('emoji', '💳')
+        emoji = request.form.get('emoji', icon_value('card'))
         acc.name = f"{emoji} {name}"
         acc.balance = round(float(str(request.form.get('balance', acc.balance)).replace(',', '.')), 2)
         from app.models import db
         db.session.commit()
         return redirect(url_for('shared.shared_budget' if acc.is_shared else 'budget.home'))
 
-    current_emoji = acc.name[0] if acc.name and acc.name[0] in '💳💵🏦🐷🗄️📱🪙💼' else '💳'
-    current_name = acc.name[1:].strip() if acc.name and acc.name[0] in '💳💵🏦🐷🗄️📱🪙💼' else acc.name
+    current_icon, current_name = split_icon_name(acc.name, fallback='card')
+    current_emoji = icon_value(parse_icon_value(current_icon, fallback='card'))
     return render_template('edit_account.html', acc=acc, current_emoji=current_emoji, current_name=current_name)
 
 @budget_bp.route('/edit_goal/<int:id>', methods=['GET', 'POST'])

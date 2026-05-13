@@ -1,4 +1,19 @@
-from app.models import db, Partnership
+from app.models import db, Partnership, Transaction, Account, Category, Goal
+
+
+def purge_shared_budget_data(user_ids):
+    """Remove all shared-budget data for the given users."""
+    if not user_ids:
+        return
+
+    user_ids = list(dict.fromkeys(user_ids))
+
+    # Delete child rows first so SQLite/FK constraints stay happy.
+    Transaction.query.filter(Transaction.user_id.in_(user_ids), Transaction.is_shared.is_(True)).delete(synchronize_session=False)
+    Goal.query.filter(Goal.user_id.in_(user_ids), Goal.is_shared.is_(True)).delete(synchronize_session=False)
+    Category.query.filter(Category.user_id.in_(user_ids), Category.is_shared.is_(True)).delete(synchronize_session=False)
+    Account.query.filter(Account.user_id.in_(user_ids), Account.is_shared.is_(True)).delete(synchronize_session=False)
+    db.session.commit()
 
 def get_partnership_by_id(p_id):
     return db.session.get(Partnership, p_id)
@@ -22,6 +37,7 @@ def create_partnership(user1_id, user2_id):
     return p
 
 def delete_partnership(p):
+    purge_shared_budget_data([p.user1_id, p.user2_id])
     db.session.delete(p)
     db.session.commit()
 

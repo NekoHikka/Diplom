@@ -51,6 +51,116 @@
           val = parts[0] + "." + parts[1].substring(0, 2);
         input.value = val;
       }
+      let appToastTimer = null;
+      let pendingAppConfirm = null;
+
+      function showAppToast(message, kind = "info") {
+        const toast = document.getElementById("site-toast");
+        if (!toast) return;
+        const icon = toast.querySelector(".site-toast-icon");
+        const text = toast.querySelector(".site-toast-text");
+        const colors = {
+          info: { bg: "rgba(33, 150, 243, 0.12)", color: "#2196f3" },
+          success: { bg: "rgba(76, 175, 80, 0.12)", color: "#4caf50" },
+          warning: { bg: "rgba(255, 152, 0, 0.12)", color: "#ff9800" },
+          danger: { bg: "rgba(244, 67, 54, 0.12)", color: "#f44336" },
+        };
+        const cfg = colors[kind] || colors.info;
+        toast.style.background = `linear-gradient(135deg, ${cfg.bg}, var(--card-bg))`;
+        toast.style.color = "var(--text-color)";
+        toast.style.borderColor = cfg.color;
+        if (icon) {
+          icon.style.color = cfg.color;
+          icon.innerHTML =
+            kind === "success"
+              ? '<svg viewBox="0 0 24 24"><path d="M5 12l4 4L19 6"></path></svg>'
+              : kind === "warning"
+              ? '<svg viewBox="0 0 24 24"><path d="M12 4l8 14H4z"></path><path d="M12 9v4"></path><path d="M12 16h.01"></path></svg>'
+              : kind === "danger"
+              ? '<svg viewBox="0 0 24 24"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg>'
+              : '<svg viewBox="0 0 24 24"><path d="M12 4v8"></path><path d="M12 16h.01"></path><circle cx="12" cy="12" r="9"></circle></svg>';
+        }
+        if (text) text.textContent = message;
+        toast.classList.add("show");
+        clearTimeout(appToastTimer);
+        appToastTimer = setTimeout(() => toast.classList.remove("show"), 3500);
+      }
+
+      function closeAppConfirm() {
+        const overlay = document.getElementById("site-confirm-overlay");
+        if (overlay) overlay.classList.remove("show");
+        pendingAppConfirm = null;
+      }
+
+      function openAppConfirm(options) {
+        const overlay = document.getElementById("site-confirm-overlay");
+        if (!overlay) return false;
+        const title = document.getElementById("site-confirm-title");
+        const message = document.getElementById("site-confirm-message");
+        const confirmBtn = document.getElementById("site-confirm-ok");
+        const cancelBtn = document.getElementById("site-confirm-cancel");
+        const icon = document.getElementById("site-confirm-icon");
+        const kind = options.kind || "danger";
+        const colors = { danger: "#ff4d4d", warning: "#ff9800", info: "#2196f3" };
+        if (title) title.textContent = options.title || "{{ 'Підтвердження' if session.get('lang','uk') == 'uk' else 'Confirm' }}";
+        if (message) message.textContent = options.message || "";
+        if (confirmBtn) confirmBtn.textContent = options.confirmText || "{{ 'Підтвердити' if session.get('lang','uk') == 'uk' else 'Confirm' }}";
+        if (cancelBtn) cancelBtn.textContent = options.cancelText || "{{ 'Скасувати' if session.get('lang','uk') == 'uk' else 'Cancel' }}";
+        if (icon) {
+          icon.style.color = colors[kind] || colors.danger;
+          icon.innerHTML = kind === "warning"
+            ? '<svg viewBox="0 0 24 24"><path d="M12 4l8 14H4z"></path><path d="M12 9v4"></path><path d="M12 16h.01"></path></svg>'
+            : kind === "info"
+            ? '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 10v6"></path><path d="M12 7h.01"></path></svg>'
+            : '<svg viewBox="0 0 24 24"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg>';
+        }
+        pendingAppConfirm = options.onConfirm || null;
+        overlay.classList.add("show");
+        confirmBtn?.focus();
+        return false;
+      }
+
+      function handleAppConfirmTarget(target) {
+        const msg = target.getAttribute("data-confirm-message");
+        if (!msg) return false;
+        const title = target.getAttribute("data-confirm-title") || "";
+        const confirmText = target.getAttribute("data-confirm-ok") || "";
+        const cancelText = target.getAttribute("data-confirm-cancel") || "";
+        const kind = target.getAttribute("data-confirm-kind") || "danger";
+        return openAppConfirm({
+          title,
+          message: msg,
+          confirmText,
+          cancelText,
+          kind,
+          onConfirm: () => {
+            if (target.tagName === "FORM") {
+              target.dataset.confirmed = "1";
+              target.submit();
+            } else if (target.tagName === "A") {
+              window.location.href = target.href;
+            }
+          },
+        });
+      }
+
+      document.addEventListener("click", (e) => {
+        const target = e.target.closest("[data-confirm-message]");
+        if (!target) return;
+        if (target.tagName === "FORM") return;
+        e.preventDefault();
+        handleAppConfirmTarget(target);
+      });
+      document.addEventListener("submit", (e) => {
+        const form = e.target.closest("form[data-confirm-message]");
+        if (!form) return;
+        if (form.dataset.confirmed === "1") {
+          delete form.dataset.confirmed;
+          return;
+        }
+        e.preventDefault();
+        handleAppConfirmTarget(form);
+      });
     </script>
 
     <style>
@@ -138,15 +248,134 @@
       .user-greeting { font-weight: bold; font-size: 16px; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
       .page-buttons { display: flex; gap: 10px; }
       .right-buttons { display: flex; gap: 10px; margin-left: auto; }
-      .nav-btn { display: inline-flex; align-items: center; justify-content: center; height: 40px; padding: 0 15px; border-radius: 8px; font-weight: bold; text-decoration: none; transition: 0.2s; box-sizing: border-box; white-space: nowrap; border: none; cursor: pointer; background-color: var(--input-bg); color: var(--text-color); font-size: 14px; }
+      .nav-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 42px; padding: 0 16px; border-radius: 12px; font-weight: 600; text-decoration: none; transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease; box-sizing: border-box; white-space: nowrap; border: 1px solid var(--border-color); cursor: pointer; background-color: var(--input-bg); color: var(--text-color); font-size: 14px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08); }
       .nav-btn:hover { filter: brightness(1.2); }
-      .nav-btn.active-home { background-color: #4caf50; color: white; }
-      .nav-btn.active-shared { background-color: #2196f3; color: white; }
-      .nav-btn.active-analytics { background-color: #9c27b0; color: white; }
-      .nav-btn.active-integrations { background-color: #ff9800; color: white; }
-      .nav-text { margin-left: 6px; }
+      .nav-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14); filter: none; }
+      .nav-btn.active-home { background: linear-gradient(135deg, #2e7d32, #4caf50); color: white; border-color: rgba(76, 175, 80, 0.55); box-shadow: 0 10px 24px rgba(76, 175, 80, 0.25); }
+      .nav-btn.active-shared { background: linear-gradient(135deg, #1565c0, #2196f3); color: white; border-color: rgba(33, 150, 243, 0.55); box-shadow: 0 10px 24px rgba(33, 150, 243, 0.25); }
+      .nav-btn.active-analytics { background: linear-gradient(135deg, #6a1b9a, #9c27b0); color: white; border-color: rgba(156, 39, 176, 0.55); box-shadow: 0 10px 24px rgba(156, 39, 176, 0.25); }
+      .nav-btn.active-integrations { background: linear-gradient(135deg, #ef6c00, #ff9800); color: white; border-color: rgba(255, 152, 0, 0.55); box-shadow: 0 10px 24px rgba(255, 152, 0, 0.25); }
+      .nav-icon { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; border-radius: 999px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.08); }
+      .nav-icon svg { width: 14px; height: 14px; display: block; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+      .nav-btn:not(.active-home):not(.active-shared):not(.active-analytics):not(.active-integrations) .nav-icon { background: rgba(127, 127, 127, 0.12); border-color: rgba(127, 127, 127, 0.14); color: var(--text-color); }
+      .nav-btn.active-home .nav-icon,
+      .nav-btn.active-shared .nav-icon,
+      .nav-btn.active-analytics .nav-icon,
+      .nav-btn.active-integrations .nav-icon { background: rgba(255, 255, 255, 0.16); border-color: rgba(255, 255, 255, 0.18); color: white; }
+      .nav-text { margin-left: 0; }
+      .action-icon { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; vertical-align: middle; }
+      .action-icon svg { width: 100%; height: 100%; display: block; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+      .title-icon { display: inline-flex; align-items: center; justify-content: center; width: 1.3em; height: 1.3em; margin-right: 0.4em; vertical-align: -0.15em; flex-shrink: 0; }
+      .title-icon svg { width: 100%; height: 100%; display: block; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+      .icon-only { display: inline-flex; align-items: center; justify-content: center; gap: 0; }
+      .item-with-icon { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+      .item-icon { width: 28px; height: 28px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; color: currentColor; background: color-mix(in srgb, currentColor 12%, transparent); border: 1px solid color-mix(in srgb, currentColor 18%, transparent); }
+      .item-icon svg { width: 16px; height: 16px; display: block; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+      .icon-picker { position: relative; min-width: 78px; }
+      .card.picker-card-open { position: relative; z-index: 20000; }
+      .icon-picker-input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
+      .icon-picker-trigger { width: 100%; min-height: 42px; border-radius: 8px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text-color); display: inline-flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 9px; cursor: pointer; box-sizing: border-box; }
+      .icon-picker-trigger:hover, .icon-picker.open .icon-picker-trigger { border-color: #9c27b0; box-shadow: 0 0 8px rgba(156, 39, 176, 0.28); }
+      .icon-picker-chevron { width: 14px; height: 14px; flex-shrink: 0; opacity: 0.75; }
+      .icon-picker-panel { position: absolute; top: calc(100% + 8px); left: 0; z-index: 21000; width: min(320px, 86vw); padding: 10px; border-radius: 12px; background: var(--card-bg); border: 1px solid var(--border-color); box-shadow: 0 18px 48px rgba(0,0,0,0.32); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); display: none; }
+      .icon-picker.open .icon-picker-panel { display: block; animation: fadeIn 0.16s ease-out; }
+      .icon-picker-search { margin-bottom: 10px; }
+      .icon-picker-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; max-height: 250px; overflow-y: auto; padding-right: 2px; }
+      .icon-picker-option { aspect-ratio: 1; border-radius: 8px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-color); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.16s ease; }
+      .icon-picker-option svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+      .icon-picker-option:hover, .icon-picker-option.active { color: white; background: linear-gradient(135deg, #2196f3, #9c27b0); border-color: transparent; transform: translateY(-1px); }
+      .icon-select { position: relative; }
+      .icon-select select { display: none; }
+      .icon-select-button { min-height: 42px; width: 100%; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text-color); border-radius: 8px; padding: 8px 38px 8px 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; box-sizing: border-box; text-align: left; }
+      .icon-select-button::after { content: ""; position: absolute; right: 12px; top: 50%; width: 16px; height: 16px; transform: translateY(-50%); background: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='gray' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e") center / contain no-repeat; }
+      .icon-select.open .icon-select-button { border-color: #9c27b0; box-shadow: 0 0 8px rgba(156, 39, 176, 0.28); }
+      .icon-select-panel { position: absolute; z-index: 21000; top: calc(100% + 8px); left: 0; right: 0; min-width: 240px; border-radius: 12px; background: var(--card-bg); border: 1px solid var(--border-color); box-shadow: 0 18px 48px rgba(0,0,0,0.32); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); display: none; max-height: 260px; overflow-y: auto; padding: 6px; }
+      .icon-select.open .icon-select-panel { display: block; animation: fadeIn 0.16s ease-out; }
+      .icon-select-option { width: 100%; border: 0; background: transparent; color: var(--text-color); padding: 8px; border-radius: 8px; display: flex; align-items: center; gap: 9px; cursor: pointer; text-align: left; font: inherit; }
+      .icon-select-option:hover, .icon-select-option.active { background: rgba(156, 39, 176, 0.16); }
+      .pretty-check { appearance: none; -webkit-appearance: none; width: 18px; height: 18px; border-radius: 6px; border: 1.5px solid var(--border-color); background: var(--input-bg); display: inline-grid; place-content: center; cursor: pointer; box-shadow: inset 0 1px 2px rgba(0,0,0,0.08); transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease; }
+      .pretty-check::before { content: ""; width: 9px; height: 5px; border-left: 2px solid white; border-bottom: 2px solid white; transform: rotate(-45deg) scale(0); transform-origin: center; transition: transform 0.12s ease-in-out; margin-top: -1px; }
+      .pretty-check:checked { background: linear-gradient(135deg, #9c27b0, #2196f3); border-color: #9c27b0; box-shadow: 0 0 0 3px rgba(156, 39, 176, 0.12); }
+      .pretty-check:checked::before { transform: rotate(-45deg) scale(1); }
+      .pretty-check:hover { border-color: #9c27b0; }
+      .pretty-check:focus-visible { outline: 2px solid rgba(156, 39, 176, 0.35); outline-offset: 2px; }
+      .dashboard-split-item { display: flex; }
+      .dashboard-split-item > .card { width: 100%; }
+      .goal-card { height: 100%; min-height: 250px; display: flex; flex-direction: column; }
+      .goal-card .goal-items { flex: 1; min-height: 0; }
       .category-card { height: 100%; min-height: 250px; }
       .category-list { min-height: 0; }
+      .site-toast {
+        position: fixed;
+        right: 18px;
+        bottom: 18px;
+        z-index: 12000;
+        min-width: 280px;
+        max-width: min(92vw, 460px);
+        padding: 14px 16px;
+        border-radius: 14px;
+        background: var(--card-bg);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.22);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        display: none;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .site-toast.show { display: flex; animation: fadeIn 0.18s ease-out; }
+      .site-toast-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 999px;
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 1px;
+      }
+      .site-toast-icon svg {
+        width: 14px;
+        height: 14px;
+        display: block;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2.25;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+      .site-confirm-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 11999;
+        background: rgba(0, 0, 0, 0.58);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+      }
+      .site-confirm-overlay.show { display: flex; }
+      .site-confirm-modal {
+        width: min(100%, 460px);
+        border-radius: 18px;
+        padding: 24px;
+        background: var(--card-bg);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+      }
+      .site-confirm-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 18px;
+      }
+      .site-confirm-actions .btn {
+        flex: 1;
+        min-height: 44px;
+      }
 
       @media (max-width: 768px) {
         body { padding: 10px; margin: 0; }
@@ -154,18 +383,24 @@
         .top-menu { flex-direction: column; padding: 10px; gap: 10px; }
         .user-greeting { max-width: 100%; text-align: center; }
         .page-buttons { width: 100%; justify-content: space-between; gap: 8px; }
-        .page-buttons .nav-btn { flex: 1; padding: 0; font-size: 20px; }
+        .page-buttons .nav-btn { flex: 1; padding: 0; gap: 0; }
+        .nav-icon { width: 28px; height: 28px; }
+        .nav-icon svg { width: 16px; height: 16px; }
         .nav-text { display: none; }
         .right-buttons { width: 100%; justify-content: space-between; margin-left: 0; }
         .right-buttons .nav-btn { flex: 1; }
         .filter-container { align-items: stretch !important; }
         .filter-scroll, .export-btns { width: 100%; overflow-x: auto; padding-bottom: 2px; }
         .filter-scroll .btn, .export-btns .btn, .export-btns button { flex: 1; min-width: max-content; }
+        .dashboard-split-item { min-width: 0 !important; }
+        .goal-card { min-width: 0 !important; height: auto; }
         .category-card { min-width: 0 !important; height: auto; }
         .category-card form { flex-wrap: wrap; align-items: stretch !important; }
         .category-card form > select { width: calc(50% - 4px) !important; }
+        .category-card form > .icon-picker { width: calc(50% - 4px) !important; }
         .category-card form > input[name="name"] { flex-basis: 100%; }
         .category-card form > button { flex: 1; }
+        .icon-picker-panel { left: auto; right: 0; }
         .category-lists { min-height: 220px !important; max-height: 42vh; }
         .category-list { -webkit-overflow-scrolling: touch; }
         #pdf-content > div:first-child { align-items: flex-start !important; gap: 10px; flex-wrap: wrap; }
@@ -293,7 +528,12 @@
         class="user-greeting"
         title="{{ get_string('nav_personal') }}, {{ current_user.username }}!"
       >
-        👤 {{ current_user.username }}
+        <span class="action-icon" aria-hidden="true" style="color: #2196f3; width: 18px; height: 18px; margin-right: 6px;">
+          <svg viewBox="0 0 24 24">
+            <circle cx="12" cy="8" r="4"></circle>
+            <path d="M5 20c1.5-3.5 4.2-5 7-5s5.5 1.5 7 5"></path>
+          </svg>
+        </span>{{ current_user.username }}
       </div>
 
       <div class="page-buttons">
@@ -301,25 +541,60 @@
           href="{{ url_for('budget.home') }}"
           class="nav-btn {% if request.endpoint == 'budget.home' %}active-home{% endif %}"
         >
-          🏠<span class="nav-text">{{ get_string('nav_personal') }}</span>
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M3 11.5L12 4l9 7.5"></path>
+              <path d="M5.5 10.5V20h13V10.5"></path>
+              <path d="M9.5 20v-5h5v5"></path>
+            </svg>
+          </span>
+          <span class="nav-text">{{ get_string('nav_personal') }}</span>
         </a>
         <a
           href="{{ url_for('shared.shared_budget') }}"
           class="nav-btn {% if request.endpoint == 'shared.shared_budget' %}active-shared{% endif %}"
         >
-          🤝<span class="nav-text">{{ get_string('nav_shared') }}</span>
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M8 13.5c1.2 0 2.2-.9 2.2-2.1S9.2 9.3 8 9.3s-2.2 1-2.2 2.1 1 2.1 2.2 2.1z"></path>
+              <path d="M16 13.5c1.2 0 2.2-.9 2.2-2.1S17.2 9.3 16 9.3s-2.2 1-2.2 2.1 1 2.1 2.2 2.1z"></path>
+              <path d="M5 18.5c.8-2 2.5-3 3.9-3 1.4 0 3.1 1 3.9 3"></path>
+              <path d="M12.2 18.5c.8-2 2.5-3 3.8-3 1.4 0 3.1 1 3.9 3"></path>
+            </svg>
+          </span>
+          <span class="nav-text">{{ get_string('nav_shared') }}</span>
         </a>
         <a
           href="{{ url_for('analytics.analytics', shared=1 if is_shared_view else None) }}"
           class="nav-btn {% if request.endpoint == 'analytics.analytics' %}active-analytics{% endif %}"
         >
-          🧠<span class="nav-text">{{ get_string('nav_analytics') }}</span>
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M5 19V10"></path>
+              <path d="M12 19V5"></path>
+              <path d="M19 19v-7"></path>
+            </svg>
+          </span>
+          <span class="nav-text">{{ get_string('nav_analytics') }}</span>
         </a>
         <a
           href="{{ url_for('integration.integrations') }}"
           class="nav-btn {% if request.endpoint == 'integration.integrations' %}active-integrations{% endif %}"
         >
-          🏦<span class="nav-text">{{ get_string('nav_integrations') }}</span>
+          <span class="nav-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M7 7h10v10H7z"></path>
+              <path d="M9 4.5V7"></path>
+              <path d="M15 4.5V7"></path>
+              <path d="M9 17v2.5"></path>
+              <path d="M15 17v2.5"></path>
+              <path d="M4.5 9h2.5"></path>
+              <path d="M17 9h2.5"></path>
+              <path d="M4.5 15h2.5"></path>
+              <path d="M17 15h2.5"></path>
+            </svg>
+          </span>
+          <span class="nav-text">{{ get_string('nav_integrations') }}</span>
         </a>
       </div>
 
@@ -329,17 +604,27 @@
           class="nav-btn"
           style="background-color: #607d8b; color: white"
         >
-          {{ get_string('nav_lang_btn') }}
+          <span class="action-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M3 12h18"></path>
+              <path d="M12 3a14 14 0 0 1 0 18"></path>
+              <path d="M12 3a14 14 0 0 0 0 18"></path>
+            </svg>
+          </span>
+          <span>{{ get_string('nav_lang_btn') }}</span>
         </a>
         <button
           onclick="toggleTheme()"
           class="nav-btn"
           style="background-color: #ff9800; color: white"
         >
-          🌓
-          <span class="nav-text-mobile-keep"
-            >{{ get_string('nav_theme') }}</span
-          >
+          <span class="action-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M21 12.8A8.5 8.5 0 0 1 11.2 3 7.7 7.7 0 1 0 21 12.8z"></path>
+            </svg>
+          </span>
+          <span class="nav-text-mobile-keep">{{ get_string('nav_theme') }}</span>
         </button>
         <button
           id="pwa-install-btn"
@@ -347,7 +632,14 @@
           class="nav-btn"
           style="background-color: #2196f3; color: white"
         >
-          +
+          <span class="action-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <rect x="5" y="4" width="14" height="16" rx="3"></rect>
+              <path d="M9 8h6"></path>
+              <path d="M9 12h6"></path>
+              <path d="M10 16h4"></path>
+            </svg>
+          </span>
           <span class="nav-text-mobile-keep">App</span>
         </button>
         <a
@@ -355,10 +647,14 @@
           class="nav-btn"
           style="background-color: #ff4d4d; color: white"
         >
-          🚪
-          <span class="nav-text-mobile-keep"
-            >{{ get_string('nav_logout') }}</span
-          >
+          <span class="action-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M10 7V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2v-2"></path>
+              <path d="M3 12h11"></path>
+              <path d="M7 8l-4 4 4 4"></path>
+            </svg>
+          </span>
+          <span class="nav-text-mobile-keep">{{ get_string('nav_logout') }}</span>
         </a>
       </div>
     </div>
@@ -370,10 +666,19 @@
       {% for category, message in messages %}
       <div
         class="card no-print"
-        style="margin-bottom: 10px; border: 1px solid {% if category == 'error' %}#ff4d4d{% else %}#4CAF50{% endif %}; border-radius: 8px; background: {% if category == 'error' %}rgba(255, 77, 77, 0.1){% else %}rgba(76, 175, 80, 0.1){% endif %}; padding: 15px; text-align: center; display: flex; justify-content: center; align-items: center;"
+        style="margin-bottom: 10px; border: 1px solid {% if category == 'error' %}#ff4d4d{% elif category == 'info' %}#2196f3{% else %}#4CAF50{% endif %}; border-radius: 8px; background: {% if category == 'error' %}rgba(255, 77, 77, 0.1){% elif category == 'info' %}rgba(33, 150, 243, 0.1){% else %}rgba(76, 175, 80, 0.1){% endif %}; padding: 15px; display: flex; justify-content: center; align-items: center; gap: 10px;"
       >
+        <span class="action-icon" aria-hidden="true" style="width:20px;height:20px;color:{% if category == 'error' %}#ff4d4d{% elif category == 'info' %}#2196f3{% else %}#4CAF50{% endif %};">
+          {% if category == 'error' %}
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v6"></path><path d="M12 16h.01"></path></svg>
+          {% elif category == 'info' %}
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M12 10v6"></path><path d="M12 7h.01"></path></svg>
+          {% else %}
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M8 12l3 3 5-6"></path></svg>
+          {% endif %}
+        </span>
         <strong
-          style="color: {% if category == 'error' %}#ff4d4d{% else %}#4CAF50{% endif %};"
+          style="color: {% if category == 'error' %}#ff4d4d{% elif category == 'info' %}#2196f3{% else %}#4CAF50{% endif %};"
           >{{ message }}</strong
         >
       </div>
@@ -386,7 +691,9 @@
 
     <!-- Floating AI Chatbot Widget -->
     <div id="ai-chat-widget" class="no-print">
-      <button id="ai-chat-toggle" aria-label="Open AI Assistant" style="background: linear-gradient(135deg, #9c27b0, #2196f3); color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 24px; box-shadow: 0 4px 15px rgba(156, 39, 176, 0.4); cursor: pointer; transition: transform 0.2s; position: fixed; bottom: 20px; right: 20px; z-index: 9999;">🤖</button>
+      <button id="ai-chat-toggle" aria-label="Open AI Assistant" style="background: linear-gradient(135deg, #9c27b0, #2196f3); color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 24px; box-shadow: 0 4px 15px rgba(156, 39, 176, 0.4); cursor: pointer; transition: transform 0.2s; position: fixed; bottom: 20px; right: 20px; z-index: 9999; display:flex; align-items:center; justify-content:center;">
+        <span class="action-icon" style="width: 26px; height: 26px; color: white;" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 8h10a3 3 0 0 1 3 3v3a3 3 0 0 1-3 3h-4l-4 3v-3H7a3 3 0 0 1-3-3v-3a3 3 0 0 1 3-3z"></path><path d="M9 12h.01"></path><path d="M12 12h.01"></path><path d="M15 12h.01"></path></svg></span>
+      </button>
       <div id="ai-chat-window" style="display: none; position: fixed; bottom: 90px; right: 20px; width: 350px; height: 450px; background: var(--card-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); z-index: 9998; flex-direction: column; overflow: hidden;">
         <div style="background: linear-gradient(135deg, #9c27b0, #2196f3); color: white; padding: 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
           <span>{{ get_string('chat_title') }}</span>
@@ -399,7 +706,33 @@
         </div>
         <div style="padding: 10px; border-top: 1px solid var(--border-color); display: flex; gap: 8px; background: rgba(0,0,0,0.2);">
           <input type="text" id="ai-chat-input" placeholder="{{ get_string('chat_placeholder') }}" style="flex: 1; padding: 10px; border-radius: 20px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--text-color); font-size: 14px;">
-          <button id="ai-chat-send" style="background: #9c27b0; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center;">➤</button>
+          <button id="ai-chat-send" aria-label="Send message" style="background: #9c27b0; color: white; border: none; border-radius: 50%; width: 40px; height: 40px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+            <span class="action-icon" style="width: 16px; height: 16px; color: white;" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M4 12l16-8-4 16-4-7-8-1z"></path>
+              </svg>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="site-toast" class="site-toast" role="status" aria-live="polite">
+      <span class="site-toast-icon" aria-hidden="true"></span>
+      <div class="site-toast-text" style="font-size: 14px; line-height: 1.45;"></div>
+    </div>
+    <div id="site-confirm-overlay" class="site-confirm-overlay" role="dialog" aria-modal="true" aria-labelledby="site-confirm-title">
+      <div class="site-confirm-modal">
+        <div style="display:flex; align-items:flex-start; gap:12px;">
+          <div id="site-confirm-icon" class="action-icon" aria-hidden="true" style="width:34px;height:34px;color:#ff4d4d;flex-shrink:0;margin-top:2px;"></div>
+          <div style="flex:1;">
+            <h3 id="site-confirm-title" style="margin:0 0 8px;"></h3>
+            <p id="site-confirm-message" style="margin:0; color:#888; line-height:1.5;"></p>
+          </div>
+        </div>
+        <div class="site-confirm-actions">
+          <button id="site-confirm-cancel" type="button" class="btn" style="background: var(--input-bg); color: var(--text-color); border: 1px solid var(--border-color);"></button>
+          <button id="site-confirm-ok" type="button" class="btn" style="background: #ff4d4d; color: white;"></button>
         </div>
       </div>
     </div>
@@ -443,6 +776,21 @@
         if (scrollpos) {
           window.scrollTo(0, parseInt(scrollpos));
           sessionStorage.removeItem("scrollpos_" + path);
+        }
+
+        const siteConfirmCancel = document.getElementById('site-confirm-cancel');
+        const siteConfirmOk = document.getElementById('site-confirm-ok');
+        const siteConfirmOverlay = document.getElementById('site-confirm-overlay');
+        if (siteConfirmCancel) siteConfirmCancel.addEventListener('click', closeAppConfirm);
+        if (siteConfirmOk) siteConfirmOk.addEventListener('click', () => {
+          const cb = pendingAppConfirm;
+          closeAppConfirm();
+          if (cb) cb();
+        });
+        if (siteConfirmOverlay) {
+          siteConfirmOverlay.addEventListener('click', (e) => {
+            if (e.target === siteConfirmOverlay) closeAppConfirm();
+          });
         }
       });
       window.addEventListener("beforeunload", function () {
@@ -560,12 +908,14 @@
             const text = inputField.value.trim();
             if(!text) return;
             
-            const lastMsgTime = localStorage.getItem(lastMessageKey);
-            if (lastMsgTime && Date.now() - parseInt(lastMsgTime) < CHAT_COOLDOWN) {
+              const lastMsgTime = localStorage.getItem(lastMessageKey);
+              if (lastMsgTime && Date.now() - parseInt(lastMsgTime) < CHAT_COOLDOWN) {
                 const remaining = Math.ceil((CHAT_COOLDOWN - (Date.now() - parseInt(lastMsgTime))) / 1000);
-                alert(`Зачекайте ${remaining} сек перед наступним повідомленням (ліміт).`);
+                if (window.showAppToast) {
+                  showAppToast("{{ get_string('chat_cooldown', remaining='__R__') }}".replace('__R__', remaining), 'warning');
+                }
                 return;
-            }
+              }
             localStorage.setItem(lastMessageKey, Date.now().toString());
 
             messagesDiv.innerHTML += `<div style="background: var(--input-bg); padding: 10px; border-radius: 8px; align-self: flex-end; max-width: 85%; border: 1px solid var(--border-color);">${escapeHtml(text)}</div>`;
@@ -574,7 +924,7 @@
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
             const loadingId = 'loading-' + Date.now();
-            messagesDiv.innerHTML += `<div id="${loadingId}" style="background: rgba(156, 39, 176, 0.1); padding: 10px; border-radius: 8px; border-left: 3px solid #9c27b0; align-self: flex-start; max-width: 85%;">{{ get_string('chat_loading') if get_string('chat_loading') else '⏳ Аналізую...' }}</div>`;
+            messagesDiv.innerHTML += `<div id="${loadingId}" style="background: rgba(156, 39, 176, 0.1); padding: 10px; border-radius: 8px; border-left: 3px solid #9c27b0; align-self: flex-start; max-width: 85%;">{{ get_string('chat_loading') if get_string('chat_loading') else 'Аналізую...' }}</div>`;
             saveChatState();
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
@@ -605,6 +955,250 @@
           sendBtn.addEventListener('click', sendMessage);
           inputField.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
         }
+      });
+    </script>
+    <script>
+      window.financeIcons = {{ (icon_choices('account') + icon_choices('category'))|tojson }};
+
+      function financeIconSvg(svg) {
+        return `<span class="item-icon"><svg viewBox="0 0 24 24">${svg}</svg></span>`;
+      }
+
+      function financeEscapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, (ch) => ({
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[ch]));
+      }
+
+      function financeIconForValue(value) {
+        const raw = String(value || "");
+        const token = raw.startsWith("icon:") ? raw.split(" ")[0].slice(5) : "";
+        const clean = financeCleanLabel(raw).toLowerCase();
+        const found = window.financeIcons.find((icon) => icon.id === token);
+        if (found) return found;
+        const byKeyword = window.financeIcons.find((icon) => {
+          const haystack = `${icon.label || ""} ${icon.keywords || ""}`.toLowerCase();
+          return clean && haystack.includes(clean);
+        });
+        return byKeyword || window.financeIcons[window.financeIcons.length - 1];
+      }
+
+      function financeIconHtml(value) {
+        const icon = financeIconForValue(value);
+        return financeIconSvg(icon.svg);
+      }
+
+      function closeIconPicker(picker) {
+        picker.classList.remove("open");
+        picker.closest(".card")?.classList.remove("picker-card-open");
+      }
+
+      function closeIconSelect(wrapper) {
+        wrapper.classList.remove("open");
+        wrapper.closest(".card")?.classList.remove("picker-card-open");
+      }
+
+      function financeCleanLabel(value) {
+        const raw = String(value || "").trim();
+        if (raw.startsWith("icon:")) return raw.split(" ").slice(1).join(" ").trim();
+        const stripped = raw.replace(/^[^\p{L}\p{N}]+/u, "").trim();
+        return stripped || raw;
+      }
+
+      function financeDoughnutTooltip(context) {
+        const { chart, tooltip } = context;
+        const parent = chart.canvas.parentNode;
+        if (!parent) return;
+
+        let tooltipEl = parent.querySelector(".finance-chart-tooltip");
+        if (!tooltipEl) {
+          tooltipEl = document.createElement("div");
+          tooltipEl.className = "finance-chart-tooltip";
+          tooltipEl.style.position = "absolute";
+          tooltipEl.style.pointerEvents = "none";
+          tooltipEl.style.zIndex = "20";
+          tooltipEl.style.minWidth = "180px";
+          tooltipEl.style.maxWidth = "280px";
+          tooltipEl.style.padding = "10px 12px";
+          tooltipEl.style.borderRadius = "12px";
+          tooltipEl.style.border = "1px solid var(--border-color)";
+          tooltipEl.style.background = "rgba(20, 20, 20, 0.94)";
+          tooltipEl.style.backdropFilter = "blur(14px)";
+          tooltipEl.style.webkitBackdropFilter = "blur(14px)";
+          tooltipEl.style.boxShadow = "0 16px 40px rgba(0, 0, 0, 0.35)";
+          tooltipEl.style.color = "var(--text-color)";
+          tooltipEl.style.opacity = "0";
+          tooltipEl.style.transform = "translate(-50%, -100%)";
+          tooltipEl.style.transition = "opacity 0.12s ease";
+          parent.appendChild(tooltipEl);
+        }
+
+        if (tooltip.opacity === 0) {
+          tooltipEl.style.opacity = "0";
+          return;
+        }
+
+        const point = tooltip.dataPoints && tooltip.dataPoints[0];
+        if (!point) return;
+
+        const rawLabel = point.label || "";
+        const cleanLabel = financeCleanLabel(rawLabel);
+        const icon = financeIconForValue(rawLabel);
+        const value = Number(point.raw ?? point.parsed ?? 0);
+        const datasetValues = Array.isArray(point.dataset?.data) ? point.dataset.data : [];
+        const accent = Array.isArray(point.dataset?.backgroundColor)
+          ? point.dataset.backgroundColor[point.dataIndex]
+          : point.dataset?.backgroundColor || "#9c27b0";
+        const total = datasetValues.reduce((sum, item) => sum + Number(item || 0), 0);
+        const percent = total ? ((value / total) * 100).toFixed(1) : "0.0";
+        const valueText = value % 1 !== 0 ? value.toFixed(2) : value.toLocaleString("uk-UA");
+
+        tooltipEl.innerHTML = `
+          <div style="display:flex; align-items:flex-start; gap:10px;">
+            <span style="color:${accent};">${financeIconSvg(icon.svg)}</span>
+            <div style="min-width:0; flex:1;">
+              <div style="font-size:13px; font-weight:600; line-height:1.25; margin-bottom:4px; word-break:break-word;">${financeEscapeHtml(cleanLabel)}</div>
+              <div style="font-size:12px; color:#aaa;">${financeEscapeHtml(valueText)} {{ get_string('currency') }} (${percent}%)</div>
+            </div>
+          </div>
+        `;
+
+        tooltipEl.style.opacity = "1";
+        const x = chart.canvas.offsetLeft + tooltip.caretX;
+        const y = chart.canvas.offsetTop + tooltip.caretY;
+        tooltipEl.style.left = `${x}px`;
+        tooltipEl.style.top = `${y}px`;
+      }
+      function initIconPickers() {
+        document.querySelectorAll(".icon-picker").forEach((picker) => {
+          if (picker.dataset.ready) return;
+          picker.dataset.ready = "1";
+          const input = picker.querySelector(".icon-picker-input");
+          const trigger = picker.querySelector(".icon-picker-trigger");
+          const current = picker.querySelector(".icon-picker-current");
+          const grid = picker.querySelector(".icon-picker-grid");
+          const search = picker.querySelector(".icon-picker-search");
+          const icons = JSON.parse(picker.dataset.icons || "[]");
+
+          const paint = () => {
+            const selected = icons.find((icon) => icon.value === input.value) || icons[0];
+            if (selected && current) current.innerHTML = `<svg viewBox="0 0 24 24">${selected.svg}</svg>`;
+            grid.querySelectorAll(".icon-picker-option").forEach((btn) => {
+              btn.classList.toggle("active", btn.dataset.value === input.value);
+            });
+          };
+
+          const render = () => {
+            const q = (search?.value || "").toLowerCase().trim();
+            grid.innerHTML = "";
+            icons
+              .filter((icon) => {
+                const haystack = `${icon.label || ""} ${icon.group || ""} ${icon.keywords || ""}`.toLowerCase();
+                return !q || haystack.includes(q);
+              })
+              .forEach((icon) => {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "icon-picker-option";
+                btn.dataset.value = icon.value;
+                btn.title = icon.label;
+                btn.innerHTML = `<svg viewBox="0 0 24 24">${icon.svg}</svg>`;
+                btn.addEventListener("click", () => {
+                  input.value = icon.value;
+                  closeIconPicker(picker);
+                  paint();
+                });
+                grid.appendChild(btn);
+              });
+            paint();
+          };
+
+          trigger.addEventListener("click", () => {
+            const willOpen = !picker.classList.contains("open");
+            document.querySelectorAll(".icon-picker.open").forEach(closeIconPicker);
+            if (willOpen) {
+              picker.classList.add("open");
+              picker.closest(".card")?.classList.add("picker-card-open");
+              search?.focus();
+            }
+          });
+          search?.addEventListener("input", render);
+          render();
+        });
+      }
+
+      function initIconSelects() {
+        document.querySelectorAll("select[data-icon-select]").forEach((select) => {
+          if (select.dataset.ready) return;
+          select.dataset.ready = "1";
+          const wrapper = document.createElement("div");
+          wrapper.className = "icon-select";
+          select.parentNode.insertBefore(wrapper, select);
+          wrapper.appendChild(select);
+
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "icon-select-button";
+          const panel = document.createElement("div");
+          panel.className = "icon-select-panel";
+          wrapper.appendChild(button);
+          wrapper.appendChild(panel);
+
+          const renderButton = () => {
+            const opt = select.options[select.selectedIndex];
+            const value = opt ? opt.value : "";
+            const icon = financeIconForValue(value);
+            button.innerHTML = `${financeIconSvg(icon.svg)}<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${financeCleanLabel(opt ? opt.textContent : value)}</span>`;
+          };
+
+          const renderOptions = () => {
+            panel.innerHTML = "";
+            Array.from(select.options).forEach((opt) => {
+              const icon = financeIconForValue(opt.value);
+              const row = document.createElement("button");
+              row.type = "button";
+              row.className = "icon-select-option";
+              row.classList.toggle("active", opt.selected);
+              row.innerHTML = `${financeIconSvg(icon.svg)}<span>${financeCleanLabel(opt.textContent || opt.value)}</span>`;
+              row.addEventListener("click", () => {
+                select.value = opt.value;
+                select.dispatchEvent(new Event("change", { bubbles: true }));
+                closeIconSelect(wrapper);
+                renderButton();
+                renderOptions();
+              });
+              panel.appendChild(row);
+            });
+          };
+
+          button.addEventListener("click", () => {
+            const willOpen = !wrapper.classList.contains("open");
+            document.querySelectorAll(".icon-select.open").forEach(closeIconSelect);
+            if (willOpen) {
+              wrapper.classList.add("open");
+              wrapper.closest(".card")?.classList.add("picker-card-open");
+            }
+          });
+          select.addEventListener("change", () => {
+            renderButton();
+            renderOptions();
+          });
+          renderButton();
+          renderOptions();
+        });
+      }
+
+      document.addEventListener("click", (event) => {
+        if (!event.target.closest(".icon-picker")) {
+          document.querySelectorAll(".icon-picker.open").forEach(closeIconPicker);
+        }
+        if (!event.target.closest(".icon-select")) {
+          document.querySelectorAll(".icon-select.open").forEach(closeIconSelect);
+        }
+      });
+      document.addEventListener("DOMContentLoaded", () => {
+        initIconPickers();
+        initIconSelects();
       });
     </script>
     {% block scripts %}{% endblock %}

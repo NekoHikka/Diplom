@@ -1,8 +1,17 @@
 <div class="card category-card" style="flex: 1; min-width: 300px; width: 100%; display: flex; flex-direction: column; height: 100%;">
 
-
-
-  <h3>{{ get_string('cat_mgmt') }}</h3>
+  <h3 style="display:flex; align-items:center; gap:6px; margin-top:0;">
+    <span class="title-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24">
+        <path d="M4 7h16"></path>
+        <path d="M4 12h16"></path>
+        <path d="M4 17h16"></path>
+        <circle cx="9" cy="7" r="1.5"></circle>
+        <circle cx="15" cy="12" r="1.5"></circle>
+        <circle cx="7" cy="17" r="1.5"></circle>
+      </svg>
+    </span>{{ get_string('cat_mgmt') }}
+  </h3>
   <form action="{{ url_for('budget.add_category_route') }}" method="POST" style="display: flex; gap: 8px; margin-bottom: 15px; align-items: center;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
     <input type="hidden" name="is_shared" value="{{ 'true' if is_shared_view else 'false' }}" />
@@ -11,18 +20,23 @@
       <option value="Витрата">{{ get_string('expense') }}</option>
       <option value="Дохід">{{ get_string('income') }}</option>
     </select>
-    <select name="emoji" style="width: 15%">
-      <option value="🛒">🛒</option><option value="🚗">🚗</option><option value="🎮">🎮</option><option value="☕">☕</option>
-      <option value="🏠">🏠</option><option value="👗">👗</option><option value="🎓">🎓</option><option value="💸">💸</option>
-      <option value="🐶">🐶</option><option value="✈️">✈️</option><option value="🍔">🍔</option><option value="💊">💊</option>
-      <option value="🛠️">🛠️</option><option value="🎁">🎁</option><option value="👶">👶</option><option value="🐾">🐾</option>
-    </select>
+    <div class="icon-picker" data-icons='{{ icon_choices("category") | tojson }}' style="width: 86px; flex-shrink: 0;">
+      <input class="icon-picker-input" type="hidden" name="emoji" value="icon:cart" />
+      <button type="button" class="icon-picker-trigger" aria-label="Choose category icon">
+        <span class="icon-picker-current item-icon"></span>
+        <svg class="icon-picker-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
+      </button>
+      <div class="icon-picker-panel">
+        <input class="icon-picker-search" type="text" placeholder="Search" />
+        <div class="icon-picker-grid"></div>
+      </div>
+    </div>
     <input type="text" name="name" placeholder="{{ get_string('ph_name') }}" required pattern=".*\S+.*" title="Введіть назву без пустих пробілів" style="flex: 1" />
     <input type="color" name="color" value="{{ random_color | default('#4caf50') }}" title="Колір графіка" style="width: 42px; height: 42px; padding: 0; border: none; border-radius: 8px; cursor: pointer; background: transparent;" />
     <button type="submit" class="btn optimistic-submit" style="background-color: #9c27b0; color: white">{{ get_string('btn_create') }}</button>
   </form>
 
-  <div class="category-lists" style="display: flex; gap: 15px; flex: 1; min-height: 100px; max-height: 160px; align-items: stretch; overflow: hidden;">
+  <div class="category-lists" style="display: flex; gap: 15px; flex: 1 1 160px; min-height: 100px; height: 160px; align-items: stretch; overflow: hidden;">
     <div class="category-list" style="flex: 1; min-width: 0; overflow-y: auto; border-right: 1px solid var(--border-color); padding-right: 10px;">
       <h4 style="color: #ff4d4d; margin: 0 0 5px 0; font-size: 14px">{{ get_string('expense_plural') }}</h4>
       {% for cat in user_categories if cat.type == 'Витрата' %}
@@ -32,9 +46,15 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
             <input type="color" name="color" value="{{ cat.color or '#9c27b0' }}" onchange="this.form.submit()" style="width: 18px; height: 18px; border: none; padding: 0; cursor: pointer; outline: none; background: transparent;" title="{{ get_string('edit') }}" />
           </form>
-          <span>{{ translate_name(cat.name) }}</span>
+          <span class="item-with-icon" style="color:{{ cat.color or '#9c27b0' }};">
+            {{ render_item_icon(cat.name) }}
+            <span style="color:var(--text-color);">{{ translate_name(cat.name) }}</span>
+          </span>
         </div>
-        <a href="{{ url_for('budget.delete_category_route', id=cat.id) }}" style="text-decoration: none" class="optimistic-delete" onclick="return confirm('{{ get_string('delete') }} {{ get_string('category')|lower }}?');">❌</a>
+        <a href="{{ url_for('budget.delete_category_route', id=cat.id) }}" style="text-decoration: none; color:#ff4d4d;" class="optimistic-delete" data-confirm-message="{{ get_string('delete') }} {{ get_string('category')|lower }}?" data-confirm-title="{{ get_string('delete') }} {{ get_string('category')|lower }}" data-confirm-ok="{{ get_string('delete') }}" data-confirm-cancel="{{ get_string('cancel') }}" aria-label="Delete category">
+          <span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:inherit;">
+            <svg viewBox="0 0 24 24"><path d="M4 7h16"></path><path d="M6 7l1 13h10l1-13"></path><path d="M9 7V4h6v3"></path></svg>
+          </span></a>
       </div>
       {% endfor %}
     </div>
@@ -47,9 +67,15 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
             <input type="color" name="color" value="{{ cat.color or '#9c27b0' }}" onchange="this.form.submit()" style="width: 18px; height: 18px; border: none; padding: 0; cursor: pointer; outline: none; background: transparent;" title="{{ get_string('edit') }}" />
           </form>
-          <span>{{ translate_name(cat.name) }}</span>
+          <span class="item-with-icon" style="color:{{ cat.color or '#9c27b0' }};">
+            {{ render_item_icon(cat.name) }}
+            <span style="color:var(--text-color);">{{ translate_name(cat.name) }}</span>
+          </span>
         </div>
-        <a href="{{ url_for('budget.delete_category_route', id=cat.id) }}" style="text-decoration: none" class="optimistic-delete" onclick="return confirm('{{ get_string('delete') }} {{ get_string('category')|lower }}?');">❌</a>
+        <a href="{{ url_for('budget.delete_category_route', id=cat.id) }}" style="text-decoration: none; color:#ff4d4d;" class="optimistic-delete" data-confirm-message="{{ get_string('delete') }} {{ get_string('category')|lower }}?" data-confirm-title="{{ get_string('delete') }} {{ get_string('category')|lower }}" data-confirm-ok="{{ get_string('delete') }}" data-confirm-cancel="{{ get_string('cancel') }}" aria-label="Delete category">
+          <span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:inherit;">
+            <svg viewBox="0 0 24 24"><path d="M4 7h16"></path><path d="M6 7l1 13h10l1-13"></path><path d="M9 7V4h6v3"></path></svg>
+          </span></a>
       </div>
       {% endfor %}
     </div>

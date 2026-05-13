@@ -1,5 +1,16 @@
-<div class="card" style="flex: 1; min-width: 300px; height: 100%;">
-  <h3>🎯 {{ get_string('goals') }}</h3>
+<div class="card goal-card" style="flex: 1; min-width: 300px; width: 100%; display: flex; flex-direction: column; height: 100%;">
+  <h3 style="display:flex; align-items:center; gap:6px; margin-top:0;">
+    <span class="title-icon" aria-hidden="true" style="color:#4caf50;">
+      <svg viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="8"></circle>
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M12 2v3"></path>
+        <path d="M22 12h-3"></path>
+        <path d="M12 22v-3"></path>
+        <path d="M2 12h3"></path>
+      </svg>
+    </span>{{ get_string('goals') }}
+  </h3>
   <form action="{{ url_for('budget.add_goal_route') }}" method="POST" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
     <input type="hidden" name="is_shared" value="{{ 'true' if is_shared_view else 'false' }}" />
@@ -17,22 +28,30 @@
     </div>
   </form>
 
-  {% for goal in goals %}
-  <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
-    <div style="display: flex; justify-content: space-between; font-size: 13px;">
-      <div style="display: flex; flex-direction: column">
-        <strong>{{ translate_name(goal.name) }}</strong>
-        <span style="font-size: 11px; opacity: 0.6">{{ get_string('acc_label') }}: {{ translate_name(goal.acc_name) }}</span>
+  <div class="goal-items" style="display: flex; flex-direction: column; gap: 15px; flex: 1; min-height: 0;">
+    {% for goal in goals %}
+    <div style="padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
+      <div style="display: flex; justify-content: space-between; font-size: 13px;">
+        <div style="display: flex; flex-direction: column">
+          <strong>{{ translate_name(goal.name) }}</strong>
+          <span style="font-size: 11px; opacity: 0.6">{{ get_string('acc_label') }}: {{ translate_name(goal.acc_name) }}</span>
+        </div>
+        <span>{{ goal.current if goal.current % 1 != 0 else goal.current|int }} / {{ goal.target_amount if goal.target_amount % 1 != 0 else goal.target_amount|int }} {{ get_string('currency') }}</span>
       </div>
-      <span>{{ goal.current if goal.current % 1 != 0 else goal.current|int }} / {{ goal.target_amount if goal.target_amount % 1 != 0 else goal.target_amount|int }} {{ get_string('currency') }}</span>
+      <div style="width: 100%; background-color: var(--input-border); border-radius: 5px; height: 8px; overflow: hidden; margin-top: 4px; margin-bottom: 8px;">
+        <div style="height: 100%; background-color: #4CAF50; width: {{ (goal.current / goal.target_amount * 100) if goal.target_amount > 0 else 0 }}%; max-width: 100%;"></div>
+      </div>
+      <div class="no-print" style="display: flex; justify-content: flex-end; gap: 15px">
+        <a href="{{ url_for('budget.edit_goal_route', id=goal.id) }}" style="text-decoration: none; font-size: 13px; color: #2196f3; display:flex; align-items:center; gap:6px;" aria-label="Edit goal">
+          <span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:inherit;">
+            <svg viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16z"></path><path d="M13 7l4 4"></path></svg>
+          </span>{{ get_string('edit') }}</a>
+        <a href="{{ url_for('budget.delete_goal_route', id=goal.id) }}" style="text-decoration: none; font-size: 13px; color: #ff4d4d; display:flex; align-items:center; gap:6px;" class="optimistic-delete" data-confirm-message="{{ get_string('delete') }} {{ get_string('goals')|lower }}?" data-confirm-title="{{ get_string('delete') }} {{ get_string('goals')|lower }}" data-confirm-ok="{{ get_string('delete') }}" data-confirm-cancel="{{ get_string('cancel') }}" aria-label="Delete goal">
+          <span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:inherit;">
+            <svg viewBox="0 0 24 24"><path d="M4 7h16"></path><path d="M6 7l1 13h10l1-13"></path><path d="M9 7V4h6v3"></path></svg>
+          </span>{{ get_string('delete') }}</a>
+      </div>
     </div>
-    <div style="width: 100%; background-color: var(--input-border); border-radius: 5px; height: 8px; overflow: hidden; margin-top: 4px; margin-bottom: 8px;">
-      <div style="height: 100%; background-color: #4CAF50; width: {{ (goal.current / goal.target_amount * 100) if goal.target_amount > 0 else 0 }}%; max-width: 100%;"></div>
-    </div>
-    <div class="no-print" style="display: flex; justify-content: flex-end; gap: 15px">
-      <a href="{{ url_for('budget.edit_goal_route', id=goal.id) }}" style="text-decoration: none; font-size: 13px; color: #2196f3">✏️ {{ get_string('edit') }}</a>
-      <a href="{{ url_for('budget.delete_goal_route', id=goal.id) }}" style="text-decoration: none; font-size: 13px; color: #ff4d4d" class="optimistic-delete" onclick="return confirm('{{ get_string('delete') }} {{ get_string('goals')|lower }}?');">🗑️ {{ get_string('delete') }}</a>
-    </div>
+    {% endfor %}
   </div>
-  {% endfor %}
 </div>

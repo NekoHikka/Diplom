@@ -11,6 +11,7 @@ load_dotenv()
 from app.models import db, User
 from app.config import Config
 from app.utils.strings import get_string, translate_name
+from app.utils.icons import display_item_name, icon_choices, render_item_icon
 
 csrf = CSRFProtect()
 login_manager = LoginManager()
@@ -30,7 +31,14 @@ def create_app():
 
     @app.context_processor
     def inject_functions():
-        return dict(get_string=get_string, translate_name=translate_name, csrf_token=generate_csrf)
+        return dict(
+            get_string=get_string,
+            translate_name=translate_name,
+            csrf_token=generate_csrf,
+            display_item_name=display_item_name,
+            icon_choices=icon_choices,
+            render_item_icon=render_item_icon,
+        )
 
     @login_manager.user_loader
     def load_user(user_id):

@@ -8,14 +8,52 @@ from PIL import Image
 from google import genai
 from google.genai import errors
 from app.utils.strings import get_string
+from app.utils.icons import display_item_name, icon_value, infer_icon_id
 from app.config import Config
 
 class AIService:
+    QUOTA_EXHAUSTED = "__AI_QUOTA_EXHAUSTED__"
+    RECEIPT_MODELS = ("gemini-3.1-flash-lite", "gemini-2.5-flash")
+
+    @staticmethod
+    def _category_reference(existing_categories):
+        refs = []
+        for c in existing_categories or []:
+            refs.append({
+                "exact": c.name,
+                "display": display_item_name(c.name),
+                "type": c.type,
+            })
+        return refs
+
+    @staticmethod
+    def _normalize_category_choice(value, category_refs):
+        if not value or not isinstance(value, str):
+            return None
+        value = value.strip()
+        exact_map = {ref["exact"]: ref["exact"] for ref in category_refs}
+        display_map = {ref["display"].lower(): ref["exact"] for ref in category_refs}
+        if value in exact_map:
+            return value
+        display = display_item_name(value).strip()
+        if display.lower() in display_map:
+            return display_map[display.lower()]
+        if value.startswith("icon:"):
+            head, _, tail = value.partition(" ")
+            return f"{head} {display_item_name(tail or value).strip()}".strip()
+        icon_id = infer_icon_id(display, fallback="folder")
+        return f"{icon_value(icon_id)} {display or 'Інше'}"
+
     @staticmethod
     def get_client():
         if not Config.GEMINI_API_KEY:
             raise ValueError("GEMINI_API_KEY is not set in configuration.")
         return genai.Client(api_key=Config.GEMINI_API_KEY)
+
+    @staticmethod
+    def _is_quota_error(error):
+        error_text = str(error).lower()
+        return "resource_exhausted" in error_text or "429" in error_text or "quota" in error_text
 
     @staticmethod
     def _call_openrouter(prompt, model, temperature=0.7):
@@ -68,38 +106,53 @@ class AIService:
     @staticmethod
     def recognize_receipt(file_stream, existing_categories, user_prompt=None):
         try:
-            cat_names_str = ",\n".join([c.name for c in existing_categories])
+            category_refs = AIService._category_reference(existing_categories)
+            cat_names_str = json.dumps(category_refs, ensure_ascii=False)
             img = Image.open(file_stream)
             client = AIService.get_client()
 
             prompt = get_string('ai_prompts')['base_receipt']
-            prompt += f"\nОСЬ ІСНУЮЧІ КАТЕГОРІЇ КОРИСТУВАЧА:\n[{cat_names_str}]\n"
-            prompt += "Твоє завдання — підібрати НАЙБІЛЬШ ВІДПОВІДНУ категорію з існуючих.\n"
+            prompt += f"\nОСЬ ІСНУЮЧІ КАТЕГОРІЇ КОРИСТУВАЧА:\n{cat_names_str}\n"
+            prompt += "Твоє завдання — підібрати НАЙБІЛЬШ ВІДПОВІДНУ категорію з існуючих. Якщо підходить існуюча категорія, повертай її поле exact повністю, включно з icon:... префіксом. Якщо не підходить жодна, створи коротку назву без emoji, без icon: і без декоративних символів.\n"
 
             if user_prompt:
                 prompt += f"\n🚨 ДОДАТКОВІ ВКАЗІВКИ ВІД КОРИСТУВАЧА:\n{user_prompt}\n"
 
             prompt += """\nПоверни результат СУВОРО як валідний JSON масив.
             Приклад:
-            [ {"type": "Витрата", "amount": 345.50, "category": "🛒 Супермаркет", "description": "АТБ", "date": "2026-03-18"} ]
+            [ {"type": "Витрата", "amount": 345.50, "category": "icon:cart Супермаркет", "description": "АТБ", "date": "2026-03-18"} ]
             """
 
-            response = client.models.generate_content(
-                model='gemini-2.0-flash', 
-                contents=[img, prompt],
-                config=genai.types.GenerateContentConfig(temperature=0.1)
-            )
-            raw_text = AIService._clean_json_response(response.text)
-            data = json.loads(raw_text)
-            return data if isinstance(data, list) else []
+            last_quota_error = None
+            for model in AIService.RECEIPT_MODELS:
+                try:
+                    response = client.models.generate_content(
+                        model=model,
+                        contents=[img, prompt],
+                        config=genai.types.GenerateContentConfig(temperature=0.1)
+                    )
+                    raw_text = AIService._clean_json_response(response.text)
+                    data = json.loads(raw_text)
+                    return data if isinstance(data, list) else []
+                except Exception as model_error:
+                    print(f"AI Recognition Error ({model}): {model_error}")
+                    if AIService._is_quota_error(model_error):
+                        last_quota_error = model_error
+                    continue
+
+            if last_quota_error:
+                return AIService.QUOTA_EXHAUSTED
+            return []
         except Exception as e:
             print(f"AI Recognition Error: {e}")
+            if AIService._is_quota_error(e):
+                return AIService.QUOTA_EXHAUSTED
             return []
 
     @staticmethod
     def parse_statement(text, existing_categories=None, is_xlsx=False):
         try:
-            category_names = ", ".join([f'"{c.name}"' for c in (existing_categories or [])])
+            category_names = json.dumps(AIService._category_reference(existing_categories), ensure_ascii=False)
 
             lines = [l for l in text.split('\n') if l.strip()]  # drop blank lines
 
@@ -160,7 +213,7 @@ RULES & NUANCES:
    - Look for keywords like "Плюс", "Поповнення", "Зарахування", "Переказ" (if positive) for "Дохід".
 2. "amount": MUST be a positive number. Remove any negative signs, currency symbols (грн, UAH), or thousand separators (spaces/commas).
 3. "date": Convert all dates to standard YYYY-MM-DD format. Look for formats like DD.MM.YYYY or DD.MM.
-4. "category": You MUST try to use exactly one of these existing categories if it matches: [{category_names}]. If no category fits, create a short new one with an emoji (e.g. "🛒 Продукти").
+4. "category": You MUST try to use exactly one of these existing categories if it matches: {category_names}. Existing categories have "exact" and "display"; return "exact" when there is a match, including icon:... prefix. If no category fits, create a short plain category name without emoji and without icon: prefix (e.g. "Продукти"). The app will add the SVG icon later.
 5. "description": Keep it short but descriptive. Extract the actual merchant name or purpose. Remove excess numbers or technical bank codes.
 6. BALANCE: If you see the final balance on the account in the text (often called "Кінцевий залишок", "Залишок", "Balance"), append one special object at the end of the array formatted exactly like this: {{"type": "BALANCE", "amount": X}}
 
@@ -224,7 +277,8 @@ DATA SOURCE:
             return {}
         try:
             CHUNK_SIZE = 50  # max transactions per AI call
-            category_names = [c.name for c in existing_categories]
+            category_refs = AIService._category_reference(existing_categories)
+            category_names = category_refs
             compact_transactions = []
             for idx, tx in enumerate(transactions):
                 compact_transactions.append({
@@ -254,16 +308,16 @@ DATA SOURCE:
     def _categorize_chunk(compact_transactions, category_names):
         """Categorize a single chunk of transactions."""
         try:
+            category_refs = category_names
             prompt = f"""You are a Ukrainian finance app categorization assistant.
 
 Your job: assign the best category to each transaction.
 
 RULES:
-1. Use EXACTLY one of the EXISTING categories if it fits well.
+1. Use EXACTLY the "exact" value of one of the EXISTING categories if it fits well. Keep the icon:... prefix unchanged.
 2. If NO existing category fits, create a NEW one. New categories MUST follow this format:
-   - Start with ONE relevant emoji (e.g. 🏋️, 💈, 🐾, 🎓, 🏦, 🎮)
-   - Then a short Ukrainian name (e.g. "🏋️ Спорт", "🐾 Тварини", "🎓 Освіта")
-   - Match the tone and style of existing categories (emoji + short Ukrainian word)
+   - A short Ukrainian name (e.g. "Спорт", "Тварини", "Освіта")
+   - No emoji, no icon: prefix, and no decorative symbols. The app will attach the SVG icon later.
 3. Return a STRICT JSON object: keys = transaction "id" (integer), values = category name (string).
 4. Do NOT return null — always assign something.
 5. Output ONLY the JSON object, no markdown, no extra text.
@@ -280,11 +334,12 @@ Transactions to categorize:
 
             raw_text = AIService._clean_json_response(raw_text)
             data = json.loads(raw_text)
-            # Accept all AI responses — both existing and newly created categories
             result = {}
             for k, v in data.items():
                 if str(k).isdigit() and v and isinstance(v, str) and v.strip():
-                    result[int(k)] = v.strip()
+                    normalized = AIService._normalize_category_choice(v, category_refs)
+                    if normalized:
+                        result[int(k)] = normalized
             return result
         except Exception as e:
             print(f"AI category choice error: {e}")
@@ -294,13 +349,13 @@ Transactions to categorize:
     def extract_transaction_request(user_text, accounts, categories):
         try:
             account_data = [{"id": a.id, "name": a.name, "is_shared": bool(a.is_shared)} for a in accounts]
-            category_data = [{"name": c.name, "type": c.type, "is_shared": bool(c.is_shared)} for c in categories]
+            category_data = [{"name": c.name, "display": display_item_name(c.name), "type": c.type, "is_shared": bool(c.is_shared)} for c in categories]
             prompt = f"""
             Parse the user's message. If they ask to add transactions, return JSON:
             {{
               "can_add": true,
               "transactions": [
-                {{"date":"YYYY-MM-DD","type":"Витрата|Дохід","amount":150,"description":"...","account_id":1,"category":"exact existing category name or null"}}
+                {{"date":"YYYY-MM-DD","type":"Витрата|Дохід","amount":150,"description":"...","account_id":1,"category":"exact existing category name, including icon: prefix, or null"}}
               ]
             }}
             If they are not asking to add transactions, return {{"can_add": false}}.

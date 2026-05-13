@@ -28,7 +28,7 @@ endif %} {% endblock %} {% block content %}
         href="{{ url_for('shared.accept_invite', id=pending_invite.id) }}"
         class="btn"
         style="background: #4caf50; color: white"
-        >{{ get_string('shared_accept') }}</a
+        ><span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:currentColor;display:inline-flex;vertical-align:middle;"><svg viewBox="0 0 24 24"><path d="M5 12l4 4L19 6"></path></svg></span> {{ get_string('shared_accept') }}</a
       >
       <a
         href="{{ url_for('shared.reject_invite', id=pending_invite.id) }}"
@@ -54,10 +54,19 @@ endif %} {% endblock %} {% block content %}
   animation: fadeIn 0.5s ease-out forwards;
   backdrop-filter: blur(10px);
 ">
-  <div style="font-size: 42px; line-height: 1; flex-shrink: 0;">🤝</div>
+  <div style="font-size: 42px; line-height: 1; flex-shrink: 0; color: #2196f3;">
+  <span class="title-icon" aria-hidden="true" style="width:1.4em;height:1.4em; margin-right:0;">
+    <svg viewBox="0 0 24 24">
+      <path d="M8 13.5c1.2 0 2.2-.9 2.2-2.1S9.2 9.3 8 9.3s-2.2 1-2.2 2.1 1 2.1 2.2 2.1z"></path>
+      <path d="M16 13.5c1.2 0 2.2-.9 2.2-2.1S17.2 9.3 16 9.3s-2.2 1-2.2 2.1 1 2.1 2.2 2.1z"></path>
+      <path d="M5 18.5c.8-2 2.5-3 3.9-3 1.4 0 3.1 1 3.9 3"></path>
+      <path d="M12.2 18.5c.8-2 2.5-3 3.8-3 1.4 0 3.1 1 3.9 3"></path>
+    </svg>
+  </span>
+</div>
   <div style="flex: 1;">
     <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: #2196f3; margin-bottom: 4px;">
-      {{ 'Спільний бюджет' if session.get('lang','uk')=='uk' else 'Shared Budget' }}
+      {{ get_string('shared_with', username=partner.username) }}
     </div>
     <div style="font-size: 20px; font-weight: 700; color: var(--text-color);">
       {{ partner.username }}
@@ -103,7 +112,14 @@ endif %} {% endblock %} {% block content %}
       href="{{ url_for('analytics.export', filter=current_filter, shared=1 if is_shared_view else None) }}"
       class="btn"
       style="background-color: #217346; color: white; animation: slideInRight 0.4s ease-out forwards; animation-delay: 0.1s; opacity: 0;"
-      >📥 Excel</a
+      >
+        <span class="action-icon" aria-hidden="true" style="color:white; width:16px; height:16px; margin-right:8px;">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 3v10"></path>
+            <path d="M8 9l4 4 4-4"></path>
+            <path d="M5 21h14"></path>
+          </svg>
+        </span>Excel</a
     >
 
     <button
@@ -111,7 +127,14 @@ endif %} {% endblock %} {% block content %}
       class="btn"
       style="background-color: #d32f2f; color: white; animation: slideInRight 0.4s ease-out forwards; animation-delay: 0.2s; opacity: 0;"
     >
-      📄 PDF
+      <span class="action-icon" aria-hidden="true" style="color:white; width:16px; height:16px; margin-right:8px;">
+        <svg viewBox="0 0 24 24">
+          <path d="M7 3h7l5 5v13H7z"></path>
+          <path d="M14 3v5h5"></path>
+          <path d="M9 13h6"></path>
+          <path d="M9 16h4"></path>
+        </svg>
+      </span>PDF
     </button>
   </div>
 </div>
@@ -122,11 +145,11 @@ endif %} {% endblock %} {% block content %}
   {% include "partials/chart_distribution.html" %}
 </div>
 
-<div style="display: flex; gap: 20px; margin-bottom: 50px; flex-wrap: wrap; align-items: stretch;">
-  <div style="flex: 1; min-width: 300px; display: flex;">
+<div class="dashboard-split" style="display: flex; gap: 20px; margin-bottom: 50px; flex-wrap: wrap; align-items: stretch;">
+  <div class="dashboard-split-item" style="flex: 1; min-width: 300px; display: flex;">
     {% include "partials/goal_list.html" %}
   </div>
-  <div class="no-print" style="flex: 1; min-width: 300px; display: flex;">
+  <div class="no-print dashboard-split-item" style="flex: 1; min-width: 300px; display: flex;">
     {% include "partials/category_mgmt.html" %}
   </div>
 </div>
@@ -152,7 +175,10 @@ endif %} {% endblock %} {% block content %}
   </p>
   <a
     href="{{ url_for('shared.leave_partnership') }}"
-    onclick="return confirm('{{ get_string('shared_leave_confirm') }}');"
+    data-confirm-message="{{ get_string('shared_leave_confirm') }}"
+    data-confirm-title="{{ get_string('shared_danger_zone') }}"
+    data-confirm-ok="{{ get_string('shared_leave_btn') }}"
+    data-confirm-cancel="{{ get_string('cancel') }}"
     class="btn"
     style="
       background-color: #ff4d4d;
@@ -160,7 +186,13 @@ endif %} {% endblock %} {% block content %}
       padding: 12px 25px;
       font-size: 15px;
     "
-    >{{ get_string('shared_leave_btn') }}</a
+    ><span class="action-icon" aria-hidden="true" style="color:white; width:16px; height:16px; margin-right:8px;">
+      <svg viewBox="0 0 24 24">
+        <path d="M9 7l6 10"></path>
+        <path d="M15 7l-6 10"></path>
+        <path d="M6 7h12"></path>
+      </svg>
+    </span>{{ get_string('shared_leave_btn') }}</a
   >
 </div>
 {% endif %} 
@@ -178,7 +210,11 @@ endif %} {% endblock %} {% block content %}
     width:90%; max-width:440px; box-shadow:0 20px 60px rgba(0,0,0,0.5);
     border:1px solid var(--border-color); animation:fadeIn 0.2s ease-out;
   ">
-    <div style="font-size:48px; text-align:center; margin-bottom:16px;" id="modal-icon">🗑️</div>
+    <div style="font-size:48px; text-align:center; margin-bottom:16px; color:#ff4d4d;" id="modal-icon">
+      <span class="action-icon" aria-hidden="true" style="width:42px;height:42px;color:inherit;">
+        <svg viewBox="0 0 24 24"><path d="M4 7h16"></path><path d="M6 7l1 13h10l1-13"></path><path d="M9 7V4h6v3"></path></svg>
+      </span>
+    </div>
     <h3 id="modal-title" style="margin:0 0 8px; text-align:center; font-size:1.2rem;"></h3>
     <p id="modal-desc" style="color:#aaa; text-align:center; font-size:14px; margin:0 0 20px;"></p>
     <div id="modal-balance-row" style="
@@ -234,30 +270,11 @@ endif %} {% endblock %} {% block content %}
     if (isDeleting) return;
     isDeleting = true;
     const btn = document.getElementById('modal-confirm-btn');
-    btn.textContent = '⏳...';
+    btn.textContent = '{{ "Обробка..." if session.get("lang","uk") == "uk" else "Processing..." }}';
     btn.style.opacity = '0.7';
     const updateBalance = document.getElementById('modal-update-balance').checked;
     if (pendingDeleteAction) pendingDeleteAction(updateBalance);
   }
-
-  // Override optimistic-delete (single transaction) to use modal
-  document.querySelectorAll('.optimistic-delete').forEach(link => {
-    link.addEventListener('click', function(e) {
-      e.preventDefault();
-      const href = this.href;
-      const row = this.closest('tr');
-      const isBalanceLink = !href.includes('update_balance=0');
-      openDeleteModal(
-        "{{ 'Видалення транзакції' if session.get('lang','uk')=='uk' else 'Delete transaction' }}",
-        "{{ 'Цю дію не можна скасувати.' if session.get('lang','uk')=='uk' else 'This action cannot be undone.' }}",
-        (updateBalance) => {
-          const url = href + (href.includes('?') ? '&' : '?') + 'update_balance=' + (updateBalance ? '1' : '0');
-          if (row) { row.style.transition='all 0.3s'; row.style.opacity='0'; row.style.transform='translateX(-20px)'; }
-          setTimeout(() => window.location.href = url, 280);
-        }
-      );
-    });
-  });
 
   document.addEventListener("DOMContentLoaded", function() {
       const checkboxes = document.querySelectorAll('.transaction-checkbox');
@@ -340,7 +357,7 @@ endif %} {% endblock %} {% block content %}
 
   document.querySelectorAll('.optimistic-submit').forEach(btn => {
       btn.closest('form').addEventListener('submit', function() {
-          if(!btn.innerHTML.includes('⏳')) { btn.innerHTML = '⏳...'; btn.style.opacity = '0.7'; btn.style.pointerEvents = 'none'; }
+          if(!btn.dataset.loading) { btn.innerHTML = '{{ "Обробка..." if session.get("lang","uk") == "uk" else "Processing..." }}'; btn.dataset.loading = '1'; btn.style.opacity = '0.7'; btn.style.pointerEvents = 'none'; }
       });
   });
 
@@ -363,8 +380,10 @@ endif %} {% endblock %} {% block content %}
       if (!catObj) return;
       catObj.innerHTML = "";
       (selectedType === "Витрата" ? expenseCategories : incomeCategories).forEach(cat => {
-          let opt = document.createElement("option"); opt.value = cat; opt.innerHTML = cat; catObj.appendChild(opt);
+          let opt = document.createElement("option"); opt.value = cat; opt.innerHTML = financeCleanLabel(cat); catObj.appendChild(opt);
       });
+      catObj.dispatchEvent(new Event("change", { bubbles: true }));
+      if (window.initIconSelects) initIconSelects();
   }
   if (document.getElementById("type_select")) {
       updateCategories();
@@ -452,14 +471,15 @@ endif %} {% endblock %} {% block content %}
 
       if (myChart) {
           myChart.data.labels = dataObj.labels; myChart.data.datasets[0].data = dataObj.data; myChart.data.datasets[0].backgroundColor = currentColors;
-          myChart.options.plugins.tooltip.callbacks.label = (c) => c.label + ': ' + c.parsed.toLocaleString('uk-UA') + ' {{ get_string("currency") }} (' + ((c.parsed / totalSum) * 100).toFixed(1) + '%)';
+          myChart.options.plugins.tooltip.enabled = false;
+          myChart.options.plugins.tooltip.external = financeDoughnutTooltip;
           myChart.update();
       } else {
           const chartEl = document.getElementById('expensesChart');
           if (chartEl) {
               myChart = new Chart(chartEl.getContext('2d'), {
                   type: 'doughnut', data: { labels: dataObj.labels, datasets: [{ data: dataObj.data, backgroundColor: currentColors, borderWidth: 0 }] },
-                  options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false } } },
+                  options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false }, tooltip: { enabled: false, external: financeDoughnutTooltip } } },
                   plugins: [centerTextPlugin]
               });
           }

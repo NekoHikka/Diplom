@@ -65,15 +65,22 @@ def sync_monobank():
 
     client_info = MonobankService.get_client_info(token)
     if client_info and 'accounts' in client_info:
-        main_card = client_info['accounts'][0]
-        real_balance = main_card.get('balance', 0) / 100.0
-        account_name = 'Monobank'
+        mono_accounts = client_info.get('accounts', [])
+        main_card = None
+        if mono_accounts:
+            positive_cards = [acc for acc in mono_accounts if acc.get('balance', 0) > 0]
+            main_card = max(positive_cards, key=lambda acc: acc.get('balance', 0), default=None) if positive_cards else mono_accounts[0]
+        real_balance = (main_card.get('balance', 0) / 100.0) if main_card else 0.0
+        account_name = get_string('bank_monobank')
 
         from app.repositories.account_repository import get_accounts_by_user as get_accs
-        mono_account = next((a for a in get_accs(current_user.id) if a.name == account_name), None)
+        legacy_names = {'Monobank', '💳 Monobank'}
+        mono_account = next((a for a in get_accs(current_user.id) if a.name == account_name or a.name in legacy_names), None)
         if not mono_account:
             mono_account = create_account(account_name, real_balance, current_user.id, False)
         else:
+            if mono_account.name != account_name:
+                mono_account.name = account_name
             mono_account.balance = real_balance
             db.session.commit()
 

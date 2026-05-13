@@ -11,6 +11,7 @@ from app.services.export_service import ExportService
 from app.models import get_current_time
 from app.config import Config
 from app.utils.strings import get_string
+from app.utils.icons import display_item_name
 
 analytics_bp = Blueprint('analytics', __name__)
 
@@ -69,7 +70,9 @@ def analytics():
     user_categories = sync_missing_categories(all_tx, user_categories, current_user.id, is_shared)
 
     expenses = [t for t in all_tx if t.date >= start_date and (t.type == 'Витрата' or t.type == 'Expense')]
+    incomes = [t for t in all_tx if t.date >= start_date and (t.type == 'Дохід' or t.type == 'Income')]
     total_expense = round(sum(e.amount for e in expenses), 2)
+    total_income = round(sum(i.amount for i in incomes), 2)
     current_balance = round(sum(a.balance for a in user_accounts), 2)
     real_daily_avg = total_expense / period_days if period_days > 0 else 0
     days_left = int(current_balance / real_daily_avg) if real_daily_avg > 0 else 999
@@ -117,7 +120,7 @@ def analytics():
         elif cat_lower in ['транспорт', 'transport'] and percent > 15: recommendations.append(get_string('rec_transport_high'))
     if not recommendations and total_expense > 0: 
         if total_expense > (older_sum * 1.5) and older_sum > 0:
-            recommendations.append(get_string('rec_trend_warning') if get_string('rec_trend_warning') != 'rec_trend_warning' else "⚠️ Ваші витрати суттєво зросли порівняно з минулим періодом. Варто звернути на це увагу.")
+            recommendations.append(get_string('rec_trend_warning'))
         else:
             recommendations.append(get_string('rec_balanced'))
 
@@ -143,19 +146,67 @@ def analytics():
 
     health_score = 50
     if total_expense == 0:
-        if current_balance == 0:
-            health_score = 50 
+        if current_balance > 0 and total_income == 0:
+            health_score = 75
+        elif current_balance > 0:
+            health_score = 92
+        elif total_income > 0:
+            health_score = 68
         else:
-            health_score = 100 
+            health_score = 55
     else:
-        if days_left >= 30: health_score += 30
-        elif days_left >= 14: health_score += 15
-        elif days_left < 7: health_score -= 20
-        
-        if total_expense > 0:
-            if current_balance > total_expense: health_score += 20
-            else: health_score -= 10
-        
+        reserve_ratio = current_balance / total_expense if total_expense > 0 else 0
+        if reserve_ratio >= 3:
+            health_score += 20
+        elif reserve_ratio >= 1.5:
+            health_score += 12
+        elif reserve_ratio >= 0.75:
+            health_score += 5
+        else:
+            health_score -= 12
+
+        if days_left >= 45:
+            health_score += 15
+        elif days_left >= 21:
+            health_score += 10
+        elif days_left >= 10:
+            health_score += 5
+        elif days_left < 5:
+            health_score -= 15
+        elif days_left < 10:
+            health_score -= 5
+
+        if total_income > 0:
+            savings_rate = 1 - (total_expense / total_income)
+            if savings_rate >= 0.25:
+                health_score += 15
+            elif savings_rate >= 0.10:
+                health_score += 8
+            elif savings_rate >= 0:
+                health_score += 2
+            else:
+                health_score -= 15
+        elif current_balance > total_expense:
+            health_score += 5
+
+        if older_sum > 0:
+            spend_delta = (total_expense - older_sum) / older_sum
+            if spend_delta <= -0.20:
+                health_score += 10
+            elif spend_delta <= -0.05:
+                health_score += 5
+            elif spend_delta >= 0.25:
+                health_score -= 15
+            elif spend_delta >= 0.10:
+                health_score -= 6
+
+        if total_expense > 0 and category_totals:
+            top_share = (top_category_amount / total_expense) * 100
+            if top_share > 55:
+                health_score -= 8
+            elif top_share < 35:
+                health_score += 5
+
     health_score = max(0, min(100, health_score))
 
     final_values = [category_totals[label] for label in final_labels]
@@ -170,7 +221,8 @@ def analytics():
     month_names_en = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
     month_names = month_names_uk if lang == 'uk' else month_names_en
 
-    return render_template('analytics.html', period_days=period_days, top_category=top_category, 
+    return render_template('analytics.html', period_days=period_days, top_category=top_category,
+                           top_category_display=display_item_name(top_category),
                            top_category_amount=top_category_amount, recommendations=recommendations, 
                            budget_forecast=budget_forecast, 
                            projected_month_total=int(total_expense + (real_daily_avg * (30 - now.day))), 

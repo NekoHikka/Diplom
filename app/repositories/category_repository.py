@@ -1,4 +1,5 @@
 from app.models import db, Category
+from app.utils.icons import display_item_name, icon_value, infer_icon_id
 import re
 from difflib import SequenceMatcher
  
@@ -15,6 +16,7 @@ def get_or_create_category(name, type, user_id, is_shared, color=None):
     from app.config import Config
     import random
     
+    name = ensure_category_icon(name, type)
     cat = Category.query.filter_by(name=name, type=type, user_id=user_id, is_shared=is_shared).first()
     if not cat:
         if not color:
@@ -23,7 +25,7 @@ def get_or_create_category(name, type, user_id, is_shared, color=None):
     return cat
 
 def _clean_category_text(value):
-    value = (value or '').lower()
+    value = display_item_name(value or '').lower()
     value = re.sub(r'[^\w\s]', ' ', value, flags=re.UNICODE)
     value = re.sub(r'\s+', ' ', value).strip()
     return value
@@ -73,7 +75,16 @@ def resolve_category_name(suggested_name, t_type, existing_categories, user_id, 
     fallback = suggested_name or description or 'Інше'
     return get_or_create_category(fallback[:50], t_type, user_id, is_shared, color=color).name
 
+def ensure_category_icon(name, t_type=None, description=''):
+    clean_name = display_item_name(name or '').strip() or 'Інше'
+    raw = (name or '').strip()
+    if raw.startswith('icon:'):
+        return f"{raw.split(' ', 1)[0]} {clean_name}".strip()
+    icon_id = infer_icon_id(f"{clean_name} {description}", fallback='salary' if t_type in {'Дохід', 'Income'} else 'folder')
+    return f"{icon_value(icon_id)} {clean_name}"
+
 def create_category(name, type, user_id, is_shared, color):
+    name = ensure_category_icon(name, type)
     new_cat = Category(name=name, type=type, user_id=user_id, is_shared=is_shared, color=color)
     db.session.add(new_cat)
     db.session.commit()
@@ -82,7 +93,7 @@ def create_category(name, type, user_id, is_shared, color):
 def sync_missing_categories(transactions, current_categories, user_id, is_shared):
     def clean_n(n):
         import re
-        return re.sub(r'[^\w]', '', n).lower().strip()
+        return re.sub(r'[^\w]', '', display_item_name(n)).lower().strip()
 
     known_clean_names = {clean_n(c.name) for c in current_categories}
     synced = False
