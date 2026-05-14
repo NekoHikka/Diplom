@@ -8,10 +8,11 @@ from app.repositories.transaction_repository import add_transaction
 from app.models import db, get_current_time
 from datetime import datetime, timezone
 from app.repositories.partnership_repository import get_active_partnership
-from app.repositories.category_repository import get_multi_user_categories, get_categories_by_user, resolve_category_name
+from app.repositories.category_repository import get_multi_user_categories, get_categories_by_user, resolve_category_name, ensure_category_icon
 from app.config import Config
 from app.services.ai_service import AIService
 from app.utils.strings import get_string
+from app.utils.icons import display_item_name, icon_value
 import random
 import threading
 import tempfile
@@ -71,10 +72,10 @@ def sync_monobank():
             positive_cards = [acc for acc in mono_accounts if acc.get('balance', 0) > 0]
             main_card = max(positive_cards, key=lambda acc: acc.get('balance', 0), default=None) if positive_cards else mono_accounts[0]
         real_balance = (main_card.get('balance', 0) / 100.0) if main_card else 0.0
-        account_name = get_string('bank_monobank')
+        account_name = f"{icon_value('card')} {display_item_name(get_string('bank_monobank'))}"
 
         from app.repositories.account_repository import get_accounts_by_user as get_accs
-        legacy_names = {'Monobank', '💳 Monobank'}
+        legacy_names = {'Monobank', '💳 Monobank', 'icon:card Monobank'}
         mono_account = next((a for a in get_accs(current_user.id) if a.name == account_name or a.name in legacy_names), None)
         if not mono_account:
             mono_account = create_account(account_name, real_balance, current_user.id, False)
@@ -757,7 +758,7 @@ def csv_preview():
                 date_obj = datetime.strptime(pt['date'], '%Y-%m-%d')
                 amt = float(pt['amount'])
                 user_cat = request.form.get(f'category_{idx_str}')
-                final_cat = user_cat.strip() if user_cat and user_cat.strip() else pt['category']
+                final_cat = ensure_category_icon(user_cat.strip() if user_cat and user_cat.strip() else pt['category'], pt['type'])
                 raw_type = pt['type']
                 if raw_type == 'Income':
                     normalized_type = 'Дохід'

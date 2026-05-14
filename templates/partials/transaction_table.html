@@ -48,11 +48,11 @@
           <input type="checkbox" class="pretty-check transaction-checkbox" value="{{ t.id }}" />
         </td>
         <td style="color: #aaa">{{ t.date.strftime('%d.%m.%Y') }}</td>
-        <td style="color: #ff9800; font-weight: bold">
+        <td class="transaction-account-cell" style="color: #ff9800; font-weight: bold">
           {% if t.account %}
           <span class="item-with-icon">
             {{ render_item_icon(t.account.name, 'card') }}
-            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#ff9800;">{{ translate_name(t.account.name) }}</span>
+            <span class="account-name" title="{{ translate_name(t.account.name) }}" style="color:#ff9800;">{{ translate_name(t.account.name) }}</span>
           </span>
           {% else %}---{% endif %}
         </td>
@@ -67,7 +67,7 @@
         <td>
           <span class="item-with-icon">
             {{ render_item_icon(t.category) }}
-            <span>{{ translate_name(t.category) }}</span>
+            <span class="text-ellipsis">{{ translate_name(t.category) }}</span>
           </span>
         </td>
         <td>{{ t.amount if t.amount % 1 != 0 else t.amount|int }} {{ get_string('currency') }}</td>

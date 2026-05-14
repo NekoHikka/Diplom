@@ -41,6 +41,9 @@
   >
     {% for acc in accounts %}
     <div
+      class="pdf-account-row"
+      data-name="{{ translate_name(acc.name)|e }}"
+      data-balance="{{ acc.balance }} {{ get_string('currency') }}"
       style="
         display: flex;
         justify-content: space-between;
@@ -123,6 +126,7 @@
       name="name"
       placeholder="{{ get_string('acc_name_ph') }}"
       required
+      maxlength="24"
       pattern=".*\S+.*"
       title="Введіть назву без пустих пробілів"
       style="flex: 2; padding: 8px"

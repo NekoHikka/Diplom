@@ -30,7 +30,15 @@
 
   <div class="goal-items" style="display: flex; flex-direction: column; gap: 15px; flex: 1; min-height: 0;">
     {% for goal in goals %}
-    <div style="padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
+    <div
+      class="pdf-goal-row"
+      data-name="{{ translate_name(goal.name)|e }}"
+      data-account="{{ translate_name(goal.acc_name)|e }}"
+      data-current="{{ goal.current if goal.current % 1 != 0 else goal.current|int }}"
+      data-target="{{ goal.target_amount if goal.target_amount % 1 != 0 else goal.target_amount|int }}"
+      data-currency="{{ get_string('currency') }}"
+      style="padding-bottom: 10px; border-bottom: 1px solid var(--border-color);"
+    >
       <div style="display: flex; justify-content: space-between; font-size: 13px;">
         <div style="display: flex; flex-direction: column">
           <strong>{{ translate_name(goal.name) }}</strong>

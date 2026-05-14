@@ -11,7 +11,7 @@ from app.repositories.account_repository import (
     get_accounts_by_user, create_account, get_account_by_id, delete_account, update_account_balance
 )
 from app.repositories.category_repository import (
-    get_categories_by_user, create_category, get_category_by_id, delete_category, update_category_color, sync_missing_categories
+    get_categories_by_user, create_category, get_category_by_id, delete_category, update_category_color, update_category, sync_missing_categories
 )
 from app.repositories.goal_repository import get_goals_by_user, create_goal, get_goal_by_id, delete_goal, update_goal
 from app.repositories.partnership_repository import get_active_partnership, get_pending_invite_received, get_partnership_by_id
@@ -22,6 +22,11 @@ from app.utils.strings import get_string
 from app.utils.icons import display_item_name, icon_value, parse_icon_value, split_icon_name
 
 budget_bp = Blueprint('budget', __name__)
+MAX_ACCOUNT_NAME_LEN = 24
+MAX_CATEGORY_NAME_LEN = 30
+
+def normalize_account_name(value):
+    return " ".join((value or "").split())
 
 @budget_bp.route('/')
 @login_required
@@ -101,6 +106,7 @@ def home():
     inc_values = [inc_cat_data[l] for l in inc_labels]
     inc_colors = [cat_color_map.get(get_extreme_clean(l), get_stable_color(l)) for l in inc_labels]
 
+    is_pdf_export = request.args.get('pdf') == '1'
     page = request.args.get('page', 1, type=int)
     per_page = 50
     total_pages = (len(ts) + per_page - 1) // per_page if ts else 1
@@ -108,7 +114,7 @@ def home():
     if page > total_pages: page = total_pages
 
     start_idx = (page - 1) * per_page
-    paginated_ts = ts[start_idx:start_idx + per_page]
+    paginated_ts = ts if is_pdf_export else ts[start_idx:start_idx + per_page]
 
     from app.utils.strings import translate_name
     return render_template('index.html', transactions=paginated_ts, username=current_user.username,
@@ -120,7 +126,7 @@ def home():
                            inc_cats=[c.name for c in user_categories if c.type=='Дохід'],
                            user_categories=user_categories, current_filter=f, filter_name=filter_name,
                            pending_invite=pending_invite, invite_sender=invite_sender,
-                           page=page, total_pages=total_pages)
+                           page=page, total_pages=total_pages, is_pdf_export=is_pdf_export)
 
 @budget_bp.route('/add_transaction', methods=['POST'])
 @login_required
@@ -208,9 +214,12 @@ def delete_all_transactions():
 @login_required
 def add_account_route():
     is_shared = request.form.get('is_shared') == 'true'
-    name = request.form.get('name', '').strip()
+    name = normalize_account_name(request.form.get('name', ''))
     if not name:
         flash(get_string('error_no_name'), "error")
+        return redirect(url_for('shared.shared_budget' if is_shared else 'budget.home'))
+    if len(name) > MAX_ACCOUNT_NAME_LEN:
+        flash(get_string('error_account_name_long'), "error")
         return redirect(url_for('shared.shared_budget' if is_shared else 'budget.home'))
     emoji = request.form.get('emoji', icon_value('card'))
     balance_str = request.form.get('balance', '').replace(',', '.').strip()
@@ -236,6 +245,9 @@ def add_category_route():
     if not name:
         flash(get_string('error_no_name'), "error")
         return redirect(url_for('shared.shared_budget' if is_shared else 'budget.home'))
+    if len(name) > MAX_CATEGORY_NAME_LEN:
+        flash(get_string('error_category_name_long'), "error")
+        return redirect(url_for('shared.shared_budget' if is_shared else 'budget.home'))
 
     partner = get_active_partnership(current_user.id)
     uid = (partner.user1_id if partner.user2_id == current_user.id else partner.user2_id) if is_shared and partner else current_user.id
@@ -255,6 +267,63 @@ def update_category_color_route(id):
         if cat.user_id == current_user.id or cat.user_id == partner_id:
             update_category_color(cat, request.form.get('color', '#9c27b0'))
     return redirect(request.referrer or url_for('budget.home'))
+
+@budget_bp.route('/update_category/<int:id>', methods=['POST'])
+@login_required
+def update_category_route(id):
+    cat = get_category_by_id(id)
+    if not cat:
+        return redirect(request.referrer or url_for('budget.home'))
+
+    partner = get_active_partnership(current_user.id)
+    partner_id = (partner.user1_id if partner.user2_id == current_user.id else partner.user2_id) if partner else None
+    if cat.user_id != current_user.id and cat.user_id != partner_id:
+        return redirect(request.referrer or url_for('budget.home'))
+
+    name = request.form.get('name', '').strip()
+    if not name:
+        flash(get_string('error_no_name'), "error")
+        return redirect(request.referrer or url_for('budget.home'))
+    if len(name) > MAX_CATEGORY_NAME_LEN:
+        flash(get_string('error_category_name_long'), "error")
+        return redirect(request.referrer or url_for('budget.home'))
+
+    icon = request.form.get('emoji', icon_value('folder'))
+    color = request.form.get('color', cat.color or '#9c27b0')
+    user_ids = [current_user.id, partner_id] if cat.is_shared and partner_id else [cat.user_id]
+    update_category(cat, f"{icon} {name}", color, user_ids=user_ids)
+    return redirect(request.referrer or url_for('budget.home'))
+
+@budget_bp.route('/edit_category/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_category_route(id):
+    cat = get_category_by_id(id)
+    if not cat:
+        return redirect(url_for('budget.home'))
+
+    partner = get_active_partnership(current_user.id)
+    partner_id = (partner.user1_id if partner.user2_id == current_user.id else partner.user2_id) if partner else None
+    if cat.user_id != current_user.id and cat.user_id != partner_id:
+        return redirect(url_for('budget.home'))
+
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        if not name:
+            flash(get_string('error_no_name'), "error")
+            return redirect(url_for('budget.edit_category_route', id=id))
+        if len(name) > MAX_CATEGORY_NAME_LEN:
+            flash(get_string('error_category_name_long'), "error")
+            return redirect(url_for('budget.edit_category_route', id=id))
+
+        icon = request.form.get('emoji', icon_value('folder'))
+        color = request.form.get('color', cat.color or '#9c27b0')
+        user_ids = [current_user.id, partner_id] if cat.is_shared and partner_id else [cat.user_id]
+        update_category(cat, f"{icon} {name}", color, user_ids=user_ids)
+        return redirect(url_for('shared.shared_budget' if cat.is_shared else 'budget.home'))
+
+    current_icon, current_name = split_icon_name(cat.name, fallback='folder')
+    current_emoji = icon_value(current_icon)
+    return render_template('edit_category.html', cat=cat, current_emoji=current_emoji, current_name=current_name)
 
 @budget_bp.route('/delete_category/<int:id>')
 @login_required
@@ -314,9 +383,12 @@ def edit_account(id):
         return redirect(url_for('budget.home'))
 
     if request.method == 'POST':
-        name = request.form.get('name', '').strip()
+        name = normalize_account_name(request.form.get('name', ''))
         if not name:
             flash(get_string('error_no_name'), "error")
+            return redirect(url_for('budget.edit_account', id=id))
+        if len(name) > MAX_ACCOUNT_NAME_LEN:
+            flash(get_string('error_account_name_long'), "error")
             return redirect(url_for('budget.edit_account', id=id))
         emoji = request.form.get('emoji', icon_value('card'))
         acc.name = f"{emoji} {name}"

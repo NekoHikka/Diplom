@@ -1,4 +1,4 @@
-from app.models import db, Category
+from app.models import db, Category, Transaction
 from app.utils.icons import display_item_name, icon_value, infer_icon_id
 import re
 from difflib import SequenceMatcher
@@ -113,6 +113,24 @@ def sync_missing_categories(transactions, current_categories, user_id, is_shared
 def update_category_color(category, color):
     category.color = color
     db.session.commit()
+
+def update_category(category, name, color=None, user_ids=None):
+    old_name = category.name
+    new_name = ensure_category_icon(name, category.type)
+    category.name = new_name
+    if color:
+        category.color = color
+    query = Transaction.query.filter_by(category=old_name, is_shared=category.is_shared)
+    if user_ids:
+        query = query.filter(Transaction.user_id.in_(user_ids))
+    else:
+        query = query.filter(Transaction.user_id == category.user_id)
+    query.update(
+        {Transaction.category: new_name},
+        synchronize_session=False
+    )
+    db.session.commit()
+    return category
 
 def delete_category(category):
     db.session.delete(category)

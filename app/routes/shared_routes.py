@@ -78,6 +78,7 @@ def shared_budget():
     inc_labels, inc_values = list(inc_cat_data.keys()), list(inc_cat_data.values())
     inc_colors = [cat_color_map.get(l, random.choice(Config.COLORS_PALETTE)) for l in inc_labels]
 
+    is_pdf_export = request.args.get('pdf') == '1'
     page = request.args.get('page', 1, type=int)
     per_page = 50
     total_pages = (len(ts) + per_page - 1) // per_page if ts else 1
@@ -85,7 +86,7 @@ def shared_budget():
     if page > total_pages: page = total_pages
 
     start_idx = (page - 1) * per_page
-    paginated_ts = ts[start_idx:start_idx + per_page]
+    paginated_ts = ts if is_pdf_export else ts[start_idx:start_idx + per_page]
 
     return render_template('index.html', transactions=paginated_ts, username=current_user.username,
                            exp_labels=exp_labels, exp_values=exp_values, exp_colors=exp_colors,
@@ -96,7 +97,7 @@ def shared_budget():
                            inc_cats=[c.name for c in user_categories if c.type=='Дохід'],
                            user_categories=user_categories, current_filter=f, filter_name=filter_name,
                            is_shared_view=True, partner=partner,
-                           page=page, total_pages=total_pages)
+                           page=page, total_pages=total_pages, is_pdf_export=is_pdf_export)
 
 @shared_bp.route('/send_invite', methods=['POST'])
 @login_required

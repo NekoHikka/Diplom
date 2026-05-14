@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finance-pwa-v2';
+const CACHE_NAME = 'finance-pwa-v8';
 const urlsToCache = [
   '/',
   '/static/manifest.json',

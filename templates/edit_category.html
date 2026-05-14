@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}{{ get_string('edit_account') }}{% endblock %}
+{% block title %}{{ get_string('edit') }} {{ get_string('category')|lower }}{% endblock %}
 
 {% block content %}
 <div class="card" style="max-width: 500px; margin: 40px auto">
-  <h2 style="margin-top: 0; color: #ff9800">{{ get_string('edit_account') }}</h2>
-  <form action="{{ url_for('budget.edit_account', id=acc.id) }}" method="POST" style="display: flex; flex-direction: column; gap: 15px">
+  <h2 style="margin-top: 0; color: #9c27b0">{{ get_string('edit') }} {{ get_string('category')|lower }}</h2>
+  <form action="{{ url_for('budget.edit_category_route', id=cat.id) }}" method="POST" style="display: flex; flex-direction: column; gap: 15px">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-    
+
     <div>
       <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #aaa">{{ get_string('type') }}:</label>
-      <div class="icon-picker" data-icons='{{ icon_choices("account") | tojson }}' style="max-width: 120px;">
+      <div class="icon-picker" data-icons='{{ icon_choices("category") | tojson }}' style="max-width: 120px;">
         <input class="icon-picker-input" type="hidden" name="emoji" value="{{ current_emoji }}" />
-        <button type="button" class="icon-picker-trigger" aria-label="Choose account icon">
+        <button type="button" class="icon-picker-trigger" aria-label="Choose category icon">
           <span class="icon-picker-current item-icon"></span>
           <svg class="icon-picker-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"></path></svg>
         </button>
@@ -25,17 +25,17 @@
 
     <div>
       <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #aaa">{{ get_string('ph_name')|replace('(','')|replace(')','') }}:</label>
-      <input type="text" name="name" value="{{ current_name }}" required maxlength="24" />
+      <input type="text" name="name" value="{{ current_name }}" required maxlength="30" />
     </div>
 
     <div>
-      <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #aaa">{{ get_string('amount') }}:</label>
-      <input type="text" inputmode="decimal" name="balance" value="{{ acc.balance if acc.balance % 1 != 0 else acc.balance|int }}" required oninput="formatMoneyInput(this)" />
+      <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #aaa">{{ get_string('color_label') }}:</label>
+      <input type="color" name="color" value="{{ cat.color or '#9c27b0' }}" style="width: 52px; height: 42px; padding: 0; border: none; border-radius: 8px; cursor: pointer; background: transparent;" />
     </div>
 
     <div style="display: flex; gap: 10px; margin-top: 10px">
       <button type="submit" class="btn" style="background-color: #4caf50; color: white; flex: 1">{{ get_string('save') }}</button>
-      <a href="{{ url_for('shared.shared_budget' if acc.is_shared else 'budget.home') }}" class="btn" style="background-color: #666; color: white; flex: 1">{{ get_string('cancel') }}</a>
+      <a href="{{ url_for('shared.shared_budget' if cat.is_shared else 'budget.home') }}" class="btn" style="background-color: #666; color: white; flex: 1">{{ get_string('cancel') }}</a>
     </div>
   </form>
 </div>

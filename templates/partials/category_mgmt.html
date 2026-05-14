@@ -31,7 +31,7 @@
         <div class="icon-picker-grid"></div>
       </div>
     </div>
-    <input type="text" name="name" placeholder="{{ get_string('ph_name') }}" required pattern=".*\S+.*" title="Введіть назву без пустих пробілів" style="flex: 1" />
+    <input type="text" name="name" placeholder="{{ get_string('ph_name') }}" required maxlength="30" pattern=".*\S+.*" title="Введіть назву без пустих пробілів" style="flex: 1" />
     <input type="color" name="color" value="{{ random_color | default('#4caf50') }}" title="Колір графіка" style="width: 42px; height: 42px; padding: 0; border: none; border-radius: 8px; cursor: pointer; background: transparent;" />
     <button type="submit" class="btn optimistic-submit" style="background-color: #9c27b0; color: white">{{ get_string('btn_create') }}</button>
   </form>
@@ -40,42 +40,56 @@
     <div class="category-list" style="flex: 1; min-width: 0; overflow-y: auto; border-right: 1px solid var(--border-color); padding-right: 10px;">
       <h4 style="color: #ff4d4d; margin: 0 0 5px 0; font-size: 14px">{{ get_string('expense_plural') }}</h4>
       {% for cat in user_categories if cat.type == 'Витрата' %}
-      <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; align-items: center;">
-        <div style="display: flex; align-items: center; gap: 8px">
+      <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; align-items: center; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
           <form action="{{ url_for('budget.update_category_color_route', id=cat.id) }}" method="POST" style="margin: 0; display: flex; align-items: center">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
             <input type="color" name="color" value="{{ cat.color or '#9c27b0' }}" onchange="this.form.submit()" style="width: 18px; height: 18px; border: none; padding: 0; cursor: pointer; outline: none; background: transparent;" title="{{ get_string('edit') }}" />
           </form>
-          <span class="item-with-icon" style="color:{{ cat.color or '#9c27b0' }};">
+          <span class="item-with-icon" style="color:{{ cat.color or '#9c27b0' }}; min-width: 0;">
             {{ render_item_icon(cat.name) }}
-            <span style="color:var(--text-color);">{{ translate_name(cat.name) }}</span>
+            <span style="color:var(--text-color); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ translate_name(cat.name) }}</span>
           </span>
         </div>
-        <a href="{{ url_for('budget.delete_category_route', id=cat.id) }}" style="text-decoration: none; color:#ff4d4d;" class="optimistic-delete" data-confirm-message="{{ get_string('delete') }} {{ get_string('category')|lower }}?" data-confirm-title="{{ get_string('delete') }} {{ get_string('category')|lower }}" data-confirm-ok="{{ get_string('delete') }}" data-confirm-cancel="{{ get_string('cancel') }}" aria-label="Delete category">
+        <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+          <a href="{{ url_for('budget.edit_category_route', id=cat.id) }}" style="text-decoration: none; color:#2196f3;" aria-label="{{ get_string('edit') }}">
+            <span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:inherit;">
+              <svg viewBox="0 0 24 24"><path d="M4 20h4l11-11-4-4L4 16v4z"></path><path d="M13 6l4 4"></path></svg>
+            </span>
+          </a>
+          <a href="{{ url_for('budget.delete_category_route', id=cat.id) }}" style="text-decoration: none; color:#ff4d4d;" class="optimistic-delete" data-confirm-message="{{ get_string('delete') }} {{ get_string('category')|lower }}?" data-confirm-title="{{ get_string('delete') }} {{ get_string('category')|lower }}" data-confirm-ok="{{ get_string('delete') }}" data-confirm-cancel="{{ get_string('cancel') }}" aria-label="Delete category">
           <span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:inherit;">
             <svg viewBox="0 0 24 24"><path d="M4 7h16"></path><path d="M6 7l1 13h10l1-13"></path><path d="M9 7V4h6v3"></path></svg>
           </span></a>
+        </div>
       </div>
       {% endfor %}
     </div>
     <div class="category-list" style="flex: 1; min-width: 0; overflow-y: auto">
       <h4 style="color: #4caf50; margin: 0 0 5px 0; font-size: 14px">{{ get_string('income_plural') }}</h4>
       {% for cat in user_categories if cat.type == 'Дохід' %}
-      <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; align-items: center;">
-        <div style="display: flex; align-items: center; gap: 8px">
+      <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 3px 0; align-items: center; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
           <form action="{{ url_for('budget.update_category_color_route', id=cat.id) }}" method="POST" style="margin: 0; display: flex; align-items: center">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
             <input type="color" name="color" value="{{ cat.color or '#9c27b0' }}" onchange="this.form.submit()" style="width: 18px; height: 18px; border: none; padding: 0; cursor: pointer; outline: none; background: transparent;" title="{{ get_string('edit') }}" />
           </form>
-          <span class="item-with-icon" style="color:{{ cat.color or '#9c27b0' }};">
+          <span class="item-with-icon" style="color:{{ cat.color or '#9c27b0' }}; min-width: 0;">
             {{ render_item_icon(cat.name) }}
-            <span style="color:var(--text-color);">{{ translate_name(cat.name) }}</span>
+            <span style="color:var(--text-color); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ translate_name(cat.name) }}</span>
           </span>
         </div>
-        <a href="{{ url_for('budget.delete_category_route', id=cat.id) }}" style="text-decoration: none; color:#ff4d4d;" class="optimistic-delete" data-confirm-message="{{ get_string('delete') }} {{ get_string('category')|lower }}?" data-confirm-title="{{ get_string('delete') }} {{ get_string('category')|lower }}" data-confirm-ok="{{ get_string('delete') }}" data-confirm-cancel="{{ get_string('cancel') }}" aria-label="Delete category">
+        <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+          <a href="{{ url_for('budget.edit_category_route', id=cat.id) }}" style="text-decoration: none; color:#2196f3;" aria-label="{{ get_string('edit') }}">
+            <span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:inherit;">
+              <svg viewBox="0 0 24 24"><path d="M4 20h4l11-11-4-4L4 16v4z"></path><path d="M13 6l4 4"></path></svg>
+            </span>
+          </a>
+          <a href="{{ url_for('budget.delete_category_route', id=cat.id) }}" style="text-decoration: none; color:#ff4d4d;" class="optimistic-delete" data-confirm-message="{{ get_string('delete') }} {{ get_string('category')|lower }}?" data-confirm-title="{{ get_string('delete') }} {{ get_string('category')|lower }}" data-confirm-ok="{{ get_string('delete') }}" data-confirm-cancel="{{ get_string('cancel') }}" aria-label="Delete category">
           <span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:inherit;">
             <svg viewBox="0 0 24 24"><path d="M4 7h16"></path><path d="M6 7l1 13h10l1-13"></path><path d="M9 7V4h6v3"></path></svg>
           </span></a>
+        </div>
       </div>
       {% endfor %}
     </div>

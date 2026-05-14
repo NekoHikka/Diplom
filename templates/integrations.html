@@ -375,7 +375,7 @@
             {% endif %}
             <form action="{{ url_for('integration.csv_cancel') }}" method="POST" style="margin:0;">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-              <button type="submit" class="btn" style="background:transparent;color:#ff4d4d;border:1px solid #ff4d4d;padding:0 14px;height:36px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;line-height:1;">{{ 'Спробувати знову' if (processing.count or 0)==0 else '✕' }}</button>
+              <button type="submit" class="btn" style="background:transparent;color:#ff4d4d;border:1px solid #ff4d4d;padding:0 14px;height:36px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;line-height:1;">{{ get_string('csv_retry_btn') if (processing.count or 0)==0 else '✕' }}</button>
             </form>
           </div>
         </div>
@@ -416,15 +416,15 @@
             }}{% endif %}
           </option>
         </select>
-        <select name="csv_account_id" required class="account-group active" data-budget-group="personal"
+        <select name="csv_account_id" required class="account-group active" data-budget-group="personal" data-icon-select
           style="padding:10px;border-radius:6px;background:var(--input-bg);color:var(--text-color);border:1px solid var(--border-color);">
           <option value="">{{ get_string('ai_acc_label') }}...</option>
-          {% for acc in accounts %}<option value="{{ acc.id }}">{{ acc.name }}</option>{% endfor %}
+          {% for acc in accounts %}<option value="{{ acc.id }}" data-icon-value="{{ acc.name|e }}">{{ translate_name(display_item_name(acc.name)) }}</option>{% endfor %}
         </select>
-        <select name="csv_account_id" required disabled class="account-group" data-budget-group="shared"
+        <select name="csv_account_id" required disabled class="account-group" data-budget-group="shared" data-icon-select
           style="padding:10px;border-radius:6px;background:var(--input-bg);color:var(--text-color);border:1px solid var(--border-color);">
           <option value="">{{ get_string('ai_acc_label') }}...</option>
-          {% for acc in shared_accounts %}<option value="{{ acc.id }}">{{ acc.name }}</option>{% endfor %}
+          {% for acc in shared_accounts %}<option value="{{ acc.id }}" data-icon-value="{{ acc.name|e }}">{{ translate_name(display_item_name(acc.name)) }}</option>{% endfor %}
         </select>
         <input type="file" name="csv_file" accept=".csv,.xlsx" required style="color:var(--text-color);font-size:13px;" />
         <button type="submit" class="btn sync-btn" style="background-color:#9c27b0;color:white;">
@@ -489,7 +489,7 @@
             {% endif %}
             <form action="{{ url_for('integration.csv_cancel') }}" method="POST" style="margin:0;">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-              <button type="submit" class="btn" style="background:transparent;color:#ff4d4d;border:1px solid #ff4d4d;padding:0 14px;height:36px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;line-height:1;">{{ 'Спробувати знову' if (processing.count or 0)==0 else '✕' }}</button>
+              <button type="submit" class="btn" style="background:transparent;color:#ff4d4d;border:1px solid #ff4d4d;padding:0 14px;height:36px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;line-height:1;">{{ get_string('csv_retry_btn') if (processing.count or 0)==0 else '✕' }}</button>
             </form>
           </div>
         </div>
@@ -506,15 +506,15 @@
             {{ 'Спільний рахунок' if session.get('lang','uk')=='uk' else 'Shared account' }}{% if not has_shared_budget or not shared_accounts %} {{ 'недоступний' if session.get('lang','uk')=='uk' else 'unavailable' }}{% endif %}
           </option>
         </select>
-        <select name="privat_account_id" required class="privat-account-group privat-account-group--active" data-privat-group="personal"
+        <select name="privat_account_id" required class="privat-account-group privat-account-group--active" data-privat-group="personal" data-icon-select
           style="padding:10px;border-radius:6px;background:var(--input-bg);color:var(--text-color);border:1px solid var(--border-color);">
           <option value="">{{ get_string('ai_acc_label') }}...</option>
-          {% for acc in accounts %}<option value="{{ acc.id }}">{{ acc.name }}</option>{% endfor %}
+          {% for acc in accounts %}<option value="{{ acc.id }}" data-icon-value="{{ acc.name|e }}">{{ translate_name(display_item_name(acc.name)) }}</option>{% endfor %}
         </select>
-        <select name="privat_account_id" required disabled class="privat-account-group" data-privat-group="shared"
+        <select name="privat_account_id" required disabled class="privat-account-group" data-privat-group="shared" data-icon-select
           style="padding:10px;border-radius:6px;background:var(--input-bg);color:var(--text-color);border:1px solid var(--border-color);">
           <option value="">{{ get_string('ai_acc_label') }}...</option>
-          {% for acc in shared_accounts %}<option value="{{ acc.id }}">{{ acc.name }}</option>{% endfor %}
+          {% for acc in shared_accounts %}<option value="{{ acc.id }}" data-icon-value="{{ acc.name|e }}">{{ translate_name(display_item_name(acc.name)) }}</option>{% endfor %}
         </select>
         <input type="file" name="privat_file" accept=".xlsx" required style="color:var(--text-color);font-size:13px;" />
         <button type="submit" class="btn sync-btn" style="background-color:#00a650;color:white;">
@@ -601,7 +601,7 @@
             {% endif %}
             <form action="{{ url_for('integration.csv_cancel') }}" method="POST" style="margin:0;">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-              <button type="submit" class="btn" style="background:transparent;color:#ff4d4d;border:1px solid #ff4d4d;padding:0 14px;height:36px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;line-height:1;">{{ 'Спробувати знову' if (processing.count or 0)==0 else '✕' }}</button>
+              <button type="submit" class="btn" style="background:transparent;color:#ff4d4d;border:1px solid #ff4d4d;padding:0 14px;height:36px;border-radius:6px;display:inline-flex;align-items:center;gap:6px;line-height:1;">{{ get_string('csv_retry_btn') if (processing.count or 0)==0 else '✕' }}</button>
             </form>
           </div>
         </div>
@@ -618,15 +618,15 @@
             {{ 'Спільний рахунок' if session.get('lang','uk')=='uk' else 'Shared account' }}{% if not has_shared_budget or not shared_accounts %} {{ 'недоступний' if session.get('lang','uk')=='uk' else 'unavailable' }}{% endif %}
           </option>
         </select>
-        <select name="abank_account_id" required class="abank-account-group abank-account-group--active" data-abank-group="personal"
+        <select name="abank_account_id" required class="abank-account-group abank-account-group--active" data-abank-group="personal" data-icon-select
           style="padding:10px;border-radius:6px;background:var(--input-bg);color:var(--text-color);border:1px solid var(--border-color);">
           <option value="">{{ get_string('ai_acc_label') }}...</option>
-          {% for acc in accounts %}<option value="{{ acc.id }}">{{ acc.name }}</option>{% endfor %}
+          {% for acc in accounts %}<option value="{{ acc.id }}" data-icon-value="{{ acc.name|e }}">{{ translate_name(display_item_name(acc.name)) }}</option>{% endfor %}
         </select>
-        <select name="abank_account_id" required disabled class="abank-account-group" data-abank-group="shared"
+        <select name="abank_account_id" required disabled class="abank-account-group" data-abank-group="shared" data-icon-select
           style="padding:10px;border-radius:6px;background:var(--input-bg);color:var(--text-color);border:1px solid var(--border-color);">
           <option value="">{{ get_string('ai_acc_label') }}...</option>
-          {% for acc in shared_accounts %}<option value="{{ acc.id }}">{{ acc.name }}</option>{% endfor %}
+          {% for acc in shared_accounts %}<option value="{{ acc.id }}" data-icon-value="{{ acc.name|e }}">{{ translate_name(display_item_name(acc.name)) }}</option>{% endfor %}
         </select>
         <input type="file" name="abank_file" accept=".xlsx" required style="color:var(--text-color);font-size:13px;" />
         <button type="submit" class="btn sync-btn" style="background-color:#003087;color:white;">
@@ -641,12 +641,22 @@
 {% endblock %} {% block scripts %}
 <script>
   const csvBudgetType = document.getElementById("csv-budget-type");
+  function syncSelectShell(select) {
+    const shell = select.closest(".icon-select");
+    if (!shell) return;
+    shell.classList.toggle("active", select.classList.contains("active"));
+    shell.classList.toggle("privat-account-group--active", select.classList.contains("privat-account-group--active"));
+    shell.classList.toggle("abank-account-group--active", select.classList.contains("abank-account-group--active"));
+    shell.style.display = getComputedStyle(select).display === "none" && !select.dataset.iconSelect ? "none" : "";
+  }
+
   if (csvBudgetType) {
     csvBudgetType.addEventListener("change", function () {
       document.querySelectorAll("[data-budget-group]").forEach((select) => {
         const active = select.dataset.budgetGroup === csvBudgetType.value;
         select.classList.toggle("active", active);
         select.disabled = !active;
+        syncSelectShell(select);
       });
     });
   }
@@ -659,6 +669,7 @@
         const active = select.dataset.privatGroup === privatBudgetType.value;
         select.classList.toggle("privat-account-group--active", active);
         select.disabled = !active;
+        syncSelectShell(select);
       });
     });
   }
@@ -671,6 +682,7 @@
         const active = select.dataset.abankGroup === abankBudgetType.value;
         select.classList.toggle("abank-account-group--active", active);
         select.disabled = !active;
+        syncSelectShell(select);
       });
     });
   }
@@ -701,7 +713,7 @@
           const procBlock = document.getElementById("processing-block");
           if (procBlock && !procBlock.dataset.errorShown) {
              const errorLabel = "{{ 'Помилка аналізу' if session.get('lang')=='uk' else 'Analysis error' }}";
-             const retryLabel = "{{ 'Спробувати знову' if session.get('lang')=='uk' else 'Try again' }}";
+             const retryLabel = "{{ get_string('csv_retry_btn') }}";
              procBlock.innerHTML = `<div style="color: #ff4d4d; font-weight: bold; margin-bottom: 10px;">${errorLabel}: ${data.message || "..."}</div><button class="btn" style="background: transparent; color: #ff4d4d; border: 1px solid #ff4d4d; padding: 8px 16px; border-radius: 6px; width: 100%;" onclick="cancelAndReload()">${retryLabel}</button>`;
              procBlock.dataset.errorShown = "1";
              procBlock.style.background = "rgba(255, 77, 77, 0.1)";

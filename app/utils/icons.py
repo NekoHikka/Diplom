@@ -298,7 +298,11 @@ def split_icon_name(value, fallback="folder"):
 
 
 def display_item_name(value):
-    return split_icon_name(value)[1]
+    name = split_icon_name(value)[1].strip()
+    parts = name.split(" ", 1)
+    if len(parts) == 2 and _looks_like_legacy_icon(parts[0]):
+        return parts[1].strip()
+    return name
 
 
 def render_item_icon(value, fallback="folder", title=None):

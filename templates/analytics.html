@@ -10,7 +10,7 @@
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
           <strong>{{ get_string('period_label') }}</strong>
           <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-            {% for d, label in [(30, '1 міс'), (90, '3 міс'), (180, '6 міс'), (365, '1 рік')] %}
+            {% for d, label in [(30, get_string('period_30_short')), (90, get_string('period_90_short')), (180, get_string('period_180_short')), (365, get_string('period_365_short'))] %}
             <button onclick="updateAnalyticsPage({{ d }})" class="btn btn-period {{ 'active-period' if period_days == d else '' }}" style="padding: 7px 14px; font-size: 13px; background: {{ 'linear-gradient(135deg,#9c27b0,#673ab7)' if period_days == d else 'var(--input-bg)' }}; color: {{ 'white' if period_days == d else 'var(--text-color)' }}; border: 1px solid {{ '#9c27b0' if period_days == d else 'var(--border-color)' }};">{{ label }}</button>
             {% endfor %}
           </div>
@@ -80,9 +80,9 @@
             <path d="M7 9h10"></path>
             <path d="M7 15h10"></path>
           </svg>
-        </span>{{ 'Доходи vs Витрати' if session.get('lang','uk') == 'uk' else 'Income vs Expenses' }}</h3>
+        </span>{{ get_string('income_vs_expenses') }}</h3>
         <div style="display: flex; gap: 6px;">
-          {% for months, label in [(3, '3 міс'), (6, '6 міс'), (12, '1 рік')] %}
+          {% for months, label in [(3, get_string('period_90_short')), (6, get_string('period_180_short')), (12, get_string('period_365_short'))] %}
           <button onclick="renderHistoryChart({{ months }})" id="hist-btn-{{ months }}" class="btn" style="padding: 6px 12px; font-size: 12px; background: var(--input-bg); color: var(--text-color); border: 1px solid var(--border-color);">{{ label }}</button>
           {% endfor %}
         </div>
