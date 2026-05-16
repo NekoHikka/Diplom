@@ -8,13 +8,15 @@ from app.repositories.partnership_repository import (
     get_existing_partnership, purge_shared_budget_data
 )
 from app.repositories.user_repository import get_user_by_id, get_user_by_username
-from app.repositories.account_repository import get_accounts_by_user, create_account, get_multi_user_accounts
-from app.repositories.category_repository import get_categories_by_user, create_category, get_multi_user_categories
+from app.repositories.account_repository import create_account, get_multi_user_accounts
+from app.repositories.category_repository import (
+    get_multi_user_categories, ensure_default_categories
+)
 from app.repositories.transaction_repository import get_shared_transactions
 from app.repositories.goal_repository import get_multi_user_goals
-from app.models import get_current_time, db
+from app.models import get_current_time
 from app.config import Config
-from app.utils.strings import get_string, get_category
+from app.utils.strings import get_string
 from app.utils.icons import display_item_name, icon_value
 
 shared_bp = Blueprint('shared', __name__)
@@ -36,6 +38,7 @@ def shared_budget():
     partner = get_user_by_id(partner_id)
     user_ids = [current_user.id, partner_id]
 
+    ensure_default_categories(partnership.user1_id, is_shared=True, include_shared_income=True)
     user_categories = get_multi_user_categories(user_ids, is_shared=True)
     user_accounts = get_multi_user_accounts(user_ids, is_shared=True)
     all_ts = get_shared_transactions(user_ids)
@@ -144,27 +147,7 @@ def accept_invite(id):
         if not get_multi_user_accounts(user_ids, is_shared=True):
             create_account(f"{icon_value('wallet')} {display_item_name(get_string('shared_account'))}", 0.0, p.user1_id, True)
 
-        if not get_multi_user_categories(user_ids, is_shared=True):
-            cats = [
-                ('food', 'Витрата', 'cart'),
-                ('transport', 'Витрата', 'car'),
-                ('home', 'Витрата', 'home'),
-                ('coffee', 'Витрата', 'coffee'),
-                ('health', 'Витрата', 'health'),
-                ('entertainment', 'Витрата', 'gamepad'),
-                ('tech', 'Витрата', 'folder'),
-                ('clothes', 'Витрата', 'shirt'),
-                ('utilities', 'Витрата', 'home'),
-                ('groceries', 'Витрата', 'cart'),
-                ('salary', 'Дохід', 'salary'),
-                ('gift', 'Дохід', 'gift'),
-                ('investments', 'Дохід', 'trending'),
-                ('cashback', 'Дохід', 'salary'),
-                ('income_transfer', 'Дохід', 'salary'),
-                ('income_shared', 'Дохід', 'salary'),
-            ]
-            for i, (key, t, icon_id) in enumerate(cats):
-                create_category(f"{icon_value(icon_id)} {display_item_name(get_category(key))}", t, p.user1_id, True, Config.COLORS_PALETTE[i % len(Config.COLORS_PALETTE)])
+        ensure_default_categories(p.user1_id, is_shared=True, include_shared_income=True)
 
         flash(get_string('success_shared_created'), "success")
     return redirect(url_for('shared.shared_budget'))

@@ -11,7 +11,8 @@ from app.repositories.account_repository import (
     get_accounts_by_user, create_account, get_account_by_id, delete_account, update_account_balance
 )
 from app.repositories.category_repository import (
-    get_categories_by_user, create_category, get_category_by_id, delete_category, update_category_color, update_category, sync_missing_categories
+    get_categories_by_user, create_category, get_category_by_id, delete_category,
+    update_category_color, update_category, sync_missing_categories, ensure_default_categories
 )
 from app.repositories.goal_repository import get_goals_by_user, create_goal, get_goal_by_id, delete_goal, update_goal
 from app.repositories.partnership_repository import get_active_partnership, get_pending_invite_received, get_partnership_by_id
@@ -31,14 +32,7 @@ def normalize_account_name(value):
 @budget_bp.route('/')
 @login_required
 def home():
-    if not get_categories_by_user(current_user.id, is_shared=False):
-        cats = [('food', 'Витрата', 'cart'), ('transport', 'Витрата', 'car'), ('home', 'Витрата', 'home'), ('coffee', 'Витрата', 'coffee'),
-                ('health', 'Витрата', 'health'), ('entertainment', 'Витрата', 'gamepad'), ('tech', 'Витрата', 'folder'), ('clothes', 'Витрата', 'shirt'),
-                ('utilities', 'Витрата', 'home'), ('groceries', 'Витрата', 'cart'), ('salary', 'Дохід', 'salary'), ('gift', 'Дохід', 'gift'),
-                ('investments', 'Дохід', 'trending'), ('cashback', 'Дохід', 'salary')]
-        for i, (key, t, icon_id) in enumerate(cats):
-            create_category(f"{icon_value(icon_id)} {display_item_name(get_string('categories')[key])}", t, current_user.id, False, Config.COLORS_PALETTE[i % len(Config.COLORS_PALETTE)])
-        create_category(f"{icon_value('salary')} {display_item_name(get_string('categories')['income_transfer'])}", 'Дохід', current_user.id, False, Config.COLORS_PALETTE[len(cats) % len(Config.COLORS_PALETTE)])
+    ensure_default_categories(current_user.id, is_shared=False)
 
     if not get_accounts_by_user(current_user.id, is_shared=False):
         create_account(f"{icon_value('wallet')} {display_item_name(get_string('default_account'))}", 0.0, current_user.id, False)

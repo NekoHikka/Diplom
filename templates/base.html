@@ -1137,12 +1137,12 @@
 
       function closeIconPicker(picker) {
         picker.classList.remove("open");
-        picker.closest(".card")?.classList.remove("picker-card-open");
+        picker.closest(".card, .bank-card")?.classList.remove("picker-card-open");
       }
 
       function closeIconSelect(wrapper) {
         wrapper.classList.remove("open");
-        wrapper.closest(".card")?.classList.remove("picker-card-open");
+        wrapper.closest(".card, .bank-card")?.classList.remove("picker-card-open");
       }
 
       function financeCleanLabel(value) {
@@ -1265,7 +1265,7 @@
             document.querySelectorAll(".icon-picker.open").forEach(closeIconPicker);
             if (willOpen) {
               picker.classList.add("open");
-              picker.closest(".card")?.classList.add("picker-card-open");
+              picker.closest(".card, .bank-card")?.classList.add("picker-card-open");
               search?.focus();
             }
           });
@@ -1324,7 +1324,7 @@
             document.querySelectorAll(".icon-select.open").forEach(closeIconSelect);
             if (willOpen) {
               wrapper.classList.add("open");
-              wrapper.closest(".card")?.classList.add("picker-card-open");
+              wrapper.closest(".card, .bank-card")?.classList.add("picker-card-open");
             }
           });
           select.addEventListener("change", () => {

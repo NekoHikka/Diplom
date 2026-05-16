@@ -6,6 +6,7 @@
     gap: 20px;
   }
   .bank-card {
+    position: relative;
     background-color: var(--card-bg);
     border-radius: 12px;
     border: 1px solid var(--border-color);
@@ -14,6 +15,9 @@
     flex-direction: column;
     opacity: 0;
     animation: cardSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .bank-card.picker-card-open {
+    z-index: 22000;
   }
   .bank-card:nth-child(1) {
     animation-delay: 0.05s;
@@ -83,12 +87,8 @@
     color: #aaa;
     border: 1px solid #888;
   }
-  .account-group {
-    display: none;
-  }
-  .account-group.active {
-    display: block;
-  }
+  .csv-account-group { display: none; }
+  .csv-account-group--active { display: block; }
   .privat-account-group { display: none; }
   .privat-account-group--active { display: block; }
   .abank-account-group { display: none; }
@@ -386,42 +386,18 @@
       {% else %}
       <form action="{{ url_for('integration.upload_csv') }}" method="POST" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:10px;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        <select
-          id="csv-budget-type"
-          style="
-            padding: 10px;
-            border-radius: 6px;
-            background: var(--input-bg);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-          "
-        >
-          <option value="personal">
-            {{ 'Особистий рахунок' if session.get('lang','uk')=='uk' else
-            'Personal account' }}
-          </option>
-          <option
-            value="shared"
-            {% if not has_shared_budget
-            or
-            not
-            shared_accounts
-            %}disabled{%
-            endif
-            %}
-          >
-            {{ 'Спільний рахунок' if session.get('lang','uk')=='uk' else 'Shared
-            account' }} {% if not has_shared_budget or not shared_accounts %} {{
-            'недоступний' if session.get('lang','uk')=='uk' else 'unavailable'
-            }}{% endif %}
+        <select id="csv-budget-type" style="padding:10px;border-radius:6px;background:var(--input-bg);color:var(--text-color);border:1px solid var(--border-color);">
+          <option value="personal">{{ 'Особистий рахунок' if session.get('lang','uk')=='uk' else 'Personal account' }}</option>
+          <option value="shared" {% if not has_shared_budget or not shared_accounts %}disabled{% endif %}>
+            {{ 'Спільний рахунок' if session.get('lang','uk')=='uk' else 'Shared account' }}{% if not has_shared_budget or not shared_accounts %} {{ 'недоступний' if session.get('lang','uk')=='uk' else 'unavailable' }}{% endif %}
           </option>
         </select>
-        <select name="csv_account_id" required class="account-group active" data-budget-group="personal" data-icon-select
+        <select name="account_id" required class="csv-account-group csv-account-group--active" data-csv-group="personal" data-icon-select
           style="padding:10px;border-radius:6px;background:var(--input-bg);color:var(--text-color);border:1px solid var(--border-color);">
           <option value="">{{ get_string('ai_acc_label') }}...</option>
           {% for acc in accounts %}<option value="{{ acc.id }}" data-icon-value="{{ acc.name|e }}">{{ translate_name(display_item_name(acc.name)) }}</option>{% endfor %}
         </select>
-        <select name="csv_account_id" required disabled class="account-group" data-budget-group="shared" data-icon-select
+        <select name="account_id" required disabled class="csv-account-group" data-csv-group="shared" data-icon-select
           style="padding:10px;border-radius:6px;background:var(--input-bg);color:var(--text-color);border:1px solid var(--border-color);">
           <option value="">{{ get_string('ai_acc_label') }}...</option>
           {% for acc in shared_accounts %}<option value="{{ acc.id }}" data-icon-value="{{ acc.name|e }}">{{ translate_name(display_item_name(acc.name)) }}</option>{% endfor %}
@@ -640,21 +616,23 @@
 </div>
 {% endblock %} {% block scripts %}
 <script>
-  const csvBudgetType = document.getElementById("csv-budget-type");
   function syncSelectShell(select) {
     const shell = select.closest(".icon-select");
     if (!shell) return;
     shell.classList.toggle("active", select.classList.contains("active"));
+    shell.classList.toggle("csv-account-group--active", select.classList.contains("csv-account-group--active"));
     shell.classList.toggle("privat-account-group--active", select.classList.contains("privat-account-group--active"));
     shell.classList.toggle("abank-account-group--active", select.classList.contains("abank-account-group--active"));
     shell.style.display = getComputedStyle(select).display === "none" && !select.dataset.iconSelect ? "none" : "";
   }
 
+  // Universal CSV/XLSX account type switcher
+  const csvBudgetType = document.getElementById("csv-budget-type");
   if (csvBudgetType) {
     csvBudgetType.addEventListener("change", function () {
-      document.querySelectorAll("[data-budget-group]").forEach((select) => {
-        const active = select.dataset.budgetGroup === csvBudgetType.value;
-        select.classList.toggle("active", active);
+      document.querySelectorAll("[data-csv-group]").forEach((select) => {
+        const active = select.dataset.csvGroup === csvBudgetType.value;
+        select.classList.toggle("csv-account-group--active", active);
         select.disabled = !active;
         syncSelectShell(select);
       });

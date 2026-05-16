@@ -1,7 +1,26 @@
 from app.models import db, Category, Transaction
 from app.utils.icons import display_item_name, icon_value, infer_icon_id
+from app.utils.strings import MESSAGES, get_category
 import re
 from difflib import SequenceMatcher
+
+DEFAULT_CATEGORY_DEFINITIONS = [
+    ('food', 'Витрата', 'cart'),
+    ('transport', 'Витрата', 'car'),
+    ('home', 'Витрата', 'home'),
+    ('coffee', 'Витрата', 'coffee'),
+    ('health', 'Витрата', 'health'),
+    ('entertainment', 'Витрата', 'gamepad'),
+    ('tech', 'Витрата', 'folder'),
+    ('clothes', 'Витрата', 'shirt'),
+    ('utilities', 'Витрата', 'home'),
+    ('groceries', 'Витрата', 'cart'),
+    ('salary', 'Дохід', 'salary'),
+    ('gift', 'Дохід', 'gift'),
+    ('investments', 'Дохід', 'trending'),
+    ('cashback', 'Дохід', 'salary'),
+    ('income_transfer', 'Дохід', 'salary'),
+]
  
 def get_category_by_id(cat_id):
     return db.session.get(Category, cat_id)
@@ -11,6 +30,42 @@ def get_categories_by_user(user_id, is_shared=False):
 
 def get_multi_user_categories(user_ids, is_shared=True):
     return Category.query.filter(Category.user_id.in_(user_ids), Category.is_shared == is_shared).all()
+
+def _category_identity(value):
+    value = display_item_name(value or '').lower()
+    value = re.sub(r'[^\w\s]', ' ', value, flags=re.UNICODE)
+    return re.sub(r'\s+', ' ', value).strip()
+
+def _category_aliases(key):
+    aliases = {key}
+    for messages in MESSAGES.values():
+        category_name = messages.get('categories', {}).get(key)
+        if category_name:
+            aliases.add(category_name)
+    return {_category_identity(alias) for alias in aliases}
+
+def ensure_default_categories(user_id, is_shared=False, include_shared_income=False):
+    from app.config import Config
+
+    definitions = list(DEFAULT_CATEGORY_DEFINITIONS)
+    if include_shared_income:
+        definitions.append(('income_shared', 'Дохід', 'salary'))
+
+    current_categories = get_categories_by_user(user_id, is_shared)
+    existing = {(cat.type, _category_identity(cat.name)) for cat in current_categories}
+
+    created = False
+    for i, (key, category_type, icon_id) in enumerate(definitions):
+        aliases = _category_aliases(key)
+        if any((category_type, alias) in existing for alias in aliases):
+            continue
+
+        name = f"{icon_value(icon_id)} {display_item_name(get_category(key))}"
+        create_category(name, category_type, user_id, is_shared, Config.COLORS_PALETTE[i % len(Config.COLORS_PALETTE)])
+        existing.add((category_type, _category_identity(name)))
+        created = True
+
+    return get_categories_by_user(user_id, is_shared) if created else current_categories
 
 def get_or_create_category(name, type, user_id, is_shared, color=None):
     from app.config import Config
