@@ -33,18 +33,14 @@
           class="invite-actions"
           style="display: flex; gap: 10px; justify-content: center"
         >
-          <a
-            href="{{ url_for('shared.accept_invite', id=pending_invite.id) }}"
-            class="btn"
-            style="background-color: #4caf50; color: white; flex: 1"
-            ><span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:currentColor;display:inline-flex;vertical-align:middle;"><svg viewBox="0 0 24 24"><path d="M5 12l4 4L19 6"></path></svg></span> {{ get_string('shared_accept') }}</a
-          >
-          <a
-            href="{{ url_for('shared.reject_invite', id=pending_invite.id) }}"
-            class="btn"
-            style="background-color: #ff4d4d; color: white; flex: 1"
-            ><span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:currentColor;display:inline-flex;vertical-align:middle;"><svg viewBox="0 0 24 24"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg></span> {{ get_string('shared_reject') }}</a
-          >
+          <form action="{{ url_for('shared.accept_invite', id=pending_invite.id) }}" method="POST" style="flex:1; margin:0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <button type="submit" class="btn" style="background-color: #4caf50; color: white; width: 100%;"><span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:currentColor;display:inline-flex;vertical-align:middle;"><svg viewBox="0 0 24 24"><path d="M5 12l4 4L19 6"></path></svg></span> {{ get_string('shared_accept') }}</button>
+          </form>
+          <form action="{{ url_for('shared.reject_invite', id=pending_invite.id) }}" method="POST" style="flex:1; margin:0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <button type="submit" class="btn" style="background-color: #ff4d4d; color: white; width: 100%;"><span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:currentColor;display:inline-flex;vertical-align:middle;"><svg viewBox="0 0 24 24"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg></span> {{ get_string('shared_reject') }}</button>
+          </form>
         </div>
       </div>
       {% elif sent_invite %}
@@ -57,12 +53,10 @@
         <p style="color: #aaa; font-size: 14px">
           {% if session.get('lang', 'uk') == 'uk' %}Очікуємо на підтвердження від користувача...{% else %}Waiting for confirmation from user...{% endif %}
         </p>
-        <a
-          href="{{ url_for('shared.reject_invite', id=sent_invite.id) }}"
-          class="btn"
-          style="background-color: #ff4d4d; color: white; margin-top: 10px"
-          >{% if session.get('lang', 'uk') == 'uk' %}Скасувати запрошення{% else %}Cancel invitation{% endif %}</a
-        >
+        <form action="{{ url_for('shared.reject_invite', id=sent_invite.id) }}" method="POST" style="margin: 10px 0 0;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+          <button type="submit" class="btn" style="background-color: #ff4d4d; color: white;">{% if session.get('lang', 'uk') == 'uk' %}Скасувати запрошення{% else %}Cancel invitation{% endif %}</button>
+        </form>
       </div>
       {% else %}
       <div class="card" style="border-top: 4px solid #2196f3">

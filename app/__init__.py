@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from werkzeug.middleware.proxy_fix import ProxyFix
+from sqlalchemy import inspect, text
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,6 +17,31 @@ from app.utils.icons import display_item_name, icon_choices, render_item_icon
 csrf = CSRFProtect()
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
+
+def _ensure_auth_schema(app):
+    inspector = inspect(db.engine)
+    if not inspector.has_table('user'):
+        return
+
+    existing_columns = {column['name'] for column in inspector.get_columns('user')}
+    quote = db.engine.dialect.identifier_preparer.quote
+    user_table = quote('user')
+
+    with db.engine.begin() as conn:
+        if 'email' not in existing_columns:
+            conn.execute(text(f'ALTER TABLE {user_table} ADD COLUMN email VARCHAR(120)'))
+        if 'email_verified' not in existing_columns:
+            default_value = '0' if db.engine.dialect.name == 'sqlite' else 'FALSE'
+            conn.execute(text(
+                f'ALTER TABLE {user_table} ADD COLUMN email_verified BOOLEAN NOT NULL DEFAULT {default_value}'
+            ))
+
+        if db.engine.dialect.name in ('sqlite', 'postgresql'):
+            index_name = quote('ix_user_email_unique')
+            conn.execute(text(
+                f'CREATE UNIQUE INDEX IF NOT EXISTS {index_name} '
+                f'ON {user_table} (email) WHERE email IS NOT NULL'
+            ))
 
 def create_app():
     app = Flask(__name__, 
@@ -61,5 +87,6 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        _ensure_auth_schema(app)
 
     return app

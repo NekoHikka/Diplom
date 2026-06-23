@@ -1,6 +1,7 @@
 import random
+import io
 from datetime import datetime, timedelta
-from flask import Blueprint, request, redirect, url_for, flash, session
+from flask import Blueprint, request, redirect, url_for, flash, session, current_app
 from flask_login import login_required, current_user
 from app.services.ai_service import AIService
 from app.repositories.user_repository import get_ai_limit, create_ai_limit, increment_ai_limit
@@ -16,6 +17,33 @@ from app.utils.strings import get_string
 
 ai_bp = Blueprint('ai', __name__)
 
+def _active_budget_user_ids():
+    partner = get_active_partnership(current_user.id)
+    if not partner:
+        return [current_user.id]
+    partner_id = partner.user1_id if partner.user2_id == current_user.id else partner.user2_id
+    return [current_user.id, partner_id]
+
+def _can_access_account(account, is_shared=None):
+    if not account:
+        return False
+    if account.user_id == current_user.id:
+        allowed = True
+    else:
+        allowed = bool(account.is_shared and account.user_id in _active_budget_user_ids())
+    if is_shared is not None:
+        allowed = allowed and bool(account.is_shared) == bool(is_shared)
+    return allowed
+
+def _read_limited_file(file, max_bytes):
+    data = file.read(max_bytes + 1)
+    if len(data) > max_bytes:
+        return None
+    return data
+
+def _is_allowed_image(filename):
+    return (filename or '').lower().endswith(('.jpg', '.jpeg', '.png', '.webp'))
+
 @ai_bp.route('/add_receipt_ai', methods=['POST'])
 @login_required
 def add_receipt_ai():
@@ -29,16 +57,27 @@ def add_receipt_ai():
         return redirect(url_for('shared.shared_budget' if is_shared else 'budget.home'))
 
     try:
+        acc = get_account_by_id(account_id)
+        if not _can_access_account(acc, is_shared):
+            flash('Account not found', "error")
+            return redirect(url_for('shared.shared_budget' if is_shared else 'budget.home'))
+        if not _is_allowed_image(file.filename) or not (file.mimetype or '').startswith('image/'):
+            flash('Unsupported image type', "error")
+            return redirect(url_for('shared.shared_budget' if is_shared else 'budget.home'))
+        file_bytes = _read_limited_file(file.stream, current_app.config['RECEIPT_IMAGE_MAX_BYTES'])
+        if file_bytes is None:
+            flash('Image is too large', "error")
+            return redirect(url_for('shared.shared_budget' if is_shared else 'budget.home'))
+
         partner = get_active_partnership(current_user.id)
         user_ids = [current_user.id, partner.user1_id if partner.user2_id == current_user.id else partner.user2_id] if is_shared and partner else [current_user.id]
         existing_cats = get_multi_user_categories(user_ids, is_shared=is_shared)
 
-        transactions_data = AIService.recognize_receipt(file.stream, existing_cats, user_prompt)
+        transactions_data = AIService.recognize_receipt(io.BytesIO(file_bytes), existing_cats, user_prompt)
         if transactions_data == AIService.QUOTA_EXHAUSTED:
             flash(get_string('error_ai_quota'), "error")
             return redirect(url_for('shared.shared_budget' if is_shared else 'budget.home'))
         
-        acc = get_account_by_id(account_id)
         if acc and transactions_data:
             now_utc = get_current_time()
             ai_category_choices = AIService.choose_existing_categories(transactions_data, existing_cats)
@@ -184,7 +223,7 @@ def api_chat():
             added = 0
             for pt in pending:
                 acc = get_account_by_id(int(pt['account_id']))
-                if not acc or (not acc.is_shared and acc.user_id != current_user.id):
+                if not _can_access_account(acc, bool(acc.is_shared) if acc else None):
                     continue
                 date_obj = datetime.strptime(pt['date'], '%Y-%m-%d')
                 amount = round(float(pt['amount']), 2)

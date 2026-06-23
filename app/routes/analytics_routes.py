@@ -10,8 +10,7 @@ from app.repositories.goal_repository import get_goals_by_user, get_multi_user_g
 from app.services.export_service import ExportService
 from app.models import get_current_time
 from app.config import Config
-from app.utils.strings import get_string
-from app.utils.icons import display_item_name
+from app.utils.strings import get_category, get_string
 
 analytics_bp = Blueprint('analytics', __name__)
 
@@ -95,7 +94,7 @@ def analytics():
         category_totals[translated_cat] = round(category_totals.get(translated_cat, 0) + exp.amount, 2)
         label_to_orig[translated_cat] = orig_cat
 
-    top_category = max(category_totals, key=category_totals.get) if category_totals else get_string('other')
+    top_category = max(category_totals, key=category_totals.get) if category_totals else get_category('other')
     top_category_amount = category_totals.get(top_category, 0)
 
     previous_start_date = start_date - timedelta(days=period_days)
@@ -222,7 +221,7 @@ def analytics():
     month_names = month_names_uk if lang == 'uk' else month_names_en
 
     return render_template('analytics.html', period_days=period_days, top_category=top_category,
-                           top_category_display=display_item_name(top_category),
+                           top_category_display=translate_name(top_category),
                            top_category_amount=top_category_amount, recommendations=recommendations, 
                            budget_forecast=budget_forecast, 
                            projected_month_total=int(total_expense + (real_daily_avg * (30 - now.day))), 

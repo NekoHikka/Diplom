@@ -1,8 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, flash, current_app
 from flask_login import login_required, current_user
-from app import csrf
 from app.services.monobank_service import MonobankService
-from app.repositories.user_repository import get_monobank_token, save_monobank_token, delete_monobank_token
+from app.repositories.user_repository import get_monobank_token, get_monobank_token_value, save_monobank_token, delete_monobank_token
 from app.repositories.account_repository import get_accounts_by_user, create_account, get_multi_user_accounts, get_account_by_id, update_account_balance
 from app.repositories.transaction_repository import add_transaction
 from app.models import db, get_current_time
@@ -30,6 +29,40 @@ def _processing_key(user_id):
 def _results_key(user_id):
     return f"csv_results_{user_id}"
 
+def _active_budget_user_ids():
+    partnership = get_active_partnership(current_user.id)
+    if not partnership:
+        return [current_user.id]
+    partner_id = partnership.user1_id if partnership.user2_id == current_user.id else partnership.user2_id
+    return [current_user.id, partner_id]
+
+def _can_access_account(account, is_shared=None):
+    if not account:
+        return False
+    if account.user_id == current_user.id:
+        allowed = True
+    else:
+        allowed = bool(account.is_shared and account.user_id in _active_budget_user_ids())
+    if is_shared is not None:
+        allowed = allowed and bool(account.is_shared) == bool(is_shared)
+    return allowed
+
+def _get_account_from_form(value):
+    try:
+        return get_account_by_id(int(value))
+    except (TypeError, ValueError):
+        return None
+
+def _read_limited_file(file, max_bytes):
+    data = file.read(max_bytes + 1)
+    if len(data) > max_bytes:
+        return None
+    return data
+
+def _has_allowed_extension(filename, allowed_extensions):
+    _, ext = os.path.splitext((filename or '').lower())
+    return ext in allowed_extensions
+
 @integration_bp.route('/integrations')
 @login_required
 def integrations():
@@ -56,8 +89,7 @@ def integrations():
 @login_required
 def sync_monobank():
     form_token = request.form.get('monobank_token')
-    db_token_record = get_monobank_token(current_user.id)
-    token = form_token or (db_token_record.token if db_token_record else None)
+    token = form_token or get_monobank_token_value(current_user.id)
 
     if not token: 
         return redirect(url_for('integration.integrations'))
@@ -559,7 +591,7 @@ def upload_csv():
         flash('Select account', 'error')
         return redirect(url_for('integration.integrations'))
 
-    acc = get_account_by_id(int(account_id))
+    acc = _get_account_from_form(account_id)
     partnership = get_active_partnership(current_user.id)
     partner_id = partnership.user1_id if partnership and partnership.user2_id == current_user.id else partnership.user2_id if partnership else None
     valid_user_ids = [current_user.id] + ([partner_id] if partner_id else [])
@@ -571,7 +603,13 @@ def upload_csv():
 
     try:
         filename = file.filename.lower()
-        file_bytes = file.read()
+        if not _has_allowed_extension(filename, {'.csv', '.xlsx'}):
+            flash('Unsupported file type', 'error')
+            return redirect(url_for('integration.integrations'))
+        file_bytes = _read_limited_file(file, current_app.config['CSV_IMPORT_MAX_BYTES'])
+        if file_bytes is None:
+            flash('File is too large', 'error')
+            return redirect(url_for('integration.integrations'))
         
         proc_key = _processing_key(current_user.id)
         _processing_status[proc_key] = {
@@ -617,7 +655,7 @@ def upload_privat():
         flash('Оберіть рахунок', 'error')
         return redirect(url_for('integration.integrations'))
 
-    acc = get_account_by_id(int(account_id))
+    acc = _get_account_from_form(account_id)
     partnership = get_active_partnership(current_user.id)
     partner_id = partnership.user1_id if partnership and partnership.user2_id == current_user.id else partnership.user2_id if partnership else None
     valid_user_ids = [current_user.id] + ([partner_id] if partner_id else [])
@@ -628,7 +666,13 @@ def upload_privat():
     existing_cats = get_multi_user_categories(valid_user_ids, is_shared=True) if acc.is_shared else get_categories_by_user(current_user.id, is_shared=False)
 
     try:
-        file_bytes = file.read()
+        if not _has_allowed_extension(file.filename, {'.xlsx'}):
+            flash('Unsupported file type', 'error')
+            return redirect(url_for('integration.integrations'))
+        file_bytes = _read_limited_file(file, current_app.config['CSV_IMPORT_MAX_BYTES'])
+        if file_bytes is None:
+            flash('File is too large', 'error')
+            return redirect(url_for('integration.integrations'))
         transactions, end_balance = parse_privat_xlsx(file_bytes)
 
         proc_key = _processing_key(current_user.id)
@@ -670,7 +714,7 @@ def upload_abank():
         flash('Оберіть рахунок', 'error')
         return redirect(url_for('integration.integrations'))
 
-    acc = get_account_by_id(int(account_id))
+    acc = _get_account_from_form(account_id)
     partnership = get_active_partnership(current_user.id)
     partner_id = partnership.user1_id if partnership and partnership.user2_id == current_user.id else partnership.user2_id if partnership else None
     valid_user_ids = [current_user.id] + ([partner_id] if partner_id else [])
@@ -681,7 +725,13 @@ def upload_abank():
     existing_cats = get_multi_user_categories(valid_user_ids, is_shared=True) if acc.is_shared else get_categories_by_user(current_user.id, is_shared=False)
 
     try:
-        file_bytes = file.read()
+        if not _has_allowed_extension(file.filename, {'.xlsx'}):
+            flash('Unsupported file type', 'error')
+            return redirect(url_for('integration.integrations'))
+        file_bytes = _read_limited_file(file, current_app.config['CSV_IMPORT_MAX_BYTES'])
+        if file_bytes is None:
+            flash('File is too large', 'error')
+            return redirect(url_for('integration.integrations'))
         transactions, end_balance = parse_abank_xlsx(file_bytes)
 
         proc_key = _processing_key(current_user.id)
@@ -732,7 +782,6 @@ def csv_cancel():
 
 @integration_bp.route('/csv_preview', methods=['GET', 'POST'])
 @login_required
-@csrf.exempt
 def csv_preview():
     path = _preview_path(current_user.id)
     
@@ -745,9 +794,12 @@ def csv_preview():
             flash(get_string('csv_error_no_data'), 'error')
             return redirect(url_for('integration.integrations'))
         
-        acc = get_account_by_id(int(data['account_id']))
         all_transactions = data['transactions']
         is_shared = bool(data.get('is_shared'))
+        acc = _get_account_from_form(data.get('account_id'))
+        if not _can_access_account(acc, is_shared):
+            flash('Account not found', 'error')
+            return redirect(url_for('integration.integrations'))
         
         added = 0
         update_balance_flag = request.form.get('update_balance') == 'yes' and data.get('end_balance') is not None
@@ -812,8 +864,11 @@ def csv_preview():
         flash(get_string('csv_error_no_data'), 'error')
         return redirect(url_for('integration.integrations'))
     
-    acc = get_account_by_id(int(data['account_id']))
+    acc = _get_account_from_form(data.get('account_id'))
     is_shared = bool(data.get('is_shared'))
+    if not _can_access_account(acc, is_shared):
+        flash('Account not found', 'error')
+        return redirect(url_for('integration.integrations'))
     transactions = data['transactions']
     end_balance = data.get('end_balance')
 

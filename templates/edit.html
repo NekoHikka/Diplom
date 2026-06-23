@@ -57,8 +57,8 @@
 
 {% block scripts %}
 <script>
-  const expenseCategories = {{ exp_cats | tojson | safe }};
-  const incomeCategories = {{ inc_cats | tojson | safe }};
+  const expenseCategories = {{ exp_cat_options | default([], true) | tojson | safe }};
+  const incomeCategories = {{ inc_cat_options | default([], true) | tojson | safe }};
   const currentCat = {{ t.category | tojson }};
 
   function updateCategories() {
@@ -67,8 +67,10 @@
     catObj.innerHTML = "";
     (selectedType === "Витрата" ? expenseCategories : incomeCategories).forEach(cat => {
       let opt = document.createElement("option");
-      opt.value = cat; opt.innerHTML = financeCleanLabel(cat);
-      if(cat === currentCat) opt.selected = true;
+      opt.value = cat.value;
+      opt.textContent = cat.label;
+      opt.dataset.iconValue = cat.value;
+      if(cat.value === currentCat) opt.selected = true;
       catObj.appendChild(opt);
     });
     catObj.dispatchEvent(new Event("change", { bubbles: true }));

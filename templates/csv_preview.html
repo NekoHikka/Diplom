@@ -127,7 +127,7 @@
       {{ get_string("acc_label") }}:
       <span class="item-with-icon" style="display:inline-flex;align-items:center;gap:8px;">
         {{ render_item_icon(account.name, 'card') }}
-        <span>{{ display_item_name(account.name) }}</span>
+        <span>{{ translate_name(account.name) }}</span>
       </span>
     </h2>
 
@@ -209,17 +209,17 @@
                   {% for cat in typed_cats %}
                   {% set is_match = cat.name == tx.category or display_item_name(cat.name) == tx_display %}
                   {% if is_match %}{% set match.found = true %}{% endif %}
-                  <option value="{{ cat.name }}" {% if is_match %}selected{% endif %}>{{ display_item_name(cat.name) }}</option>
+                  <option value="{{ cat.name }}" data-icon-value="{{ cat.name|e }}" {% if is_match %}selected{% endif %}>{{ translate_name(cat.name) }}</option>
                   {% endfor %}
                   {# If current category not in the typed list, add it as option #}
                   {% if tx.category and not match.found %}
-                  <option value="{{ tx.category }}" selected>{{ tx_display }}</option>
+                  <option value="{{ tx.category }}" data-icon-value="{{ tx.category|e }}" selected>{{ translate_name(tx.category) }}</option>
                   {% endif %}
                 </select>
                 {% else %}
                 <span class="item-with-icon" style="display:inline-flex;align-items:center;gap:8px;background:var(--input-bg);padding:5px 8px;border-radius:8px;font-size:13px;">
                   {{ render_item_icon(tx.category) }}
-                  <span>{{ display_item_name(tx.category) }}</span>
+                  <span>{{ translate_name(tx.category) }}</span>
                 </span>
                 {% endif %}
               </td>

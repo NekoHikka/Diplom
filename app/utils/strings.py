@@ -1,4 +1,6 @@
 # app/utils/strings.py
+import re
+
 from flask import session
 from app.utils.icons import display_item_name
 
@@ -53,13 +55,28 @@ MESSAGES = {
         
         'login_title': "Вхід в систему",
         'username_label': "Логін",
+        'email_label': "Email",
         'password_label': "Пароль",
+        'new_password_label': "Новий пароль",
+        'repeat_password_label': "Повторіть пароль",
+        'code_label': "Код з email",
         'login_btn': "Увійти",
         'no_acc_yet': "Немає аккаунту?",
         'registration_link': "Реєстрація",
         'already_have_acc': "Вже є аккаунт?",
         'register_btn': "Зареєструватися",
         'register_title': "Реєстрація",
+        'forgot_password_link': "Забули пароль?",
+        'verify_email_title': "Підтвердження email",
+        'verify_email_hint': "Ми надіслали 6-значний код на вашу пошту. Введіть його, щоб активувати акаунт.",
+        'verify_btn': "Підтвердити",
+        'resend_code_btn': "Надіслати код ще раз",
+        'forgot_password_title': "Відновлення пароля",
+        'forgot_password_hint': "Введіть email акаунта. Якщо він є в системі, ми надішлемо код для скидання пароля.",
+        'email_spam_hint': "Якщо лист не з'явився протягом хвилини, перевірте папку «Спам» або «Уся пошта».",
+        'send_code_btn': "Надіслати код",
+        'reset_password_title': "Новий пароль",
+        'reset_password_btn': "Змінити пароль",
         
         'bank_monobank': "Monobank",
         'bank_privat': "ПриватБанк",
@@ -167,11 +184,17 @@ MESSAGES = {
         
         'error_invalid_login': "Неправильний логін або пароль.",
         'error_login_exists': "Користувач з таким логіном вже існує.",
+        'error_email_exists': "Користувач з таким email вже існує.",
+        'error_email_invalid': "Введіть коректний email.",
         'error_username_short': "Логін занадто короткий: мінімум 3 символи.",
         'error_username_long': "Логін занадто довгий: максимум 30 символів.",
         'error_username_spaces': "Логін не має містити пробіли.",
         'error_username_chars': "Логін може містити лише літери, цифри та нижнє підкреслення.",
         'error_password_short': "Пароль занадто короткий: мінімум 6 символів.",
+        'error_password_mismatch': "Паролі не збігаються.",
+        'error_code_invalid': "Неправильний або неактивний код.",
+        'error_code_expired': "Термін дії коду минув. Надішліть новий код.",
+        'error_code_attempts': "Забагато невдалих спроб. Надішліть новий код.",
         'error_fix_issues': "Виправте наступні помилки:",
         'error_user_not_found': "Користувача з таким логіном не знайдено.",
         'error_already_has_partnership': "У вас вже є активний партнер.",
@@ -186,6 +209,19 @@ MESSAGES = {
         'success_invite_sent': "Запрошення надіслано!",
         'success_shared_created': "Спільний бюджет створено!",
         'success_csv_import': "Успішно імпортовано {count} транзакцій!",
+        'verification_code_sent': "Код підтвердження надіслано на email.",
+        'verify_required': "Підтвердіть email, щоб увійти в акаунт.",
+        'email_send_failed': "Не вдалося надіслати email. Перевірте налаштування пошти.",
+        'email_verified_success': "Email підтверджено.",
+        'email_already_verified': "Email вже підтверджено.",
+        'code_resend_wait': "Зачекайте хвилину перед повторним надсиланням коду.",
+        'password_reset_code_sent': "Якщо такий email зареєстрований, код для скидання пароля надіслано.",
+        'password_reset_success': "Пароль успішно змінено. Увійдіть з новим паролем.",
+        'email_subject_verify': "Ваш код підтвердження для Smart Finance",
+        'email_subject_reset': "Ваш код скидання пароля для Smart Finance",
+        'email_preview': "Код безпеки Smart Finance діє 15 хвилин.",
+        'email_body_verify': "Вітаємо!\n\nВикористайте цей код, щоб підтвердити email у Smart Finance: {code}\n\nКод діє 15 хвилин. Якщо ви не створювали акаунт, просто проігноруйте цей лист.",
+        'email_body_reset': "Вітаємо!\n\nВикористайте цей код, щоб змінити пароль у Smart Finance: {code}\n\nКод діє 15 хвилин. Якщо ви не запитували скидання пароля, просто проігноруйте цей лист.",
         
         'shared_invite_title': "Запрошення!",
         'shared_invite_text': "Користувач <strong>{username}</strong> пропонує вести Спільний Бюджет.",
@@ -320,13 +356,28 @@ MESSAGES = {
         
         'login_title': "Login",
         'username_label': "Username",
+        'email_label': "Email",
         'password_label': "Password",
+        'new_password_label': "New password",
+        'repeat_password_label': "Repeat password",
+        'code_label': "Email code",
         'login_btn': "Login",
         'no_acc_yet': "No account yet?",
         'registration_link': "Register",
         'already_have_acc': "Already have an account?",
         'register_btn': "Register",
         'register_title': "Registration",
+        'forgot_password_link': "Forgot password?",
+        'verify_email_title': "Email confirmation",
+        'verify_email_hint': "We sent a 6-digit code to your email. Enter it to activate your account.",
+        'verify_btn': "Confirm",
+        'resend_code_btn': "Send code again",
+        'forgot_password_title': "Password recovery",
+        'forgot_password_hint': "Enter your account email. If it exists, we will send a password reset code.",
+        'email_spam_hint': "If the email does not appear within a minute, check Spam or All Mail.",
+        'send_code_btn': "Send code",
+        'reset_password_title': "New password",
+        'reset_password_btn': "Change password",
         
         'bank_monobank': "Monobank",
         'bank_privat': "PrivatBank",
@@ -434,11 +485,17 @@ MESSAGES = {
         
         'error_invalid_login': "Invalid username or password.",
         'error_login_exists': "User with this username already exists.",
+        'error_email_exists': "User with this email already exists.",
+        'error_email_invalid': "Enter a valid email.",
         'error_username_short': "Username too short: minimum 3 characters.",
         'error_username_long': "Username too long: maximum 30 characters.",
         'error_username_spaces': "Username must not contain spaces.",
         'error_username_chars': "Username can only contain letters, digits and underscore.",
         'error_password_short': "Password too short: minimum 6 characters.",
+        'error_password_mismatch': "Passwords do not match.",
+        'error_code_invalid': "Invalid or inactive code.",
+        'error_code_expired': "The code has expired. Send a new code.",
+        'error_code_attempts': "Too many failed attempts. Send a new code.",
         'error_fix_issues': "Please fix the following issues:",
         'error_user_not_found': "User with this username not found.",
         'error_already_has_partnership': "You already have an active partner.",
@@ -453,6 +510,19 @@ MESSAGES = {
         'success_invite_sent': "Invitation sent!",
         'success_shared_created': "Shared budget created!",
         'success_csv_import': "Successfully imported {count} transactions!",
+        'verification_code_sent': "Confirmation code was sent to your email.",
+        'verify_required': "Confirm your email to enter the account.",
+        'email_send_failed': "Could not send email. Check mail settings.",
+        'email_verified_success': "Email confirmed.",
+        'email_already_verified': "Email is already confirmed.",
+        'code_resend_wait': "Wait one minute before sending another code.",
+        'password_reset_code_sent': "If this email is registered, a password reset code was sent.",
+        'password_reset_success': "Password changed successfully. Log in with your new password.",
+        'email_subject_verify': "Your Smart Finance confirmation code",
+        'email_subject_reset': "Your Smart Finance password reset code",
+        'email_preview': "Your Smart Finance security code is valid for 15 minutes.",
+        'email_body_verify': "Hello!\n\nUse this code to confirm your email in Smart Finance: {code}\n\nThe code is valid for 15 minutes. If you did not create an account, ignore this email.",
+        'email_body_reset': "Hello!\n\nUse this code to change your Smart Finance password: {code}\n\nThe code is valid for 15 minutes. If you did not request a password reset, ignore this email.",
         
         'shared_invite_title': "Invitation!",
         'shared_invite_text': "User <strong>{username}</strong> invites you.",
@@ -569,6 +639,17 @@ def translate_name(name):
     if not name: return name
     name = display_item_name(name)
     lang = get_current_lang()
+
+    def identity(value):
+        value = display_item_name(value or '').lower()
+        value = re.sub(r'[^\w\s]', ' ', value, flags=re.UNICODE)
+        return re.sub(r'\s+', ' ', value).strip()
+
+    name_identity = identity(name)
+    for account_key in ('default_account', 'shared_account'):
+        for messages in MESSAGES.values():
+            if name_identity == identity(messages.get(account_key)):
+                return get_string(account_key)
     
     cat_mapping = {
         'їжа': 'food', 'food': 'food',

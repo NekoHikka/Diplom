@@ -12,3 +12,4 @@ pandas
 xlsxwriter
 Pillow
 openpyxl
+cryptography

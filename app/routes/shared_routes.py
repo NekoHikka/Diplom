@@ -16,10 +16,13 @@ from app.repositories.transaction_repository import get_shared_transactions
 from app.repositories.goal_repository import get_multi_user_goals
 from app.models import get_current_time
 from app.config import Config
-from app.utils.strings import get_string
+from app.utils.strings import get_string, translate_name
 from app.utils.icons import display_item_name, icon_value
 
 shared_bp = Blueprint('shared', __name__)
+
+def category_options(categories):
+    return [{'value': c.name, 'label': translate_name(c.name)} for c in categories]
 
 @shared_bp.route('/shared')
 @login_required
@@ -76,10 +79,14 @@ def shared_budget():
         else: inc_cat_data[clean_cat] = round(inc_cat_data.get(clean_cat, 0) + t.amount, 2)
 
     cat_color_map = { (c.name.split(' ', 1)[-1] if ' ' in c.name else c.name): c.color for c in user_categories }
-    exp_labels, exp_values = list(exp_cat_data.keys()), list(exp_cat_data.values())
-    exp_colors = [cat_color_map.get(l, random.choice(Config.COLORS_PALETTE)) for l in exp_labels]
-    inc_labels, inc_values = list(inc_cat_data.keys()), list(inc_cat_data.values())
-    inc_colors = [cat_color_map.get(l, random.choice(Config.COLORS_PALETTE)) for l in inc_labels]
+    exp_raw_labels = list(exp_cat_data.keys())
+    exp_labels = [translate_name(label) for label in exp_raw_labels]
+    exp_values = list(exp_cat_data.values())
+    exp_colors = [cat_color_map.get(l, random.choice(Config.COLORS_PALETTE)) for l in exp_raw_labels]
+    inc_raw_labels = list(inc_cat_data.keys())
+    inc_labels = [translate_name(label) for label in inc_raw_labels]
+    inc_values = list(inc_cat_data.values())
+    inc_colors = [cat_color_map.get(l, random.choice(Config.COLORS_PALETTE)) for l in inc_raw_labels]
 
     is_pdf_export = request.args.get('pdf') == '1'
     page = request.args.get('page', 1, type=int)
@@ -91,13 +98,17 @@ def shared_budget():
     start_idx = (page - 1) * per_page
     paginated_ts = ts if is_pdf_export else ts[start_idx:start_idx + per_page]
 
+    expense_categories = [c for c in user_categories if c.type=='Витрата']
+    income_categories = [c for c in user_categories if c.type=='Дохід']
     return render_template('index.html', transactions=paginated_ts, username=current_user.username,
                            exp_labels=exp_labels, exp_values=exp_values, exp_colors=exp_colors,
                            inc_labels=inc_labels, inc_values=inc_values, inc_colors=inc_colors,
                            random_color=random.choice(Config.COLORS_PALETTE), balance=total_balance,
                            accounts=user_accounts, goals=goals_data,
-                           exp_cats=[c.name for c in user_categories if c.type=='Витрата'],
-                           inc_cats=[c.name for c in user_categories if c.type=='Дохід'],
+                           exp_cats=[c.name for c in expense_categories],
+                           inc_cats=[c.name for c in income_categories],
+                           exp_cat_options=category_options(expense_categories),
+                           inc_cat_options=category_options(income_categories),
                            user_categories=user_categories, current_filter=f, filter_name=filter_name,
                            is_shared_view=True, partner=partner,
                            page=page, total_pages=total_pages, is_pdf_export=is_pdf_export)
@@ -127,7 +138,7 @@ def send_invite():
         flash(get_string('success_invite_sent'), "success")
     return redirect(url_for('shared.shared_budget'))
 
-@shared_bp.route('/accept_invite/<int:id>')
+@shared_bp.route('/accept_invite/<int:id>', methods=['POST'])
 @login_required
 def accept_invite(id):
     p = get_partnership_by_id(id)
@@ -152,7 +163,7 @@ def accept_invite(id):
         flash(get_string('success_shared_created'), "success")
     return redirect(url_for('shared.shared_budget'))
 
-@shared_bp.route('/reject_invite/<int:id>')
+@shared_bp.route('/reject_invite/<int:id>', methods=['POST'])
 @login_required
 def reject_invite(id):
     p = get_partnership_by_id(id)
@@ -160,7 +171,7 @@ def reject_invite(id):
         delete_partnership(p)
     return redirect(request.referrer or url_for('budget.home'))
 
-@shared_bp.route('/leave_partnership')
+@shared_bp.route('/leave_partnership', methods=['POST'])
 @login_required
 def leave_partnership():
     p = get_active_partnership(current_user.id)

@@ -81,7 +81,9 @@
               </svg>
             </span>
           </a>
-          <a href="{{ url_for('budget.delete_transaction_route', id=t.id) }}" style="text-decoration: none; font-size: 16px; color:#ff4d4d;" class="optimistic-delete" data-confirm-message="{{ get_string('delete') }} {{ get_string('transactions')|lower }}?" data-confirm-title="{{ get_string('delete') }} {{ get_string('transactions')|lower }}" data-confirm-ok="{{ get_string('delete') }}" data-confirm-cancel="{{ get_string('cancel') }}" aria-label="Delete transaction">
+          <form action="{{ url_for('budget.delete_transaction_route', id=t.id) }}" method="POST" style="display:inline; margin:0;" data-confirm-message="{{ get_string('delete') }} {{ get_string('transactions')|lower }}?" data-confirm-title="{{ get_string('delete') }} {{ get_string('transactions')|lower }}" data-confirm-ok="{{ get_string('delete') }}" data-confirm-cancel="{{ get_string('cancel') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <button type="submit" style="background:transparent; border:0; padding:0; text-decoration: none; font-size: 16px; color:#ff4d4d; cursor:pointer;" aria-label="Delete transaction">
             <span class="action-icon" aria-hidden="true" style="width:16px; height:16px; color:inherit;">
               <svg viewBox="0 0 24 24">
                 <path d="M4 7h16"></path>
@@ -89,7 +91,8 @@
                 <path d="M9 7V4h6v3"></path>
               </svg>
             </span>
-          </a>
+            </button>
+          </form>
         </td>
       </tr>
       {% endfor %}

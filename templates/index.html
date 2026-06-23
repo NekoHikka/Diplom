@@ -24,18 +24,14 @@
       >
     </div>
     <div style="display: flex; gap: 10px">
-      <a
-        href="{{ url_for('shared.accept_invite', id=pending_invite.id) }}"
-        class="btn"
-        style="background: #4caf50; color: white"
-        ><span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:currentColor;display:inline-flex;vertical-align:middle;"><svg viewBox="0 0 24 24"><path d="M5 12l4 4L19 6"></path></svg></span> {{ get_string('shared_accept') }}</a
-      >
-      <a
-        href="{{ url_for('shared.reject_invite', id=pending_invite.id) }}"
-        class="btn"
-        style="background: #ff4d4d; color: white"
-        >{{ get_string('shared_reject') }}</a
-      >
+      <form action="{{ url_for('shared.accept_invite', id=pending_invite.id) }}" method="POST" style="margin:0;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <button type="submit" class="btn" style="background: #4caf50; color: white"><span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:currentColor;display:inline-flex;vertical-align:middle;"><svg viewBox="0 0 24 24"><path d="M5 12l4 4L19 6"></path></svg></span> {{ get_string('shared_accept') }}</button>
+      </form>
+      <form action="{{ url_for('shared.reject_invite', id=pending_invite.id) }}" method="POST" style="margin:0;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <button type="submit" class="btn" style="background: #ff4d4d; color: white">{{ get_string('shared_reject') }}</button>
+      </form>
     </div>
   </div>
 </div>
@@ -174,27 +170,35 @@
   <p style="color: #aaa; font-size: 14px; margin-bottom: 20px">
     {{ get_string('shared_leave_text') }}
   </p>
-  <a
-    href="{{ url_for('shared.leave_partnership') }}"
+  <form
+    action="{{ url_for('shared.leave_partnership') }}"
+    method="POST"
     data-confirm-message="{{ get_string('shared_leave_confirm') }}"
     data-confirm-title="{{ get_string('shared_danger_zone') }}"
     data-confirm-ok="{{ get_string('shared_leave_btn') }}"
     data-confirm-cancel="{{ get_string('cancel') }}"
-    class="btn"
     style="
-      background-color: #ff4d4d;
-      color: white;
-      padding: 12px 25px;
-      font-size: 15px;
+      margin: 0;
     "
+  >
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <button
+      type="submit"
+      class="btn"
+      style="
+        background-color: #ff4d4d;
+        color: white;
+        padding: 12px 25px;
+        font-size: 15px;
+      "
     ><span class="action-icon" aria-hidden="true" style="color:white; width:16px; height:16px; margin-right:8px;">
       <svg viewBox="0 0 24 24">
         <path d="M9 7l6 10"></path>
         <path d="M15 7l-6 10"></path>
         <path d="M6 7h12"></path>
       </svg>
-    </span>{{ get_string('shared_leave_btn') }}</a
-  >
+    </span>{{ get_string('shared_leave_btn') }}</button>
+  </form>
 </div>
 {% endif %} 
 
@@ -373,15 +377,19 @@
       document.getElementById('transaction_date').valueAsDate = new Date();
   }
 
-  const expenseCategories = {{ exp_cats | tojson | safe }};
-  const incomeCategories = {{ inc_cats | tojson | safe }};
+  const expenseCategories = {{ exp_cat_options | default([], true) | tojson | safe }};
+  const incomeCategories = {{ inc_cat_options | default([], true) | tojson | safe }};
   function updateCategories() {
       const selectedType = document.getElementById("type_select").value;
       const catObj = document.getElementById("category_select");
       if (!catObj) return;
       catObj.innerHTML = "";
       (selectedType === "Витрата" ? expenseCategories : incomeCategories).forEach(cat => {
-          let opt = document.createElement("option"); opt.value = cat; opt.innerHTML = financeCleanLabel(cat); catObj.appendChild(opt);
+          let opt = document.createElement("option");
+          opt.value = cat.value;
+          opt.textContent = cat.label;
+          opt.dataset.iconValue = cat.value;
+          catObj.appendChild(opt);
       });
       catObj.dispatchEvent(new Event("change", { bubbles: true }));
       if (window.initIconSelects) initIconSelects();

@@ -82,16 +82,18 @@
             style="text-decoration: none; margin-right: 5px"
             ><span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:currentColor;display:inline-flex;vertical-align:middle;"><svg viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16v4z"></path><path d="M13 7l4 4"></path></svg></span></a
           >
-          <a
-            href="{{ url_for('budget.delete_account_route', id=acc.id) }}"
-            style="text-decoration: none"
-            class="optimistic-delete"
+          <form
+            action="{{ url_for('budget.delete_account_route', id=acc.id) }}"
+            method="POST"
+            style="display:inline; margin:0"
             data-confirm-message="{{ get_string('delete') }} {{ get_string('acc_label')|lower }}?"
             data-confirm-title="{{ get_string('delete') }} {{ get_string('acc_label')|lower }}"
             data-confirm-ok="{{ get_string('delete') }}"
             data-confirm-cancel="{{ get_string('cancel') }}"
-            ><span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:currentColor;display:inline-flex;vertical-align:middle;"><svg viewBox="0 0 24 24"><path d="M4 7h16"></path><path d="M6 7l1 13h10l1-13"></path><path d="M9 7V4h6v3"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></svg></span></a
           >
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <button type="submit" style="background:transparent; border:0; padding:0; color:inherit; cursor:pointer;"><span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:currentColor;display:inline-flex;vertical-align:middle;"><svg viewBox="0 0 24 24"><path d="M4 7h16"></path><path d="M6 7l1 13h10l1-13"></path><path d="M9 7V4h6v3"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></svg></span></button>
+          </form>
         </span>
       </div>
     </div>

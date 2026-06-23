@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ get_string('register_title') }}</title>
+    {% include "partials/favicon.html" %}
     <style>
         :root { --bg: #121212; --card: #1e1e1e; --text: #fff; --primary: #2196F3; }
         body { background: var(--bg); color: var(--text); font-family: Arial; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
@@ -34,6 +35,7 @@
         <form method="POST">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="text" name="username" value="{{ username_value or '' }}" placeholder="{{ get_string('username_label') }}" minlength="3" maxlength="30" required>
+            <input type="email" name="email" value="{{ email_value or '' }}" placeholder="{{ get_string('email_label') }}" maxlength="120" required>
             <input type="password" name="password" placeholder="{{ get_string('password_label') }}" minlength="6" required>
             <button type="submit" class="btn">{{ get_string('register_btn') }}</button>
         </form>

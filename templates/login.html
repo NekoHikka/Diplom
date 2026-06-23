@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ get_string('login_title') }}</title>
+    {% include "partials/favicon.html" %}
     <style>
       :root {
         --bg: #121212;
@@ -110,6 +111,9 @@
         />
         <button type="submit" class="btn">{{ get_string('login_btn') }}</button>
       </form>
+      <div class="link">
+        <a href="{{ url_for('auth.forgot_password') }}">{{ get_string('forgot_password_link') }}</a>
+      </div>
       <div class="link">
         {{ get_string('no_acc_yet') }}
         <a href="{{ url_for('auth.register') }}"

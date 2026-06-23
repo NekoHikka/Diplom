@@ -57,10 +57,14 @@
               <svg viewBox="0 0 24 24"><path d="M4 20h4l11-11-4-4L4 16v4z"></path><path d="M13 6l4 4"></path></svg>
             </span>
           </a>
-          <a href="{{ url_for('budget.delete_category_route', id=cat.id) }}" style="text-decoration: none; color:#ff4d4d;" class="optimistic-delete" data-confirm-message="{{ get_string('delete') }} {{ get_string('category')|lower }}?" data-confirm-title="{{ get_string('delete') }} {{ get_string('category')|lower }}" data-confirm-ok="{{ get_string('delete') }}" data-confirm-cancel="{{ get_string('cancel') }}" aria-label="Delete category">
-          <span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:inherit;">
-            <svg viewBox="0 0 24 24"><path d="M4 7h16"></path><path d="M6 7l1 13h10l1-13"></path><path d="M9 7V4h6v3"></path></svg>
-          </span></a>
+          <form action="{{ url_for('budget.delete_category_route', id=cat.id) }}" method="POST" style="display:inline; margin:0;" data-confirm-message="{{ get_string('delete') }} {{ get_string('category')|lower }}?" data-confirm-title="{{ get_string('delete') }} {{ get_string('category')|lower }}" data-confirm-ok="{{ get_string('delete') }}" data-confirm-cancel="{{ get_string('cancel') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <button type="submit" style="background:transparent; border:0; padding:0; color:#ff4d4d; cursor:pointer;" aria-label="Delete category">
+              <span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:inherit;">
+                <svg viewBox="0 0 24 24"><path d="M4 7h16"></path><path d="M6 7l1 13h10l1-13"></path><path d="M9 7V4h6v3"></path></svg>
+              </span>
+            </button>
+          </form>
         </div>
       </div>
       {% endfor %}
@@ -85,10 +89,14 @@
               <svg viewBox="0 0 24 24"><path d="M4 20h4l11-11-4-4L4 16v4z"></path><path d="M13 6l4 4"></path></svg>
             </span>
           </a>
-          <a href="{{ url_for('budget.delete_category_route', id=cat.id) }}" style="text-decoration: none; color:#ff4d4d;" class="optimistic-delete" data-confirm-message="{{ get_string('delete') }} {{ get_string('category')|lower }}?" data-confirm-title="{{ get_string('delete') }} {{ get_string('category')|lower }}" data-confirm-ok="{{ get_string('delete') }}" data-confirm-cancel="{{ get_string('cancel') }}" aria-label="Delete category">
-          <span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:inherit;">
-            <svg viewBox="0 0 24 24"><path d="M4 7h16"></path><path d="M6 7l1 13h10l1-13"></path><path d="M9 7V4h6v3"></path></svg>
-          </span></a>
+          <form action="{{ url_for('budget.delete_category_route', id=cat.id) }}" method="POST" style="display:inline; margin:0;" data-confirm-message="{{ get_string('delete') }} {{ get_string('category')|lower }}?" data-confirm-title="{{ get_string('delete') }} {{ get_string('category')|lower }}" data-confirm-ok="{{ get_string('delete') }}" data-confirm-cancel="{{ get_string('cancel') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <button type="submit" style="background:transparent; border:0; padding:0; color:#ff4d4d; cursor:pointer;" aria-label="Delete category">
+              <span class="action-icon" aria-hidden="true" style="width:14px;height:14px;color:inherit;">
+                <svg viewBox="0 0 24 24"><path d="M4 7h16"></path><path d="M6 7l1 13h10l1-13"></path><path d="M9 7V4h6v3"></path></svg>
+              </span>
+            </button>
+          </form>
         </div>
       </div>
       {% endfor %}

@@ -11,7 +11,20 @@ def get_current_time():
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=True)
+    email_verified = db.Column(db.Boolean, default=False, nullable=False)
     password = db.Column(db.String(200), nullable=False)
+
+class EmailCode(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    code_hash = db.Column(db.String(200), nullable=False)
+    purpose = db.Column(db.String(30), nullable=False)
+    created_at = db.Column(db.DateTime, default=get_current_time, nullable=False)
+    expires_at = db.Column(db.DateTime, nullable=False)
+    used_at = db.Column(db.DateTime)
+    attempts = db.Column(db.Integer, default=0, nullable=False)
+    user = db.relationship('User')
 
 class Partnership(db.Model):
     id = db.Column(db.Integer, primary_key=True)

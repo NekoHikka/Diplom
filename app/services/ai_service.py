@@ -1,4 +1,4 @@
-import os
+﻿import os
 import re
 import json
 import random
@@ -223,7 +223,7 @@ DATA SOURCE:
 ---
 """
             primary_model = "openai/gpt-oss-120b:free"
-            fallback_model = "meta-llama/llama-3.3-70b-instruct:free"
+            fallback_model = "qwen/qwen3-coder:free"
 
             def _call_ai(temp=0.0):
                 print(f"Calling OpenRouter Primary ({primary_model}, temp={temp})...")
